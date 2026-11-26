@@ -25,15 +25,26 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(SDL3)
 
+add_library(ember_engine STATIC
+    src/Engine/Core/Application.cpp
+    src/Engine/Core/Time.cpp
+    src/Engine/Platform/Input.cpp
+)
+
+target_include_directories(ember_engine PUBLIC src)
+target_link_libraries(ember_engine PUBLIC SDL3::SDL3)
+
 add_executable(ember_editor
     src/main.cpp
 )
 
-target_link_libraries(ember_editor PRIVATE SDL3::SDL3)
+target_link_libraries(ember_editor PRIVATE ember_engine)
 
 if(MSVC)
+    target_compile_options(ember_engine PRIVATE /W4 /permissive-)
     target_compile_options(ember_editor PRIVATE /W4 /permissive-)
 else()
+    target_compile_options(ember_engine PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(ember_editor PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
