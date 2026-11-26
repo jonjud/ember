@@ -17,6 +17,7 @@ AssetRegistry::AssetRegistry(std::filesystem::path assetRoot)
 bool AssetRegistry::Scan()
 {
     m_assets.clear();
+    m_metadataPaths.clear();
     m_diagnostics.clear();
 
     const auto& root = m_directory.GetRoot();
@@ -121,6 +122,7 @@ bool AssetRegistry::Scan()
         if (!inserted)
         {
             m_assets.erase(entry);
+            m_metadataPaths.erase(id);
             duplicateIds.insert(id);
             m_diagnostics.push_back({
                 AssetRegistryDiagnosticType::DuplicateAssetId,
@@ -128,7 +130,10 @@ bool AssetRegistry::Scan()
                 id,
                 "Multiple metadata sidecars use the same asset ID; the ID was excluded."
             });
+            continue;
         }
+
+        m_metadataPaths.emplace(id, sidecar);
     }
 
     return scanComplete;
@@ -138,6 +143,15 @@ const AssetMetadata* AssetRegistry::Find(const std::string& assetId) const noexc
 {
     const auto found = m_assets.find(assetId);
     return found == m_assets.end() ? nullptr : &found->second;
+}
+
+std::optional<std::filesystem::path> AssetRegistry::FindMetadataPath(
+    const std::string& assetId) const
+{
+    const auto found = m_metadataPaths.find(assetId);
+    return found == m_metadataPaths.end()
+        ? std::nullopt
+        : std::optional<std::filesystem::path>{found->second};
 }
 
 const std::unordered_map<std::string, AssetMetadata>& AssetRegistry::GetAssets() const noexcept

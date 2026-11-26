@@ -4,6 +4,7 @@
 #include "Engine/Resources/AssetMetadata.hpp"
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -39,6 +40,8 @@ public:
     [[nodiscard]] bool Scan();
 
     [[nodiscard]] const AssetMetadata* Find(const std::string& assetId) const noexcept;
+    [[nodiscard]] std::optional<std::filesystem::path> FindMetadataPath(
+        const std::string& assetId) const;
     [[nodiscard]] const std::unordered_map<std::string, AssetMetadata>& GetAssets() const noexcept;
     [[nodiscard]] const std::vector<AssetRegistryDiagnostic>& GetDiagnostics() const noexcept;
     [[nodiscard]] std::size_t GetAssetCount() const noexcept;
@@ -47,6 +50,7 @@ public:
 private:
     AssetDirectory m_directory;
     std::unordered_map<std::string, AssetMetadata> m_assets;
+    std::unordered_map<std::string, std::filesystem::path> m_metadataPaths;
     std::vector<AssetRegistryDiagnostic> m_diagnostics;
 };
 } // namespace ember

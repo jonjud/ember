@@ -37,6 +37,7 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Asset metadata project scanning and diagnostics registry
 - [x] Resolve and load texture assets through stable IDs in AssetManager
 - [x] Apply texture filter and premultiplied-alpha import settings at load time
+- [x] Add an asset import settings service API for editor workflows
 - [ ] Asset import settings UI
 - [x] Versioned JSON scene serialization with stable entity and asset IDs
 - [ ] Collision and Box2D integration
