@@ -576,6 +576,8 @@ void EditorApplication::DrawViewport()
         ImGui::SameLine();
         if (ImGui::SmallButton(m_gizmoMode == 2 ? "[Scale]" : "Scale")) m_gizmoMode = 2;
         ImGui::SameLine();
+        ImGui::Checkbox("Local", &m_gizmoLocalSpace);
+        ImGui::SameLine();
         ImGui::Checkbox("Snap", &m_snapTransforms);
         if (m_snapTransforms)
         {
@@ -683,8 +685,14 @@ void EditorApplication::DrawViewport()
                         canvasMin.x + originScreenWorld.x,
                         canvasMin.y + originScreenWorld.y
                     };
-                    const Vector2 xEndWorld = origin + Vector2{80.0F / m_viewportCamera.GetZoom(), 0.0F};
-                    const Vector2 yEndWorld = origin + Vector2{0.0F, 80.0F / m_viewportCamera.GetZoom()};
+                    const float axisLength = 80.0F / m_viewportCamera.GetZoom();
+                    const float axisCosine = m_gizmoLocalSpace ? std::cos(transform.rotation) : 1.0F;
+                    const float axisSine = m_gizmoLocalSpace ? std::sin(transform.rotation) : 0.0F;
+                    const Vector2 axes[2]{
+                        {axisCosine, axisSine}, {-axisSine, axisCosine}
+                    };
+                    const Vector2 xEndWorld = origin + axes[0] * axisLength;
+                    const Vector2 yEndWorld = origin + axes[1] * axisLength;
                     const Vector2 xScreenWorld = m_viewportCamera.WorldToScreen(xEndWorld);
                     const Vector2 yScreenWorld = m_viewportCamera.WorldToScreen(yEndWorld);
                     const ImVec2 ends[2]{
@@ -715,7 +723,8 @@ void EditorApplication::DrawViewport()
                             {
                                 bestHandleDistance = distance;
                                 gizmoEntity = selected->GetId();
-                                gizmoAxis = i == 0 ? Vector2{1.0F, 0.0F} : Vector2{0.0F, 1.0F};
+                                gizmoAxis = axes[i];
+                                m_dragGizmoAxisIndex = i;
                                 scaleHandle = true;
                             }
                         }
@@ -740,6 +749,7 @@ void EditorApplication::DrawViewport()
                                 bestHandleDistance = distance;
                                 gizmoEntity = selected->GetId();
                                 gizmoAxis = axes[i];
+                                m_dragGizmoAxisIndex = i;
                             }
                         }
                     }
@@ -850,17 +860,16 @@ void EditorApplication::DrawViewport()
                     const auto& render = entity->GetRenderComponent();
                     const float distance = movement.x * m_dragGizmoAxis.x +
                         movement.y * m_dragGizmoAxis.y;
-                    if (m_dragGizmoAxis.x != 0.0F && std::abs(render.size.x) > 0.0001F)
+                    const float baseSize = m_dragGizmoAxisIndex == 0 ? render.size.x : render.size.y;
+                    if (std::abs(baseSize) > 0.0001F)
                     {
-                        const float candidate = m_dragStartEntityScale.x + distance / render.size.x;
-                        transform.scale.x = std::max(0.01F,
+                        const float startScale = m_dragGizmoAxisIndex == 0
+                            ? m_dragStartEntityScale.x : m_dragStartEntityScale.y;
+                        const float candidate = startScale + distance / baseSize;
+                        const float nextScale = std::max(0.01F,
                             m_snapTransforms ? SnapValue(candidate, m_scaleSnap) : candidate);
-                    }
-                    if (m_dragGizmoAxis.y != 0.0F && std::abs(render.size.y) > 0.0001F)
-                    {
-                        const float candidate = m_dragStartEntityScale.y + distance / render.size.y;
-                        transform.scale.y = std::max(0.01F,
-                            m_snapTransforms ? SnapValue(candidate, m_scaleSnap) : candidate);
+                        if (m_dragGizmoAxisIndex == 0) transform.scale.x = nextScale;
+                        else transform.scale.y = nextScale;
                     }
                 }
                 else if (m_draggingGizmoAxis)
@@ -1037,8 +1046,12 @@ void EditorApplication::DrawViewport()
                 else
                 {
                     const float axisLength = 80.0F / zoom;
-                    const ImVec2 xEnd = toCanvas(origin + Vector2{axisLength, 0.0F});
-                    const ImVec2 yEnd = toCanvas(origin + Vector2{0.0F, axisLength});
+                    const float axisCosine = m_gizmoLocalSpace ? std::cos(transform.rotation) : 1.0F;
+                    const float axisSine = m_gizmoLocalSpace ? std::sin(transform.rotation) : 0.0F;
+                    const Vector2 xAxis{axisCosine, axisSine};
+                    const Vector2 yAxis{-axisSine, axisCosine};
+                    const ImVec2 xEnd = toCanvas(origin + xAxis * axisLength);
+                    const ImVec2 yEnd = toCanvas(origin + yAxis * axisLength);
                     const ImU32 xColor = m_gizmoMode == 2
                         ? IM_COL32(255, 175, 65, 255) : IM_COL32(245, 85, 85, 255);
                     const ImU32 yColor = m_gizmoMode == 2
