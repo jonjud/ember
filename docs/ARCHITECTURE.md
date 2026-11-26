@@ -22,6 +22,7 @@ src/
 │   │   ├── Camera2D.hpp/.cpp
 │   │   └── Renderer2D.hpp/.cpp
 │   ├── Resources/
+│   │   ├── AssetDirectory.hpp/.cpp
 │   │   ├── TextureCache.hpp/.cpp
 │   │   └── TextureHandle.hpp
 │   └── Scene/
@@ -62,6 +63,13 @@ tests/
 - Call `DestroyEntity(id)` to remove one entity or `Clear()` to remove all entities.
 - Use `ForEachEntity(callback)` to update or render entities without allocating a temporary list.
 - Entity IDs are monotonically assigned and are not reused during a scene's lifetime. ID exhaustion is reported with `std::overflow_error`.
+
+## Asset directory workflow
+
+- Construct an `AssetDirectory` with the project's asset root, such as `assets/`.
+- Call `Resolve(relativePath)` before passing an asset path to a loader.
+- Absolute paths, empty paths, and paths that lexically escape the root are rejected.
+- The resolver performs lexical checks only; projects that allow untrusted asset folders should additionally enforce filesystem-level symlink policy.
 
 ## Texture cache workflow
 
