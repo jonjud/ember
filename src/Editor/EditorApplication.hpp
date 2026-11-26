@@ -5,6 +5,7 @@
 #include "Engine/Resources/AssetRegistry.hpp"
 #include "Engine/Renderer/Camera2D.hpp"
 #include "Engine/Scene/Scene.hpp"
+#include "Engine/Platform/InputMap.hpp"
 
 #include <cstdint>
 #include <string>
@@ -57,6 +58,7 @@ private:
     Scene m_playScene{"Play Scene"};
     bool m_isPlaying = false;
     Time m_time;
+    InputMap m_inputMap = InputMap::CreateDefaultMovementMap();
     Camera2D m_viewportCamera;
     AssetRegistry m_assetRegistry{"assets"};
     AssetImportService m_assetImportService{"assets"};

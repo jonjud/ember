@@ -139,19 +139,19 @@ void Application::Update()
     float directionX = 0.0F;
     float directionY = 0.0F;
 
-    if (Input::IsKeyDown(SDL_SCANCODE_A) || Input::IsKeyDown(SDL_SCANCODE_LEFT))
+    if (m_inputMap.IsActionDown("MoveLeft"))
     {
         directionX -= 1.0F;
     }
-    if (Input::IsKeyDown(SDL_SCANCODE_D) || Input::IsKeyDown(SDL_SCANCODE_RIGHT))
+    if (m_inputMap.IsActionDown("MoveRight"))
     {
         directionX += 1.0F;
     }
-    if (Input::IsKeyDown(SDL_SCANCODE_W) || Input::IsKeyDown(SDL_SCANCODE_UP))
+    if (m_inputMap.IsActionDown("MoveUp"))
     {
         directionY -= 1.0F;
     }
-    if (Input::IsKeyDown(SDL_SCANCODE_S) || Input::IsKeyDown(SDL_SCANCODE_DOWN))
+    if (m_inputMap.IsActionDown("MoveDown"))
     {
         directionY += 1.0F;
     }

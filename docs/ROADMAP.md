@@ -66,7 +66,7 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [ ] Animation
 - [ ] Audio
 - [ ] UI system
-- [ ] Input mapping
+- [x] Named keyboard action mapping with configurable key bindings and default movement actions
 - [ ] Save and load scenes
 - [ ] Scripting interface
 

@@ -131,10 +131,10 @@ void EditorApplication::UpdatePlayMode()
     }
 
     Vector2 direction{};
-    if (Input::IsKeyDown(SDL_SCANCODE_A) || Input::IsKeyDown(SDL_SCANCODE_LEFT)) direction.x -= 1.0F;
-    if (Input::IsKeyDown(SDL_SCANCODE_D) || Input::IsKeyDown(SDL_SCANCODE_RIGHT)) direction.x += 1.0F;
-    if (Input::IsKeyDown(SDL_SCANCODE_W) || Input::IsKeyDown(SDL_SCANCODE_UP)) direction.y -= 1.0F;
-    if (Input::IsKeyDown(SDL_SCANCODE_S) || Input::IsKeyDown(SDL_SCANCODE_DOWN)) direction.y += 1.0F;
+    if (m_inputMap.IsActionDown("MoveLeft")) direction.x -= 1.0F;
+    if (m_inputMap.IsActionDown("MoveRight")) direction.x += 1.0F;
+    if (m_inputMap.IsActionDown("MoveUp")) direction.y -= 1.0F;
+    if (m_inputMap.IsActionDown("MoveDown")) direction.y += 1.0F;
 
     const float lengthSquared = direction.x * direction.x + direction.y * direction.y;
     if (lengthSquared <= 0.0F)

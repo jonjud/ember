@@ -4,6 +4,7 @@
 #include "Engine/Renderer/Camera2D.hpp"
 #include "Engine/Renderer/Renderer2D.hpp"
 #include "Engine/Resources/AssetManager.hpp"
+#include "Engine/Platform/InputMap.hpp"
 #include "Engine/Scene/Scene.hpp"
 
 struct SDL_Window;
@@ -36,5 +37,6 @@ private:
     EntityId m_playerEntityId = 0;
     bool m_isRunning = false;
     Time m_time;
+    InputMap m_inputMap = InputMap::CreateDefaultMovementMap();
 };
 } // namespace ember
