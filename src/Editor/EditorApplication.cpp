@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cstdio>
 #include <iostream>
+#include <optional>
 #include <vector>
 
 namespace
@@ -43,6 +44,17 @@ bool MatchesAssetType(ember::AssetType type, int filter)
 float SnapValue(float value, float increment)
 {
     return increment > 0.0F ? std::round(value / increment) * increment : value;
+}
+
+std::optional<std::filesystem::path> ResolveProjectScenePath(
+    const std::filesystem::path& projectFilePath,
+    const ember::ProjectConfiguration& projectConfiguration,
+    const std::filesystem::path& scenePath)
+{
+    ember::ProjectConfiguration candidate = projectConfiguration;
+    candidate.startupScene = scenePath;
+    return ember::ProjectConfigurationStore::ResolveStartupScene(
+        projectFilePath, candidate);
 }
 
 bool IsDefaultInputAction(std::string_view action)
@@ -728,7 +740,31 @@ void EditorApplication::DrawAssetBrowser()
             ImGui::Text("Selected: %s (%s)", selected->assetId.c_str(), AssetTypeName(selected->type));
             ImGui::Text("Source: %s", selected->source.generic_string().c_str());
 
-            if (selected->type == AssetType::Texture)
+            if (selected->type == AssetType::Scene)
+            {
+                ImGui::SeparatorText("Scene Actions");
+                const std::filesystem::path projectRelativeScene =
+                    m_projectConfiguration.assetDirectory / selected->source;
+                if (ImGui::Button("Open Selected Scene"))
+                {
+                    const std::string path = projectRelativeScene.generic_string();
+                    std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", path.c_str());
+                    LoadScene();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Set as Startup Scene"))
+                {
+                    const std::string path = projectRelativeScene.generic_string();
+                    std::snprintf(m_startupScenePath, sizeof(m_startupScenePath),
+                        "%s", path.c_str());
+                    if (SaveProjectSettings())
+                    {
+                        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                            "Startup scene set: %.190s", path.c_str());
+                    }
+                }
+            }
+            else if (selected->type == AssetType::Texture)
             {
                 ImGui::SeparatorText("Texture Import Settings");
                 ImGui::SetNextItemWidth(150.0F);
@@ -786,16 +822,37 @@ void EditorApplication::DrawAssetBrowser()
         }
 
         ImGui::Separator();
+        ImGui::SeparatorText("Scene Manager");
         ImGui::BeginDisabled(m_isPlaying);
-        ImGui::Text("Scene file: %s", m_scenePath);
+        ImGui::SetNextItemWidth(330.0F);
+        ImGui::InputText("Project-relative scene path", m_scenePath, sizeof(m_scenePath));
+        if (ImGui::Button("New Scene"))
+        {
+            m_scene = Scene("Untitled Scene");
+            m_selectedEntity = 0;
+            const std::string path =
+                (m_projectConfiguration.assetDirectory / "scenes/untitled.emberscene").generic_string();
+            std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", path.c_str());
+            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                "New empty scene created (not saved yet)");
+        }
         ImGui::SameLine();
-        ImGui::SetNextItemWidth(220.0F);
-        ImGui::InputText("Path", m_scenePath, sizeof(m_scenePath));
+        if (ImGui::Button("Load Scene")) LoadScene();
         ImGui::SameLine();
-        if (ImGui::SmallButton("Save Scene")) SaveScene();
+        if (ImGui::Button("Save Scene")) SaveScene();
         ImGui::SameLine();
-        if (ImGui::SmallButton("Load Scene")) LoadScene();
+        if (ImGui::Button("Set Current as Startup"))
+        {
+            std::snprintf(m_startupScenePath, sizeof(m_startupScenePath),
+                "%s", m_scenePath);
+            if (SaveProjectSettings())
+            {
+                std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                    "Current scene saved as project startup scene");
+            }
+        }
         ImGui::EndDisabled();
+        ImGui::TextDisabled("Scene paths are relative to the project file. New Scene replaces the current in-memory scene.");
     }
     ImGui::End();
 }
@@ -1459,27 +1516,54 @@ void EditorApplication::CreateEntity()
 void EditorApplication::SaveScene()
 {
     if (m_isPlaying) return;
+    const auto resolvedPath = ResolveProjectScenePath(
+        m_projectFilePath, m_projectConfiguration, m_scenePath);
+    if (!resolvedPath)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Scene path must be a safe project-relative path");
+        return;
+    }
+
     std::string error;
-    if (SceneSerializer::Save(m_scene, m_scenePath, &error))
-        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Saved scene: %.200s", m_scenePath);
+    if (SceneSerializer::Save(m_scene, *resolvedPath, &error))
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Saved scene: %.200s", m_scenePath);
+        (void)m_assetRegistry.Scan();
+    }
     else
-        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Save failed: %.220s", error.c_str());
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Save failed: %.220s", error.c_str());
+    }
 }
 
 void EditorApplication::LoadScene()
 {
     if (m_isPlaying) return;
+    const auto resolvedPath = ResolveProjectScenePath(
+        m_projectFilePath, m_projectConfiguration, m_scenePath);
+    if (!resolvedPath)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Scene path must be a safe project-relative path");
+        return;
+    }
+
     Scene loadedScene;
     std::string error;
-    if (SceneSerializer::Load(loadedScene, m_scenePath, &error))
+    if (SceneSerializer::Load(loadedScene, *resolvedPath, &error))
     {
         m_scene = std::move(loadedScene);
         m_selectedEntity = 0;
-        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Loaded scene: %.200s", m_scenePath);
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Loaded scene: %.200s", m_scenePath);
     }
     else
     {
-        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Load failed: %.220s", error.c_str());
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Load failed: %.220s", error.c_str());
     }
 }
 
@@ -1519,7 +1603,7 @@ void EditorApplication::LoadStartupScene()
     m_scene = std::move(loadedScene);
     m_selectedEntity = 0;
     std::snprintf(m_scenePath, sizeof(m_scenePath), "%s",
-        startupScene->string().c_str());
+        m_projectConfiguration.startupScene.generic_string().c_str());
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Startup scene loaded: %.190s", startupScene->string().c_str());
 }

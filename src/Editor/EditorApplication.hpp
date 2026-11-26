@@ -104,7 +104,7 @@ private:
     std::string m_importSettingsAssetId;
     int m_textureFilter = 0;
     bool m_premultiplyAlpha = false;
-    char m_scenePath[260] = "untitled.emberscene";
+    char m_scenePath[260] = "assets/scenes/untitled.emberscene";
     char m_assetSearch[128]{};
     int m_assetTypeFilter = 0;
     char m_statusMessage[256] = "Ready";
