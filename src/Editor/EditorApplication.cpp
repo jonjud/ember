@@ -1523,7 +1523,7 @@ void EditorApplication::LoadInputSettings()
 
         m_projectConfiguration = ProjectConfiguration{};
         std::snprintf(m_projectName, sizeof(m_projectName), "%s", m_projectConfiguration.name.c_str());
-        m_startupScenePath[0] = '\\0';
+        m_startupScenePath[0] = '\0';
         m_inputMap = InputMap::CreateDefaultMovementMap();
         (void)SaveInputSettings();
         return;
