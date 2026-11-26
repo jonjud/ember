@@ -2,7 +2,7 @@
 
 A lightweight, 2D-first game engine written in modern C++.
 
-EMBER is being built from the ground up. The project currently has a modular desktop foundation: application lifecycle, frame timing, keyboard input, and a dedicated SDL-backed 2D renderer.
+EMBER is being built from the ground up. The project currently has a modular desktop foundation: application lifecycle, frame timing, keyboard input, and an SDL-backed 2D renderer with BMP texture loading and sprite drawing.
 
 ## Project status
 
@@ -23,8 +23,28 @@ See [ROADMAP.md](docs/ROADMAP.md) for planned milestones and [ARCHITECTURE.md](d
 - Uses frame delta time for consistent movement speed.
 - Normalizes diagonal movement.
 - Uses a dedicated Renderer2D module for drawing.
+- Loads BMP images into engine-managed texture handles.
+- Provides a sprite drawing API without exposing SDL texture pointers.
 - Requests VSync where supported.
 - Press Escape to quit.
+
+## Texture API
+
+The renderer currently supports BMP files through SDL3:
+
+```cpp
+const ember::TextureHandle sprite = renderer.LoadTexture("assets/player.bmp");
+if (sprite)
+{
+    renderer.DrawTexture(sprite, 100.0F, 100.0F, 64.0F, 64.0F);
+}
+
+// Release early when the texture is no longer needed.
+// Remaining textures are released automatically by Renderer2D::Shutdown().
+renderer.DestroyTexture(sprite);
+```
+
+PNG/JPEG support and a centralized asset cache are planned follow-up work.
 
 ## Build
 
