@@ -277,7 +277,7 @@ void EditorApplication::ProcessEvents()
                 {
                     StartPlayMode();
                 }
-                else if (!m_isPlaying && event.key.key == SDLK_d &&
+                else if (!m_isPlaying && event.key.key == SDLK_D &&
                     (event.key.mod & SDL_KMOD_CTRL) != 0)
                 {
                     DuplicateSelectedEntity();
