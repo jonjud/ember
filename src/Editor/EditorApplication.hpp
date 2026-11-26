@@ -63,6 +63,12 @@ private:
     Vector2 m_dragStartEntityPosition{};
     Vector2 m_dragGizmoAxis{};
     bool m_draggingGizmoAxis = false;
+    int m_gizmoMode = 0;
+    bool m_draggingRotationGizmo = false;
+    bool m_draggingScaleGizmo = false;
+    float m_dragStartEntityRotation = 0.0F;
+    float m_dragStartMouseAngle = 0.0F;
+    Vector2 m_dragStartEntityScale{1.0F, 1.0F};
     std::string m_selectedAssetId;
     std::string m_importSettingsAssetId;
     int m_textureFilter = 0;

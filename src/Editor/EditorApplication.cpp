@@ -563,7 +563,13 @@ void EditorApplication::DrawViewport()
             ImGui::TextColored(ImVec4(0.35F, 0.9F, 0.55F, 1.0F),
                 "PLAY MODE - isolated scene preview (runtime simulation is not connected yet)");
         }
-        ImGui::TextDisabled("Middle-drag: pan | Wheel: zoom | Click: select | Drag X/Y gizmo handles: move on axis");
+        ImGui::TextDisabled("Middle-drag: pan | Wheel: zoom | Click: select");
+        ImGui::SameLine();
+        if (ImGui::SmallButton(m_gizmoMode == 0 ? "[Move]" : "Move")) m_gizmoMode = 0;
+        ImGui::SameLine();
+        if (ImGui::SmallButton(m_gizmoMode == 1 ? "[Rotate]" : "Rotate")) m_gizmoMode = 1;
+        ImGui::SameLine();
+        if (ImGui::SmallButton(m_gizmoMode == 2 ? "[Scale]" : "Scale")) m_gizmoMode = 2;
         ImGui::SameLine();
         if (ImGui::SmallButton("Reset View"))
         {
@@ -627,6 +633,8 @@ void EditorApplication::DrawViewport()
         {
             EntityId gizmoEntity = 0;
             Vector2 gizmoAxis{};
+            bool rotationHandle = false;
+            bool scaleHandle = false;
             float bestHandleDistance = 12.0F;
             if (!m_isPlaying && m_selectedEntity != 0)
             {
@@ -652,24 +660,55 @@ void EditorApplication::DrawViewport()
                         ImVec2{canvasMin.x + yScreenWorld.x, canvasMin.y + yScreenWorld.y}
                     };
                     const ImVec2 start = ImGui::GetIO().MousePos;
-                    const ImVec2 points[2]{ends[0], ends[1]};
-                    const Vector2 axes[2]{{1.0F, 0.0F}, {0.0F, 1.0F}};
-                    for (int i = 0; i < 2; ++i)
+                    if (m_gizmoMode == 1)
                     {
-                        const ImVec2 segment{points[i].x - originScreen.x, points[i].y - originScreen.y};
-                        const ImVec2 relative{start.x - originScreen.x, start.y - originScreen.y};
-                        const float lengthSquared = segment.x * segment.x + segment.y * segment.y;
-                        const float t = lengthSquared > 0.0F
-                            ? std::clamp((relative.x * segment.x + relative.y * segment.y) / lengthSquared, 0.0F, 1.0F)
-                            : 0.0F;
-                        const float dx = start.x - (originScreen.x + segment.x * t);
-                        const float dy = start.y - (originScreen.y + segment.y * t);
-                        const float distance = std::sqrt(dx * dx + dy * dy);
-                        if (distance < bestHandleDistance)
+                        const float dx = start.x - originScreen.x;
+                        const float dy = start.y - originScreen.y;
+                        const float ringDistance = std::abs(std::sqrt(dx * dx + dy * dy) - 58.0F);
+                        if (ringDistance < bestHandleDistance)
                         {
-                            bestHandleDistance = distance;
+                            bestHandleDistance = ringDistance;
                             gizmoEntity = selected->GetId();
-                            gizmoAxis = axes[i];
+                            rotationHandle = true;
+                        }
+                    }
+                    else if (m_gizmoMode == 2)
+                    {
+                        for (int i = 0; i < 2; ++i)
+                        {
+                            const float dx = start.x - ends[i].x;
+                            const float dy = start.y - ends[i].y;
+                            const float distance = std::sqrt(dx * dx + dy * dy);
+                            if (distance < bestHandleDistance)
+                            {
+                                bestHandleDistance = distance;
+                                gizmoEntity = selected->GetId();
+                                gizmoAxis = i == 0 ? Vector2{1.0F, 0.0F} : Vector2{0.0F, 1.0F};
+                                scaleHandle = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        const ImVec2 points[2]{ends[0], ends[1]};
+                        const Vector2 axes[2]{{1.0F, 0.0F}, {0.0F, 1.0F}};
+                        for (int i = 0; i < 2; ++i)
+                        {
+                            const ImVec2 segment{points[i].x - originScreen.x, points[i].y - originScreen.y};
+                            const ImVec2 relative{start.x - originScreen.x, start.y - originScreen.y};
+                            const float lengthSquared = segment.x * segment.x + segment.y * segment.y;
+                            const float t = lengthSquared > 0.0F
+                                ? std::clamp((relative.x * segment.x + relative.y * segment.y) / lengthSquared, 0.0F, 1.0F)
+                                : 0.0F;
+                            const float dx = start.x - (originScreen.x + segment.x * t);
+                            const float dy = start.y - (originScreen.y + segment.y * t);
+                            const float distance = std::sqrt(dx * dx + dy * dy);
+                            if (distance < bestHandleDistance)
+                            {
+                                bestHandleDistance = distance;
+                                gizmoEntity = selected->GetId();
+                                gizmoAxis = axes[i];
+                            }
                         }
                     }
                 }
@@ -677,14 +716,30 @@ void EditorApplication::DrawViewport()
 
             m_dragEntityId = 0;
             m_draggingGizmoAxis = false;
+            m_draggingRotationGizmo = false;
+            m_draggingScaleGizmo = false;
             if (gizmoEntity != 0)
             {
                 m_dragEntityId = gizmoEntity;
-                m_draggingGizmoAxis = true;
+                m_draggingRotationGizmo = rotationHandle;
+                m_draggingScaleGizmo = scaleHandle;
+                m_draggingGizmoAxis = !rotationHandle && !scaleHandle;
                 m_dragGizmoAxis = gizmoAxis;
                 m_dragStartMouseWorld = worldMouse;
                 if (const Entity* entity = activeScene.FindEntity(gizmoEntity))
-                    m_dragStartEntityPosition = entity->GetTransform().position;
+                {
+                    const auto& transform = entity->GetTransform();
+                    m_dragStartEntityPosition = transform.position;
+                    m_dragStartEntityRotation = transform.rotation;
+                    m_dragStartEntityScale = transform.scale;
+                    const auto& render = entity->GetRenderComponent();
+                    const Vector2 pivot{
+                        transform.position.x + render.size.x * transform.scale.x * 0.5F,
+                        transform.position.y + render.size.y * transform.scale.y * 0.5F
+                    };
+                    const Vector2 mouseOffset = worldMouse - pivot;
+                    m_dragStartMouseAngle = std::atan2(mouseOffset.y, mouseOffset.x);
+                }
             }
             else
             {
@@ -733,22 +788,51 @@ void EditorApplication::DrawViewport()
             if (Entity* entity = activeScene.FindEntity(m_dragEntityId))
             {
                 const Vector2 movement = worldMouse - m_dragStartMouseWorld;
-                if (m_draggingGizmoAxis)
+                auto& transform = entity->GetTransform();
+                if (m_draggingRotationGizmo)
+                {
+                    const auto& render = entity->GetRenderComponent();
+                    const Vector2 pivot{
+                        transform.position.x + render.size.x * transform.scale.x * 0.5F,
+                        transform.position.y + render.size.y * transform.scale.y * 0.5F
+                    };
+                    const Vector2 mouseOffset = worldMouse - pivot;
+                    const float currentAngle = std::atan2(mouseOffset.y, mouseOffset.x);
+                    const float angleDelta = std::atan2(
+                        std::sin(currentAngle - m_dragStartMouseAngle),
+                        std::cos(currentAngle - m_dragStartMouseAngle));
+                    transform.rotation = m_dragStartEntityRotation + angleDelta;
+                }
+                else if (m_draggingScaleGizmo)
+                {
+                    const auto& render = entity->GetRenderComponent();
+                    const float distance = movement.x * m_dragGizmoAxis.x +
+                        movement.y * m_dragGizmoAxis.y;
+                    if (m_dragGizmoAxis.x != 0.0F && std::abs(render.size.x) > 0.0001F)
+                        transform.scale.x = std::max(0.01F,
+                            m_dragStartEntityScale.x + distance / render.size.x);
+                    if (m_dragGizmoAxis.y != 0.0F && std::abs(render.size.y) > 0.0001F)
+                        transform.scale.y = std::max(0.01F,
+                            m_dragStartEntityScale.y + distance / render.size.y);
+                }
+                else if (m_draggingGizmoAxis)
                 {
                     const float distance = movement.x * m_dragGizmoAxis.x +
                         movement.y * m_dragGizmoAxis.y;
-                    entity->GetTransform().position = m_dragStartEntityPosition +
+                    transform.position = m_dragStartEntityPosition +
                         Vector2{m_dragGizmoAxis.x * distance, m_dragGizmoAxis.y * distance};
                 }
                 else
                 {
-                    entity->GetTransform().position = m_dragStartEntityPosition + movement;
+                    transform.position = m_dragStartEntityPosition + movement;
                 }
             }
             else
             {
                 m_dragEntityId = 0;
                 m_draggingGizmoAxis = false;
+                m_draggingRotationGizmo = false;
+                m_draggingScaleGizmo = false;
             }
         }
 
@@ -756,6 +840,8 @@ void EditorApplication::DrawViewport()
         {
             m_dragEntityId = 0;
             m_draggingGizmoAxis = false;
+            m_draggingRotationGizmo = false;
+            m_draggingScaleGizmo = false;
         }
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -882,24 +968,40 @@ void EditorApplication::DrawViewport()
                     transform.position.y + render.size.y * transform.scale.y * 0.5F
                 };
                 const ImVec2 pivot = toCanvas(origin);
-                const float axisLength = 80.0F / zoom;
-                const ImVec2 xEnd = toCanvas(origin + Vector2{axisLength, 0.0F});
-                const ImVec2 yEnd = toCanvas(origin + Vector2{0.0F, axisLength});
-                drawList->AddLine(pivot, xEnd, IM_COL32(245, 85, 85, 255), 3.0F);
-                drawList->AddLine(pivot, yEnd, IM_COL32(90, 220, 125, 255), 3.0F);
-                drawList->AddCircleFilled(xEnd, 6.0F, IM_COL32(245, 85, 85, 255));
-                drawList->AddCircleFilled(yEnd, 6.0F, IM_COL32(90, 220, 125, 255));
-                drawList->AddText(ImVec2(xEnd.x + 7.0F, xEnd.y - 7.0F),
-                    IM_COL32(255, 125, 125, 255), "X");
-                drawList->AddText(ImVec2(yEnd.x + 7.0F, yEnd.y - 7.0F),
-                    IM_COL32(130, 255, 160, 255), "Y");
-                drawList->AddCircle(pivot, 4.0F, IM_COL32(255, 230, 130, 255), 0, 2.0F);
+                if (m_gizmoMode == 1)
+                {
+                    drawList->AddCircle(pivot, 58.0F, IM_COL32(255, 190, 70, 255), 64, 3.0F);
+                    drawList->AddCircleFilled(ImVec2(pivot.x, pivot.y - 58.0F),
+                        6.0F, IM_COL32(255, 220, 120, 255));
+                    drawList->AddText(ImVec2(pivot.x + 8.0F, pivot.y - 76.0F),
+                        IM_COL32(255, 220, 150, 255), "ROT");
+                }
+                else
+                {
+                    const float axisLength = 80.0F / zoom;
+                    const ImVec2 xEnd = toCanvas(origin + Vector2{axisLength, 0.0F});
+                    const ImVec2 yEnd = toCanvas(origin + Vector2{0.0F, axisLength});
+                    const ImU32 xColor = m_gizmoMode == 2
+                        ? IM_COL32(255, 175, 65, 255) : IM_COL32(245, 85, 85, 255);
+                    const ImU32 yColor = m_gizmoMode == 2
+                        ? IM_COL32(75, 190, 255, 255) : IM_COL32(90, 220, 125, 255);
+                    drawList->AddLine(pivot, xEnd, xColor, 3.0F);
+                    drawList->AddLine(pivot, yEnd, yColor, 3.0F);
+                    drawList->AddCircleFilled(xEnd, 6.0F, xColor);
+                    drawList->AddCircleFilled(yEnd, 6.0F, yColor);
+                    drawList->AddText(ImVec2(xEnd.x + 7.0F, xEnd.y - 7.0F),
+                        xColor, "X");
+                    drawList->AddText(ImVec2(yEnd.x + 7.0F, yEnd.y - 7.0F),
+                        yColor, "Y");
+                    drawList->AddCircle(pivot, 4.0F, IM_COL32(255, 230, 130, 255), 0, 2.0F);
+                }
             }
         }
 
         drawList->PopClipRect();
-        ImGui::TextDisabled("%zu entities | Drag the X/Y handles to constrain movement to a world axis.",
-            activeScene.GetEntityCount());
+        const char* toolName = m_gizmoMode == 1 ? "Rotate" : (m_gizmoMode == 2 ? "Scale" : "Move");
+        ImGui::TextDisabled("%zu entities | Active tool: %s | Drag the handles to edit the selected transform.",
+            activeScene.GetEntityCount(), toolName);
     }
     ImGui::End();
 }
