@@ -30,8 +30,8 @@ cmake --build build --config Debug
 
 Run the executable:
 
-- Windows: `build/Debug/ember_editor.exe` (multi-config generators) or `build/ember_editor.exe`
-- Linux/macOS: `./build/ember_editor`
+- Windows: `build/Debug/ember.exe` (multi-config generators) or `build/ember.exe`
+- Linux/macOS: `./build/ember`
 
 ## Repository layout
 
