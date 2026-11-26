@@ -16,24 +16,29 @@ class Scene
 {
 public:
     explicit Scene(std::string name = "Untitled Scene");
+    ~Scene();
+    Scene(const Scene&) = delete;
+    Scene& operator=(const Scene&) = delete;
+    Scene(Scene&& other) noexcept;
+    Scene& operator=(Scene&& other) noexcept;
 
     [[nodiscard]] const std::string& GetName() const { return m_name; }
     void SetName(std::string name);
 
-    // Returns a stable reference. Other entity insertions do not invalidate it.
+    void Start() noexcept;
+    void Update(float deltaSeconds) noexcept;
+    void Stop() noexcept;
+    [[nodiscard]] bool IsStarted() const { return m_started; }
+
     Entity& CreateEntity(std::string name = "Entity");
     [[nodiscard]] bool DestroyEntity(EntityId id);
-    // Creates a full independent copy with a fresh stable ID.
     [[nodiscard]] Entity* DuplicateEntity(EntityId id);
-
     [[nodiscard]] Entity* FindEntity(EntityId id);
     [[nodiscard]] const Entity* FindEntity(EntityId id) const;
-
     [[nodiscard]] std::size_t GetEntityCount() const { return m_entities.size(); }
     [[nodiscard]] bool IsEmpty() const { return m_entities.empty(); }
     [[nodiscard]] std::vector<EntityId> GetEntityIds() const;
 
-    // Iterate without allocating a temporary entity list.
     template <typename Function>
     void ForEachEntity(Function&& function)
     {
@@ -54,17 +59,16 @@ public:
         }
     }
 
-    // Removes all entities. IDs are not reused during this Scene's lifetime.
     void Clear();
-
-    // Creates an independent scene copy while preserving entity IDs and render data.
     [[nodiscard]] Scene Clone() const;
 
 private:
     friend class SceneSerializer;
+    void MoveFrom(Scene&& other) noexcept;
 
     std::string m_name;
     EntityId m_nextEntityId = 1;
     std::map<EntityId, std::unique_ptr<Entity>> m_entities;
+    bool m_started = false;
 };
 } // namespace ember

@@ -150,6 +150,8 @@ void EditorApplication::UpdatePlayMode()
         return;
     }
 
+    m_playScene.Update(std::clamp(m_time.DeltaSeconds(), 0.0F, 0.05F));
+
     Entity* entity = m_playScene.FindEntity(m_selectedEntity);
     if (entity == nullptr || !entity->IsActive())
     {
@@ -1527,6 +1529,7 @@ void EditorApplication::StartPlayMode()
 {
     if (m_isPlaying) return;
     m_playScene = m_scene.Clone();
+    m_playScene.Start();
     m_isPlaying = true;
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Play mode: WASD / arrow keys move the selected entity in an isolated scene copy");
@@ -1535,6 +1538,7 @@ void EditorApplication::StartPlayMode()
 void EditorApplication::StopPlayMode()
 {
     if (!m_isPlaying) return;
+    m_playScene.Stop();
     m_isPlaying = false;
     m_playScene.Clear();
     if (m_scene.FindEntity(m_selectedEntity) == nullptr) m_selectedEntity = 0;

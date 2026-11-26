@@ -22,7 +22,7 @@ src/
 │   ├── Renderer/   Renderer2D, Camera2D
 │   ├── Resources/  AssetDirectory, AssetManager, AssetRegistry,
 │   │               AssetMetadataStore, AssetImportService, TextureCache
-│   └── Scene/      Entity, Scene, Transform2D, RenderComponent2D,
+│   └── Scene/      Component, Entity, Scene, Transform2D, RenderComponent2D,
 │                   SceneSerializer
 └── main.cpp
 
@@ -50,8 +50,9 @@ tests/
 - **Math / Vector2:** engine-owned 2D vector type.
 - **Renderer / Camera2D:** world/screen conversion with camera position, zoom, and rotation.
 - **Renderer / Renderer2D:** SDL-backed primitive/sprite rendering and renderer-owned texture lifetime.
-- **Scene / Entity:** stable 64-bit ID, name, active state, Transform2D, RenderComponent2D, and MovementComponent2D.
-- **Scene / Scene:** owns entities; supports create, duplicate, destroy, lookup, iteration, and independent cloning.
+- **Scene / Component:** polymorphic runtime behavior with Clone, OnCreate, OnUpdate, and OnDestroy hooks. Components are owned by entities and cloned independently. Structural changes are locked while a Scene is running.
+- **Scene / Entity:** stable 64-bit ID, name, active state, Transform2D, RenderComponent2D, MovementComponent2D, and typed runtime components.
+- **Scene / Scene:** owns entities; supports create, duplicate, destroy, lookup, iteration, independent cloning, and explicit Start / Update / Stop lifecycle dispatch.
 - **Scene / SceneSerializer:** versioned JSON persistence of entity IDs and scene data. Renderer-owned texture handles are not serialized; stable asset IDs are.
 - **Resources / TextureCache:** reference-counted texture sharing keyed by normalized path and import settings. Uses injected load/destroy callbacks.
 - **Resources / AssetDirectory:** resolves project-relative paths and rejects lexical traversal outside the asset root.
@@ -88,6 +89,6 @@ The current Play Mode movement proof of concept moves the selected active entity
 ## Known gaps
 
 - Interactive runtime behavior has not yet been independently verified on Windows.
-- No general component lifecycle/update API, physics/collision, animation, audio, UI system, or scripting interface yet.
+- No component inspector/serialization registry yet; physics/collision, animation, audio, UI system, and scripting interface are also not implemented yet.
 - Runtime Play Mode movement is still a focused proof of concept; editor input-binding persistence is not yet wired into runtime action polling.
 - The Windows workflow currently compiles the project and runs CTest; it does not validate visual editor behavior.

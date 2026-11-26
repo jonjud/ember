@@ -55,7 +55,7 @@ EMBER is a 2D-first engine. Each milestone should produce a buildable, testable 
 
 ## Phase 4 — Game Systems
 
-- [ ] General component update/lifecycle API
+- [x] General component update/lifecycle API (typed components, cloning, Start / Update / Stop)
 - [ ] Collision and physics integration (planned Box2D backend)
 - [ ] Animation
 - [ ] Audio (planned miniaudio backend)
@@ -67,7 +67,7 @@ EMBER is a 2D-first engine. Each milestone should produce a buildable, testable 
 
 - [ ] Windows game export / runtime executable
 - [ ] Project templates
-- [ ] Automated tests executed in CI
+- [x] Automated tests executed in CI
 - [ ] Profiler
 - [ ] User documentation and samples
 
