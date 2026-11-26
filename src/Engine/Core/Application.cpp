@@ -150,12 +150,17 @@ void Application::Render()
     int windowHeight = 0;
     SDL_GetWindowSize(m_window, &windowWidth, &windowHeight);
 
+    m_camera.SetViewportSize(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
+    m_camera.SetPosition({static_cast<float>(windowWidth) * 0.5F, static_cast<float>(windowHeight) * 0.5F});
+
+    const Transform2D playerTransform{{m_playerX, m_playerY}, {1.0F, 1.0F}};
+
     m_renderer.Clear(24, 27, 36);
     m_renderer.DrawFilledRect(
-        m_playerX,
-        m_playerY,
-        std::min(kPlayerSize, static_cast<float>(windowWidth)),
-        std::min(kPlayerSize, static_cast<float>(windowHeight)),
+        playerTransform,
+        m_camera,
+        {std::min(kPlayerSize, static_cast<float>(windowWidth)),
+         std::min(kPlayerSize, static_cast<float>(windowHeight))},
         91,
         160,
         255);
