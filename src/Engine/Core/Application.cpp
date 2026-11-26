@@ -1,0 +1,163 @@
+#include "Engine/Core/Application.hpp"
+
+#include "Engine/Platform/Input.hpp"
+
+#include <algorithm>
+#include <iostream>
+
+namespace
+{
+constexpr int kWindowWidth = 1280;
+constexpr int kWindowHeight = 720;
+constexpr float kPlayerSize = 64.0F;
+constexpr float kPlayerSpeed = 320.0F;
+constexpr float kMaxDeltaSeconds = 0.1F;
+}
+
+namespace ember
+{
+Application::~Application()
+{
+    Shutdown();
+}
+
+bool Application::Initialize()
+{
+    if (!SDL_Init(SDL_INIT_VIDEO))
+    {
+        std::cerr << "EMBER: SDL initialization failed: " << SDL_GetError() << '\n';
+        return false;
+    }
+
+    if (!SDL_CreateWindowAndRenderer(
+            "EMBER Engine",
+            kWindowWidth,
+            kWindowHeight,
+            SDL_WINDOW_RESIZABLE,
+            &m_window,
+            &m_renderer))
+    {
+        std::cerr << "EMBER: Window creation failed: " << SDL_GetError() << '\n';
+        Shutdown();
+        return false;
+    }
+
+    m_playerX = (static_cast<float>(kWindowWidth) - kPlayerSize) * 0.5F;
+    m_playerY = (static_cast<float>(kWindowHeight) - kPlayerSize) * 0.5F;
+    m_isRunning = true;
+    m_time.Reset();
+
+    std::cout << "EMBER Engine 0.1.0 started. Use WASD or arrow keys to move; Escape to quit.\n";
+    return true;
+}
+
+void Application::Run()
+{
+    while (m_isRunning)
+    {
+        ProcessEvents();
+        m_time.Tick();
+        Update();
+        Render();
+    }
+}
+
+void Application::Shutdown()
+{
+    if (m_renderer != nullptr)
+    {
+        SDL_DestroyRenderer(m_renderer);
+        m_renderer = nullptr;
+    }
+
+    if (m_window != nullptr)
+    {
+        SDL_DestroyWindow(m_window);
+        m_window = nullptr;
+    }
+
+    SDL_Quit();
+    m_isRunning = false;
+}
+
+void Application::ProcessEvents()
+{
+    SDL_Event event{};
+
+    while (SDL_PollEvent(&event))
+    {
+        if (event.type == SDL_EVENT_QUIT)
+        {
+            m_isRunning = false;
+        }
+    }
+}
+
+void Application::Update()
+{
+    if (Input::IsKeyDown(SDL_SCANCODE_ESCAPE))
+    {
+        m_isRunning = false;
+    }
+
+    const float deltaSeconds = std::min(m_time.DeltaSeconds(), kMaxDeltaSeconds);
+    float directionX = 0.0F;
+    float directionY = 0.0F;
+
+    if (Input::IsKeyDown(SDL_SCANCODE_A) || Input::IsKeyDown(SDL_SCANCODE_LEFT))
+    {
+        directionX -= 1.0F;
+    }
+    if (Input::IsKeyDown(SDL_SCANCODE_D) || Input::IsKeyDown(SDL_SCANCODE_RIGHT))
+    {
+        directionX += 1.0F;
+    }
+    if (Input::IsKeyDown(SDL_SCANCODE_W) || Input::IsKeyDown(SDL_SCANCODE_UP))
+    {
+        directionY -= 1.0F;
+    }
+    if (Input::IsKeyDown(SDL_SCANCODE_S) || Input::IsKeyDown(SDL_SCANCODE_DOWN))
+    {
+        directionY += 1.0F;
+    }
+
+    // Normalize diagonal movement so it is not faster than horizontal movement.
+    if (directionX != 0.0F && directionY != 0.0F)
+    {
+        constexpr float kDiagonalScale = 0.70710678F;
+        directionX *= kDiagonalScale;
+        directionY *= kDiagonalScale;
+    }
+
+    m_playerX += directionX * kPlayerSpeed * deltaSeconds;
+    m_playerY += directionY * kPlayerSpeed * deltaSeconds;
+
+    int windowWidth = 0;
+    int windowHeight = 0;
+    SDL_GetWindowSize(m_window, &windowWidth, &windowHeight);
+
+    m_playerX = std::clamp(m_playerX, 0.0F, std::max(0.0F, static_cast<float>(windowWidth) - kPlayerSize));
+    m_playerY = std::clamp(m_playerY, 0.0F, std::max(0.0F, static_cast<float>(windowHeight) - kPlayerSize));
+}
+
+void Application::Render()
+{
+    int windowWidth = 0;
+    int windowHeight = 0;
+    SDL_GetWindowSize(m_window, &windowWidth, &windowHeight);
+
+    SDL_SetRenderDrawColor(m_renderer, 24, 27, 36, 255);
+    SDL_RenderClear(m_renderer);
+
+    const SDL_FRect playerRect{
+        m_playerX,
+        m_playerY,
+        std::min(kPlayerSize, static_cast<float>(windowWidth)),
+        std::min(kPlayerSize, static_cast<float>(windowHeight))
+    };
+
+    SDL_SetRenderDrawColor(m_renderer, 91, 160, 255, 255);
+    SDL_RenderFillRect(m_renderer, &playerRect);
+    SDL_RenderPresent(m_renderer);
+}
+} // namespace ember
