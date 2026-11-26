@@ -94,8 +94,8 @@ int main()
     const auto duplicatePath = root / "duplicate.emberscene";
     {
         std::ofstream duplicate(duplicatePath);
-        duplicate << "{\\"schema_version\\":1,\\"scene_name\\":\\"Duplicate IDs\\",\\"entities\\":[" 
-                  << duplicateEntity << "," << duplicateEntity << "]}";
+        duplicate << R"({"schema_version":1,"scene_name":"Duplicate IDs","entities":[)"
+                  << duplicateEntity << "," << duplicateEntity << R"(]})";
     }
     Check(!ember::SceneSerializer::Load(loaded, duplicatePath, &error),
           "Duplicate entity IDs are rejected");
