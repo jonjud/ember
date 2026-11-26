@@ -76,6 +76,7 @@ add_library(ember_engine STATIC
     src/Engine/Resources/AssetImportService.cpp
     src/Engine/Resources/AssetRegistry.cpp
     src/Engine/Resources/AssetMetadataStore.cpp
+    src/Engine/Project/ProjectConfigurationStore.cpp
     src/Engine/Resources/TextureCache.cpp
     src/Engine/Scene/Scene.cpp
     src/Engine/Scene/SceneSerializer.cpp
@@ -154,6 +155,14 @@ if(BUILD_TESTING)
     target_link_libraries(ember_asset_manager_tests PRIVATE nlohmann_json::nlohmann_json)
     add_test(NAME ember_asset_manager_tests COMMAND ember_asset_manager_tests)
 
+    add_executable(ember_project_configuration_tests
+        tests/ProjectConfigurationTests.cpp
+        src/Engine/Project/ProjectConfigurationStore.cpp
+    )
+    target_include_directories(ember_project_configuration_tests PRIVATE src)
+    target_link_libraries(ember_project_configuration_tests PRIVATE nlohmann_json::nlohmann_json)
+    add_test(NAME ember_project_configuration_tests COMMAND ember_project_configuration_tests)
+
     add_executable(ember_asset_import_service_tests
         tests/AssetImportServiceTests.cpp
         src/Engine/Resources/AssetImportService.cpp
@@ -178,6 +187,7 @@ if(MSVC)
         target_compile_options(ember_asset_metadata_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_scene_serializer_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_import_service_tests PRIVATE /W4 /permissive-)
+        target_compile_options(ember_project_configuration_tests PRIVATE /W4 /permissive-)
     endif()
 else()
     target_compile_options(ember_engine PRIVATE -Wall -Wextra -Wpedantic)
@@ -191,6 +201,7 @@ else()
         target_compile_options(ember_asset_metadata_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_scene_serializer_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_import_service_tests PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(ember_project_configuration_tests PRIVATE -Wall -Wextra -Wpedantic)
     endif()
 endif()
 
