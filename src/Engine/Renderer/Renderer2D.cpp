@@ -19,6 +19,11 @@ bool Renderer2D::Initialize(SDL_Window* window)
         return false;
     }
 
+    if (m_renderer != nullptr)
+    {
+        Shutdown();
+    }
+
     m_renderer = SDL_CreateRenderer(window, nullptr);
     if (m_renderer == nullptr)
     {
@@ -37,6 +42,14 @@ bool Renderer2D::Initialize(SDL_Window* window)
 
 void Renderer2D::Shutdown()
 {
+    for (const auto& [id, texture] : m_textures)
+    {
+        (void)id;
+        SDL_DestroyTexture(texture);
+    }
+    m_textures.clear();
+    m_nextTextureId = 1;
+
     if (m_renderer != nullptr)
     {
         SDL_DestroyRenderer(m_renderer);
@@ -77,6 +90,64 @@ void Renderer2D::DrawFilledRect(
     const SDL_FRect rectangle{x, y, width, height};
     SDL_SetRenderDrawColor(m_renderer, red, green, blue, alpha);
     SDL_RenderFillRect(m_renderer, &rectangle);
+}
+
+TextureHandle Renderer2D::LoadTexture(const std::string& filePath)
+{
+    if (m_renderer == nullptr || filePath.empty())
+    {
+        std::cerr << "EMBER: Cannot load a texture without an initialized renderer and file path.\n";
+        return {};
+    }
+
+    SDL_Surface* surface = SDL_LoadBMP(filePath.c_str());
+    if (surface == nullptr)
+    {
+        std::cerr << "EMBER: Failed to load BMP '" << filePath << "': " << SDL_GetError() << '\n';
+        return {};
+    }
+
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(m_renderer, surface);
+    SDL_DestroySurface(surface);
+
+    if (texture == nullptr)
+    {
+        std::cerr << "EMBER: Failed to create texture from '" << filePath << "': " << SDL_GetError() << '\n';
+        return {};
+    }
+
+    const std::uint32_t id = m_nextTextureId++;
+    m_textures.emplace(id, texture);
+    return {id};
+}
+
+void Renderer2D::DestroyTexture(TextureHandle texture)
+{
+    const auto iterator = m_textures.find(texture.id);
+    if (iterator == m_textures.end())
+    {
+        return;
+    }
+
+    SDL_DestroyTexture(iterator->second);
+    m_textures.erase(iterator);
+}
+
+void Renderer2D::DrawTexture(TextureHandle texture, float x, float y, float width, float height)
+{
+    if (m_renderer == nullptr)
+    {
+        return;
+    }
+
+    const auto iterator = m_textures.find(texture.id);
+    if (iterator == m_textures.end())
+    {
+        return;
+    }
+
+    const SDL_FRect destination{x, y, width, height};
+    SDL_RenderTexture(m_renderer, iterator->second, nullptr, &destination);
 }
 
 void Renderer2D::Present()
