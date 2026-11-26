@@ -37,6 +37,11 @@ bool MatchesAssetType(ember::AssetType type, int filter)
         (filter == 2 && type == ember::AssetType::Audio) ||
         (filter == 3 && type == ember::AssetType::Scene);
 }
+
+float SnapValue(float value, float increment)
+{
+    return increment > 0.0F ? std::round(value / increment) * increment : value;
+}
 }
 
 namespace ember
@@ -571,6 +576,33 @@ void EditorApplication::DrawViewport()
         ImGui::SameLine();
         if (ImGui::SmallButton(m_gizmoMode == 2 ? "[Scale]" : "Scale")) m_gizmoMode = 2;
         ImGui::SameLine();
+        ImGui::Checkbox("Snap", &m_snapTransforms);
+        if (m_snapTransforms)
+        {
+            ImGui::SameLine();
+            if (m_gizmoMode == 0)
+            {
+                ImGui::SetNextItemWidth(72.0F);
+                ImGui::DragFloat("##PositionSnap", &m_positionSnap, 1.0F, 0.1F, 256.0F, "%.1f");
+                ImGui::SameLine();
+                ImGui::TextDisabled("units");
+            }
+            else if (m_gizmoMode == 1)
+            {
+                ImGui::SetNextItemWidth(72.0F);
+                ImGui::DragFloat("##RotationSnap", &m_rotationSnapDegrees, 1.0F, 1.0F, 180.0F, "%.0f");
+                ImGui::SameLine();
+                ImGui::TextDisabled("deg");
+            }
+            else
+            {
+                ImGui::SetNextItemWidth(72.0F);
+                ImGui::DragFloat("##ScaleSnap", &m_scaleSnap, 0.01F, 0.01F, 2.0F, "%.2f");
+                ImGui::SameLine();
+                ImGui::TextDisabled("scale");
+            }
+        }
+        ImGui::SameLine();
         if (ImGui::SmallButton("Reset View"))
         {
             m_viewportCamera.SetPosition({0.0F, 0.0F});
@@ -801,7 +833,17 @@ void EditorApplication::DrawViewport()
                     const float angleDelta = std::atan2(
                         std::sin(currentAngle - m_dragStartMouseAngle),
                         std::cos(currentAngle - m_dragStartMouseAngle));
-                    transform.rotation = m_dragStartEntityRotation + angleDelta;
+                    const float candidate = m_dragStartEntityRotation + angleDelta;
+                    if (m_snapTransforms)
+                    {
+                        constexpr float radiansPerDegree = 0.017453292519943295F;
+                        const float step = m_rotationSnapDegrees * radiansPerDegree;
+                        transform.rotation = SnapValue(candidate, step);
+                    }
+                    else
+                    {
+                        transform.rotation = candidate;
+                    }
                 }
                 else if (m_draggingScaleGizmo)
                 {
@@ -809,11 +851,17 @@ void EditorApplication::DrawViewport()
                     const float distance = movement.x * m_dragGizmoAxis.x +
                         movement.y * m_dragGizmoAxis.y;
                     if (m_dragGizmoAxis.x != 0.0F && std::abs(render.size.x) > 0.0001F)
+                    {
+                        const float candidate = m_dragStartEntityScale.x + distance / render.size.x;
                         transform.scale.x = std::max(0.01F,
-                            m_dragStartEntityScale.x + distance / render.size.x);
+                            m_snapTransforms ? SnapValue(candidate, m_scaleSnap) : candidate);
+                    }
                     if (m_dragGizmoAxis.y != 0.0F && std::abs(render.size.y) > 0.0001F)
+                    {
+                        const float candidate = m_dragStartEntityScale.y + distance / render.size.y;
                         transform.scale.y = std::max(0.01F,
-                            m_dragStartEntityScale.y + distance / render.size.y);
+                            m_snapTransforms ? SnapValue(candidate, m_scaleSnap) : candidate);
+                    }
                 }
                 else if (m_draggingGizmoAxis)
                 {
@@ -821,10 +869,20 @@ void EditorApplication::DrawViewport()
                         movement.y * m_dragGizmoAxis.y;
                     transform.position = m_dragStartEntityPosition +
                         Vector2{m_dragGizmoAxis.x * distance, m_dragGizmoAxis.y * distance};
+                    if (m_snapTransforms)
+                    {
+                        transform.position.x = SnapValue(transform.position.x, m_positionSnap);
+                        transform.position.y = SnapValue(transform.position.y, m_positionSnap);
+                    }
                 }
                 else
                 {
                     transform.position = m_dragStartEntityPosition + movement;
+                    if (m_snapTransforms)
+                    {
+                        transform.position.x = SnapValue(transform.position.x, m_positionSnap);
+                        transform.position.y = SnapValue(transform.position.y, m_positionSnap);
+                    }
                 }
             }
             else

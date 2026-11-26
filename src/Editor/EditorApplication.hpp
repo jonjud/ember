@@ -64,6 +64,10 @@ private:
     Vector2 m_dragGizmoAxis{};
     bool m_draggingGizmoAxis = false;
     int m_gizmoMode = 0;
+    bool m_snapTransforms = false;
+    float m_positionSnap = 16.0F;
+    float m_rotationSnapDegrees = 15.0F;
+    float m_scaleSnap = 0.1F;
     bool m_draggingRotationGizmo = false;
     bool m_draggingScaleGizmo = false;
     float m_dragStartEntityRotation = 0.0F;

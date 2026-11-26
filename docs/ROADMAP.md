@@ -54,6 +54,8 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Registry-backed texture previews in the 2D viewport (filter and premultiplied-alpha settings)
 - [x] Direct entity position editing by dragging selected entities in the 2D viewport
 - [x] 2D translation gizmo with world-space X/Y axis-constrained dragging
+- [x] 2D rotation and scale gizmo tools
+- [x] Optional transform snapping for position, rotation, and scale
 - [x] Play / stop workflow with an isolated Scene clone (runtime simulation still pending)
 
 ## Phase 4 — Game Systems
