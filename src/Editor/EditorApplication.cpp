@@ -638,6 +638,8 @@ void EditorApplication::DrawProjectSettings()
         ImGui::SetNextItemWidth(-1.0F);
         ImGui::InputText("Project Name", m_projectName, sizeof(m_projectName));
         ImGui::SetNextItemWidth(-1.0F);
+        ImGui::InputText("Asset Directory", m_assetDirectory, sizeof(m_assetDirectory));
+        ImGui::SetNextItemWidth(-1.0F);
         ImGui::InputText("Startup Scene", m_startupScenePath, sizeof(m_startupScenePath));
         ImGui::TextDisabled("Scene path is relative to the .emberproject file.");
         if (ImGui::Button("Save Project Settings"))
@@ -1523,6 +1525,7 @@ void EditorApplication::LoadInputSettings()
 
         m_projectConfiguration = ProjectConfiguration{};
         std::snprintf(m_projectName, sizeof(m_projectName), "%s", m_projectConfiguration.name.c_str());
+        std::snprintf(m_assetDirectory, sizeof(m_assetDirectory), "%s", m_projectConfiguration.assetDirectory.generic_string().c_str());
         m_startupScenePath[0] = '\0';
         m_inputMap = InputMap::CreateDefaultMovementMap();
         (void)SaveInputSettings();
@@ -1531,6 +1534,7 @@ void EditorApplication::LoadInputSettings()
 
     m_projectConfiguration = std::move(*loaded);
     std::snprintf(m_projectName, sizeof(m_projectName), "%s", m_projectConfiguration.name.c_str());
+    std::snprintf(m_assetDirectory, sizeof(m_assetDirectory), "%s", m_projectConfiguration.assetDirectory.generic_string().c_str());
     std::snprintf(m_startupScenePath, sizeof(m_startupScenePath), "%s",
         m_projectConfiguration.startupScene.generic_string().c_str());
     if (!m_projectConfiguration.inputBindingsConfigured)
@@ -1608,12 +1612,26 @@ bool EditorApplication::SaveProjectSettings()
 
     const ProjectConfiguration previous = m_projectConfiguration;
     m_projectConfiguration.name = name;
+    m_projectConfiguration.assetDirectory = m_assetDirectory;
     m_projectConfiguration.startupScene = startupScene;
     if (!SaveInputSettings())
     {
         m_projectConfiguration = previous;
         return false;
     }
+
+    const auto resolvedAssetDirectory = ProjectConfigurationStore::ResolveAssetDirectory(
+        m_projectFilePath, m_projectConfiguration);
+    if (!resolvedAssetDirectory)
+    {
+        m_projectConfiguration = previous;
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Asset directory must be a safe relative path");
+        return false;
+    }
+    m_assetRegistry = AssetRegistry(*resolvedAssetDirectory);
+    m_assetImportService = AssetImportService(*resolvedAssetDirectory);
+    RefreshAssets();
     return true;
 }
 
