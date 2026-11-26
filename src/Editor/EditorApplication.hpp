@@ -61,6 +61,8 @@ private:
     EntityId m_dragEntityId = 0;
     Vector2 m_dragStartMouseWorld{};
     Vector2 m_dragStartEntityPosition{};
+    Vector2 m_dragGizmoAxis{};
+    bool m_draggingGizmoAxis = false;
     std::string m_selectedAssetId;
     std::string m_importSettingsAssetId;
     int m_textureFilter = 0;

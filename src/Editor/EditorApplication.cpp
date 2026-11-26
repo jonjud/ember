@@ -563,7 +563,7 @@ void EditorApplication::DrawViewport()
             ImGui::TextColored(ImVec4(0.35F, 0.9F, 0.55F, 1.0F),
                 "PLAY MODE - isolated scene preview (runtime simulation is not connected yet)");
         }
-        ImGui::TextDisabled("Middle-drag: pan | Mouse wheel: zoom | Left-click: select | Left-drag selected entity: move");
+        ImGui::TextDisabled("Middle-drag: pan | Wheel: zoom | Click: select | Drag X/Y gizmo handles: move on axis");
         ImGui::SameLine();
         if (ImGui::SmallButton("Reset View"))
         {
@@ -625,44 +625,102 @@ void EditorApplication::DrawViewport()
 
         if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         {
-            EntityId hitEntity = 0;
-            activeScene.ForEachEntity([&](const Entity& entity)
+            EntityId gizmoEntity = 0;
+            Vector2 gizmoAxis{};
+            float bestHandleDistance = 12.0F;
+            if (!m_isPlaying && m_selectedEntity != 0)
             {
-                const auto& render = entity.GetRenderComponent();
-                if (!entity.IsActive() || !render.visible) return;
-
-                const auto& transform = entity.GetTransform();
-                const Vector2 scaledSize{
-                    render.size.x * transform.scale.x,
-                    render.size.y * transform.scale.y
-                };
-                const Vector2 center{
-                    transform.position.x + scaledSize.x * 0.5F,
-                    transform.position.y + scaledSize.y * 0.5F
-                };
-                const float cosine = std::cos(transform.rotation);
-                const float sine = std::sin(transform.rotation);
-                const Vector2 offset = worldMouse - center;
-                const Vector2 localPoint{
-                    offset.x * cosine + offset.y * sine,
-                    -offset.x * sine + offset.y * cosine
-                };
-                if (std::abs(localPoint.x) <= std::abs(scaledSize.x) * 0.5F &&
-                    std::abs(localPoint.y) <= std::abs(scaledSize.y) * 0.5F)
+                if (const Entity* selected = activeScene.FindEntity(m_selectedEntity))
                 {
-                    hitEntity = entity.GetId();
+                    const auto& transform = selected->GetTransform();
+                    const auto& render = selected->GetRenderComponent();
+                    const Vector2 origin{
+                        transform.position.x + render.size.x * transform.scale.x * 0.5F,
+                        transform.position.y + render.size.y * transform.scale.y * 0.5F
+                    };
+                    const ImVec2 originScreen = canvasMin + ImVec2(
+                        m_viewportCamera.WorldToScreen(origin).x,
+                        m_viewportCamera.WorldToScreen(origin).y);
+                    const Vector2 xEndWorld = origin + Vector2{80.0F / m_viewportCamera.GetZoom(), 0.0F};
+                    const Vector2 yEndWorld = origin + Vector2{0.0F, 80.0F / m_viewportCamera.GetZoom()};
+                    const Vector2 xScreenWorld = m_viewportCamera.WorldToScreen(xEndWorld);
+                    const Vector2 yScreenWorld = m_viewportCamera.WorldToScreen(yEndWorld);
+                    const ImVec2 ends[2]{
+                        canvasMin + ImVec2(xScreenWorld.x, xScreenWorld.y),
+                        canvasMin + ImVec2(yScreenWorld.x, yScreenWorld.y)
+                    };
+                    const ImVec2 start = ImGui::GetIO().MousePos;
+                    const ImVec2 points[2]{ends[0], ends[1]};
+                    const Vector2 axes[2]{{1.0F, 0.0F}, {0.0F, 1.0F}};
+                    for (int i = 0; i < 2; ++i)
+                    {
+                        const ImVec2 segment = points[i] - originScreen;
+                        const ImVec2 relative = start - originScreen;
+                        const float lengthSquared = segment.x * segment.x + segment.y * segment.y;
+                        const float t = lengthSquared > 0.0F
+                            ? std::clamp((relative.x * segment.x + relative.y * segment.y) / lengthSquared, 0.0F, 1.0F)
+                            : 0.0F;
+                        const float dx = start.x - (originScreen.x + segment.x * t);
+                        const float dy = start.y - (originScreen.y + segment.y * t);
+                        const float distance = std::sqrt(dx * dx + dy * dy);
+                        if (distance < bestHandleDistance)
+                        {
+                            bestHandleDistance = distance;
+                            gizmoEntity = selected->GetId();
+                            gizmoAxis = axes[i];
+                        }
+                    }
                 }
-            });
-            m_selectedEntity = hitEntity;
-            m_dragEntityId = 0;
+            }
 
-            if (!m_isPlaying && hitEntity != 0)
+            m_dragEntityId = 0;
+            m_draggingGizmoAxis = false;
+            if (gizmoEntity != 0)
             {
-                if (Entity* entity = activeScene.FindEntity(hitEntity))
-                {
-                    m_dragEntityId = hitEntity;
-                    m_dragStartMouseWorld = worldMouse;
+                m_dragEntityId = gizmoEntity;
+                m_draggingGizmoAxis = true;
+                m_dragGizmoAxis = gizmoAxis;
+                m_dragStartMouseWorld = worldMouse;
+                if (const Entity* entity = activeScene.FindEntity(gizmoEntity))
                     m_dragStartEntityPosition = entity->GetTransform().position;
+            }
+            else
+            {
+                EntityId hitEntity = 0;
+                activeScene.ForEachEntity([&](const Entity& entity)
+                {
+                    const auto& render = entity.GetRenderComponent();
+                    if (!entity.IsActive() || !render.visible) return;
+
+                    const auto& transform = entity.GetTransform();
+                    const Vector2 scaledSize{
+                        render.size.x * transform.scale.x,
+                        render.size.y * transform.scale.y
+                    };
+                    const Vector2 center{
+                        transform.position.x + scaledSize.x * 0.5F,
+                        transform.position.y + scaledSize.y * 0.5F
+                    };
+                    const float cosine = std::cos(transform.rotation);
+                    const float sine = std::sin(transform.rotation);
+                    const Vector2 offset = worldMouse - center;
+                    const Vector2 localPoint{
+                        offset.x * cosine + offset.y * sine,
+                        -offset.x * sine + offset.y * cosine
+                    };
+                    if (std::abs(localPoint.x) <= std::abs(scaledSize.x) * 0.5F &&
+                        std::abs(localPoint.y) <= std::abs(scaledSize.y) * 0.5F)
+                        hitEntity = entity.GetId();
+                });
+                m_selectedEntity = hitEntity;
+                if (!m_isPlaying && hitEntity != 0)
+                {
+                    if (Entity* entity = activeScene.FindEntity(hitEntity))
+                    {
+                        m_dragEntityId = hitEntity;
+                        m_dragStartMouseWorld = worldMouse;
+                        m_dragStartEntityPosition = entity->GetTransform().position;
+                    }
                 }
             }
         }
@@ -673,17 +731,29 @@ void EditorApplication::DrawViewport()
             if (Entity* entity = activeScene.FindEntity(m_dragEntityId))
             {
                 const Vector2 movement = worldMouse - m_dragStartMouseWorld;
-                entity->GetTransform().position = m_dragStartEntityPosition + movement;
+                if (m_draggingGizmoAxis)
+                {
+                    const float distance = movement.x * m_dragGizmoAxis.x +
+                        movement.y * m_dragGizmoAxis.y;
+                    entity->GetTransform().position = m_dragStartEntityPosition +
+                        Vector2{m_dragGizmoAxis.x * distance, m_dragGizmoAxis.y * distance};
+                }
+                else
+                {
+                    entity->GetTransform().position = m_dragStartEntityPosition + movement;
+                }
             }
             else
             {
                 m_dragEntityId = 0;
+                m_draggingGizmoAxis = false;
             }
         }
 
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
         {
             m_dragEntityId = 0;
+            m_draggingGizmoAxis = false;
         }
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -799,8 +869,34 @@ void EditorApplication::DrawViewport()
             }
         });
 
+        if (!m_isPlaying)
+        {
+            if (const Entity* selected = activeScene.FindEntity(m_selectedEntity))
+            {
+                const auto& transform = selected->GetTransform();
+                const auto& render = selected->GetRenderComponent();
+                const Vector2 origin{
+                    transform.position.x + render.size.x * transform.scale.x * 0.5F,
+                    transform.position.y + render.size.y * transform.scale.y * 0.5F
+                };
+                const ImVec2 pivot = toCanvas(origin);
+                const float axisLength = 80.0F / zoom;
+                const ImVec2 xEnd = toCanvas(origin + Vector2{axisLength, 0.0F});
+                const ImVec2 yEnd = toCanvas(origin + Vector2{0.0F, axisLength});
+                drawList->AddLine(pivot, xEnd, IM_COL32(245, 85, 85, 255), 3.0F);
+                drawList->AddLine(pivot, yEnd, IM_COL32(90, 220, 125, 255), 3.0F);
+                drawList->AddCircleFilled(xEnd, 6.0F, IM_COL32(245, 85, 85, 255));
+                drawList->AddCircleFilled(yEnd, 6.0F, IM_COL32(90, 220, 125, 255));
+                drawList->AddText(ImVec2(xEnd.x + 7.0F, xEnd.y - 7.0F),
+                    IM_COL32(255, 125, 125, 255), "X");
+                drawList->AddText(ImVec2(yEnd.x + 7.0F, yEnd.y - 7.0F),
+                    IM_COL32(130, 255, 160, 255), "Y");
+                drawList->AddCircle(pivot, 4.0F, IM_COL32(255, 230, 130, 255), 0, 2.0F);
+            }
+        }
+
         drawList->PopClipRect();
-        ImGui::TextDisabled("%zu entities | Active, visible render components are shown. Texture previews use project import settings.",
+        ImGui::TextDisabled("%zu entities | Drag the X/Y handles to constrain movement to a world axis.",
             activeScene.GetEntityCount());
     }
     ImGui::End();
