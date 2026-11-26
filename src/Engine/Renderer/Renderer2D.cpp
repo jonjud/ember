@@ -92,6 +92,27 @@ void Renderer2D::DrawFilledRect(
     SDL_RenderFillRect(m_renderer, &rectangle);
 }
 
+void Renderer2D::DrawFilledRect(
+    const Transform2D& transform,
+    const Camera2D& camera,
+    const Vector2& size,
+    std::uint8_t red,
+    std::uint8_t green,
+    std::uint8_t blue,
+    std::uint8_t alpha)
+{
+    if (m_renderer == nullptr)
+    {
+        return;
+    }
+
+    const Vector2 screenPosition = camera.WorldToScreen(transform.position);
+    const Vector2 screenSize = camera.WorldToScreenSize({size.x * transform.scale.x, size.y * transform.scale.y});
+    const SDL_FRect rectangle{screenPosition.x, screenPosition.y, screenSize.x, screenSize.y};
+    SDL_SetRenderDrawColor(m_renderer, red, green, blue, alpha);
+    SDL_RenderFillRect(m_renderer, &rectangle);
+}
+
 TextureHandle Renderer2D::LoadTexture(const std::string& filePath)
 {
     if (m_renderer == nullptr || filePath.empty())
