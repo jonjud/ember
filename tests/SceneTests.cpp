@@ -42,6 +42,8 @@ int main()
 
     player.GetTransform().position = {12.0F, 34.0F};
     player.GetTransform().rotation = 0.5F;
+    player.GetMovementComponent().enabled = true;
+    player.GetMovementComponent().speed = 320.0F;
     auto& visual = player.GetRenderComponent();
     Check(!visual.texture, "Render component starts without a texture");
     visual.texture = ember::TextureHandle{42};
@@ -59,6 +61,8 @@ int main()
           player.GetTransform().position.y == 34.0F,
           "Entity transform can be updated");
     Check(player.GetTransform().rotation == 0.5F, "Entity rotation can be updated");
+    Check(player.GetMovementComponent().enabled && player.GetMovementComponent().speed == 320.0F,
+          "Entity movement component stores enabled state and speed");
     Check(visual.visible && visual.size.x == 48.0F && visual.size.y == 32.0F,
           "Render component stores visibility and size");
     Check(visual.red == 20 && visual.green == 40 &&
@@ -110,6 +114,8 @@ int main()
     afterClear.GetTransform().position = {15.0F, 25.0F};
     afterClear.GetRenderComponent().visible = true;
     afterClear.GetRenderComponent().size = {90.0F, 45.0F};
+    afterClear.GetMovementComponent().enabled = true;
+    afterClear.GetMovementComponent().speed = 180.0F;
     afterClear.SetActive(false);
     ember::Scene playCopy = scene.Clone();
     Check(playCopy.GetName() == scene.GetName(), "Scene clone preserves the scene name");
@@ -123,7 +129,9 @@ int main()
           "Scene clone preserves entity transforms");
     Check(copiedEntity != nullptr && !copiedEntity->IsActive() &&
           copiedEntity->GetRenderComponent().visible &&
-          copiedEntity->GetRenderComponent().size.x == 90.0F,
+          copiedEntity->GetRenderComponent().size.x == 90.0F &&
+          copiedEntity->GetMovementComponent().enabled &&
+          copiedEntity->GetMovementComponent().speed == 180.0F,
           "Scene clone preserves active and render component state");
     if (ember::Entity* copiedMutable = playCopy.FindEntity(afterClear.GetId()))
     {

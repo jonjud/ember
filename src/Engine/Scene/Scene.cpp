@@ -71,6 +71,7 @@ Scene Scene::Clone() const
         auto copiedEntity = std::unique_ptr<Entity>(new Entity(id, entity->m_name));
         copiedEntity->m_transform = entity->m_transform;
         copiedEntity->m_renderComponent = entity->m_renderComponent;
+        copiedEntity->m_movementComponent = entity->m_movementComponent;
         copiedEntity->m_active = entity->m_active;
         clone.m_entities.emplace(id, std::move(copiedEntity));
     }

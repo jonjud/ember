@@ -105,11 +105,13 @@ Json ToJson(const Entity& entity)
 {
     const Transform2D& transform = entity.GetTransform();
     const RenderComponent2D& render = entity.GetRenderComponent();
+    const MovementComponent2D& movement = entity.GetMovementComponent();
 
     return {
         {"id", entity.GetId()},
         {"name", entity.GetName()},
         {"active", entity.IsActive()},
+        {"movement", {{"enabled", movement.enabled}, {"speed", movement.speed}}},
         {"transform", {
             {"position", {transform.position.x, transform.position.y}},
             {"scale", {transform.scale.x, transform.scale.y}},
@@ -247,6 +249,17 @@ bool SceneSerializer::Load(
                 !ReadColor(tint[3], render.alpha))
             {
                 return Fail(error, "Scene contains an invalid RGBA tint.");
+            }
+
+            if (value.contains("movement"))
+            {
+                const Json& movementJson = value.at("movement");
+                entity->GetMovementComponent().enabled = movementJson.at("enabled").get<bool>();
+                if (!ReadFloat(movementJson.at("speed"), entity->GetMovementComponent().speed) ||
+                    entity->GetMovementComponent().speed < 0.0F)
+                {
+                    return Fail(error, "Scene contains an invalid movement speed.");
+                }
             }
 
             render.visible = renderJson.at("visible").get<bool>();

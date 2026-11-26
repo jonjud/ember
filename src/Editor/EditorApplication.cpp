@@ -124,6 +124,12 @@ void EditorApplication::UpdatePlayMode()
         return;
     }
 
+    const MovementComponent2D& movement = entity->GetMovementComponent();
+    if (!movement.enabled || movement.speed <= 0.0F)
+    {
+        return;
+    }
+
     Vector2 direction{};
     if (Input::IsKeyDown(SDL_SCANCODE_A) || Input::IsKeyDown(SDL_SCANCODE_LEFT)) direction.x -= 1.0F;
     if (Input::IsKeyDown(SDL_SCANCODE_D) || Input::IsKeyDown(SDL_SCANCODE_RIGHT)) direction.x += 1.0F;
@@ -139,7 +145,7 @@ void EditorApplication::UpdatePlayMode()
     const float inverseLength = 1.0F / std::sqrt(lengthSquared);
     const float deltaSeconds = std::clamp(m_time.DeltaSeconds(), 0.0F, 0.05F);
     auto& position = entity->GetTransform().position;
-    position.x += direction.x * inverseLength * m_playMovementSpeed * deltaSeconds;
+    position.x += direction.x * inverseLength * movement.speed * deltaSeconds;
     position.y += direction.y * inverseLength * m_playMovementSpeed * deltaSeconds;
 }
 
@@ -319,6 +325,11 @@ void EditorApplication::DrawInspector()
             ImGui::DragFloat2("Position", &transform.position.x, 0.1F);
             ImGui::DragFloat2("Scale", &transform.scale.x, 0.01F);
             ImGui::DragFloat("Rotation (rad)", &transform.rotation, 0.01F);
+
+            ImGui::SeparatorText("Movement");
+            auto& movement = entity->GetMovementComponent();
+            ImGui::Checkbox("Enable keyboard movement", &movement.enabled);
+            ImGui::DragFloat("Movement speed", &movement.speed, 1.0F, 0.0F, 2000.0F);
 
             ImGui::SeparatorText("Renderer");
             auto& render = entity->GetRenderComponent();

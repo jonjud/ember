@@ -14,6 +14,12 @@ using EntityId = std::uint64_t;
 class Scene;
 class SceneSerializer;
 
+struct MovementComponent2D
+{
+    bool enabled = false;
+    float speed = 240.0F;
+};
+
 // An entity is a lightweight scene object with identity, transform, and render data.
 class Entity
 {
@@ -28,6 +34,9 @@ public:
 
     [[nodiscard]] RenderComponent2D& GetRenderComponent() { return m_renderComponent; }
     [[nodiscard]] const RenderComponent2D& GetRenderComponent() const { return m_renderComponent; }
+
+    [[nodiscard]] MovementComponent2D& GetMovementComponent() { return m_movementComponent; }
+    [[nodiscard]] const MovementComponent2D& GetMovementComponent() const { return m_movementComponent; }
 
     [[nodiscard]] bool IsActive() const { return m_active; }
     void SetActive(bool active) { m_active = active; }
@@ -45,6 +54,7 @@ private:
     std::string m_name;
     Transform2D m_transform{};
     RenderComponent2D m_renderComponent{};
+    MovementComponent2D m_movementComponent{};
     bool m_active = true;
 };
 } // namespace ember

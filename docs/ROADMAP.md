@@ -59,6 +59,7 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Local-space and world-space move/scale gizmo orientation
 - [x] Play / stop workflow with an isolated Scene clone
 - [x] Basic Play Mode runtime update loop with frame-rate-independent WASD / arrow-key movement
+- [x] Per-entity MovementComponent2D with Inspector settings and scene serialization
 
 ## Phase 4 — Game Systems
 

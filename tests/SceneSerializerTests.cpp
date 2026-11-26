@@ -35,6 +35,8 @@ int main()
     player.GetTransform().scale = {2.0F, 1.5F};
     player.GetTransform().rotation = 0.75F;
     player.SetActive(false);
+    player.GetMovementComponent().enabled = true;
+    player.GetMovementComponent().speed = 375.0F;
 
     auto& visual = player.GetRenderComponent();
     visual.size = {48.0F, 32.0F};
@@ -78,6 +80,9 @@ int main()
               loadedVisual.blue == 60 && loadedVisual.alpha == 200 &&
               loadedVisual.visible,
               "Render component values survive round-trip");
+        Check(loadedPlayer->GetMovementComponent().enabled &&
+              loadedPlayer->GetMovementComponent().speed == 375.0F,
+              "Movement component settings survive round-trip");
         Check(loadedVisual.textureAssetId == "asset-player-texture",
               "Stable texture asset ID survives round-trip");
         Check(!loadedVisual.texture,
