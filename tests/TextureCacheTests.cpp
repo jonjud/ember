@@ -34,8 +34,11 @@ int main()
     Check(!cache.SetBackend({}, {}), "Cache rejects an incomplete backend");
 
     Check(cache.SetBackend(
-        [&loaded, &nextId, &loadCalls](const std::string& path)
+        [&loaded, &nextId, &loadCalls](
+            const std::string& path,
+            const ember::TextureImportSettings& settings)
         {
+            (void)settings;
             ++loadCalls;
             const ember::TextureHandle handle{nextId++};
             loaded.emplace(path, handle);

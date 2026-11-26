@@ -56,11 +56,17 @@ int main()
     int loadCalls = 0;
 
     Check(assets.SetTextureBackend(
-        [&nextId, &loadCalls](const std::string& path)
+        [&nextId, &loadCalls](
+            const std::string& path,
+            const ember::TextureImportSettings& settings)
         {
             ++loadCalls;
             Check(path.find("sprites/player.bmp") != std::string::npos,
                   "Backend receives the resolved project asset path");
+            Check(settings.filter == ember::TextureFilter::Linear,
+                  "Backend receives the texture filter from asset metadata");
+            Check(settings.premultiplyAlpha,
+                  "Backend receives the premultiplied-alpha import setting");
             return ember::TextureHandle{nextId++};
         },
         [&destroyed](ember::TextureHandle handle)
