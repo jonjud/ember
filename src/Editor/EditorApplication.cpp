@@ -638,24 +638,26 @@ void EditorApplication::DrawViewport()
                         transform.position.x + render.size.x * transform.scale.x * 0.5F,
                         transform.position.y + render.size.y * transform.scale.y * 0.5F
                     };
-                    const ImVec2 originScreen = canvasMin + ImVec2(
-                        m_viewportCamera.WorldToScreen(origin).x,
-                        m_viewportCamera.WorldToScreen(origin).y);
+                    const Vector2 originScreenWorld = m_viewportCamera.WorldToScreen(origin);
+                    const ImVec2 originScreen{
+                        canvasMin.x + originScreenWorld.x,
+                        canvasMin.y + originScreenWorld.y
+                    };
                     const Vector2 xEndWorld = origin + Vector2{80.0F / m_viewportCamera.GetZoom(), 0.0F};
                     const Vector2 yEndWorld = origin + Vector2{0.0F, 80.0F / m_viewportCamera.GetZoom()};
                     const Vector2 xScreenWorld = m_viewportCamera.WorldToScreen(xEndWorld);
                     const Vector2 yScreenWorld = m_viewportCamera.WorldToScreen(yEndWorld);
                     const ImVec2 ends[2]{
-                        canvasMin + ImVec2(xScreenWorld.x, xScreenWorld.y),
-                        canvasMin + ImVec2(yScreenWorld.x, yScreenWorld.y)
+                        ImVec2{canvasMin.x + xScreenWorld.x, canvasMin.y + xScreenWorld.y},
+                        ImVec2{canvasMin.x + yScreenWorld.x, canvasMin.y + yScreenWorld.y}
                     };
                     const ImVec2 start = ImGui::GetIO().MousePos;
                     const ImVec2 points[2]{ends[0], ends[1]};
                     const Vector2 axes[2]{{1.0F, 0.0F}, {0.0F, 1.0F}};
                     for (int i = 0; i < 2; ++i)
                     {
-                        const ImVec2 segment = points[i] - originScreen;
-                        const ImVec2 relative = start - originScreen;
+                        const ImVec2 segment{points[i].x - originScreen.x, points[i].y - originScreen.y};
+                        const ImVec2 relative{start.x - originScreen.x, start.y - originScreen.y};
                         const float lengthSquared = segment.x * segment.x + segment.y * segment.y;
                         const float t = lengthSquared > 0.0F
                             ? std::clamp((relative.x * segment.x + relative.y * segment.y) / lengthSquared, 0.0F, 1.0F)
