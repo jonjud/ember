@@ -31,6 +31,7 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Add a basic render component for texture-backed sprites
 - [x] Add a path-based reference-counted texture cache
 - [x] Add an asset root resolver with traversal checks
+- [x] Add project-facing AssetManager for validated texture loading
 - [ ] Asset metadata and import settings
 - [ ] Scene serialization
 - [ ] Collision and Box2D integration

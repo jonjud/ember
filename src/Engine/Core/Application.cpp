@@ -50,7 +50,7 @@ bool Application::Initialize()
         return false;
     }
 
-    if (!m_textureCache.SetBackend(
+    if (!m_assets.SetTextureBackend(
             [this](const std::string& path) { return m_renderer.LoadTexture(path); },
             [this](TextureHandle texture) { m_renderer.DestroyTexture(texture); }))
     {
@@ -93,7 +93,7 @@ void Application::Run()
 
 void Application::Shutdown()
 {
-    m_textureCache.Clear();
+    m_assets.Clear();
     m_renderer.Shutdown();
 
     if (m_window != nullptr)

@@ -23,6 +23,7 @@ src/
 │   │   └── Renderer2D.hpp/.cpp
 │   ├── Resources/
 │   │   ├── AssetDirectory.hpp/.cpp
+│   │   ├── AssetManager.hpp/.cpp
 │   │   ├── TextureCache.hpp/.cpp
 │   │   └── TextureHandle.hpp
 │   └── Scene/
@@ -71,6 +72,14 @@ tests/
 - Absolute paths, empty paths, and paths that lexically escape the root are rejected.
 - The resolver performs lexical checks only; projects that allow untrusted asset folders should additionally enforce filesystem-level symlink policy.
 
+## Asset manager workflow
+
+- Construct an `AssetManager` with the project's asset folder (defaults to `assets/`).
+- Connect its texture backend after the renderer is initialized.
+- Use `LoadTexture("sprites/player.bmp")` with a path relative to the asset folder; paths that escape the folder are rejected.
+- Call `ReleaseTexture` once for each successful load when no component needs that reference anymore.
+- Call `Clear()` before shutting down the renderer.
+
 ## Texture cache workflow
 
 - Configure the cache with a loader and a destroy callback once the renderer is initialized.
@@ -80,7 +89,7 @@ tests/
 - Call `Clear()` before shutting down the renderer to release every remaining texture.
 - A failed load returns an empty handle and does not create a cache entry.
 
-The cache uses callbacks rather than SDL types. The Application connects those callbacks to Renderer2D and clears the cache before destroying the renderer. Do not release a path while an entity still intends to draw its handle.
+The cache uses callbacks rather than SDL types. The AssetManager connects the validated project-relative path workflow to the cache. The Application connects its callbacks to Renderer2D and clears the cache before destroying the renderer. Do not release a path while an entity still intends to draw its handle.
 
 ## Renderer texture workflow
 
