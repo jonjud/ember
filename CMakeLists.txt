@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include(CTest)
 include(FetchContent)
 
 set(SDL_TESTS OFF CACHE BOOL "" FORCE)
@@ -43,12 +44,27 @@ add_executable(ember_editor
 
 target_link_libraries(ember_editor PRIVATE ember_engine)
 
+if(BUILD_TESTING)
+    add_executable(ember_scene_tests
+        tests/SceneTests.cpp
+        src/Engine/Scene/Scene.cpp
+    )
+    target_include_directories(ember_scene_tests PRIVATE src)
+    add_test(NAME ember_scene_tests COMMAND ember_scene_tests)
+endif()
+
 if(MSVC)
     target_compile_options(ember_engine PRIVATE /W4 /permissive-)
     target_compile_options(ember_editor PRIVATE /W4 /permissive-)
+    if(BUILD_TESTING)
+        target_compile_options(ember_scene_tests PRIVATE /W4 /permissive-)
+    endif()
 else()
     target_compile_options(ember_engine PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(ember_editor PRIVATE -Wall -Wextra -Wpedantic)
+    if(BUILD_TESTING)
+        target_compile_options(ember_scene_tests PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
 endif()
 
 set_target_properties(ember_editor PROPERTIES
