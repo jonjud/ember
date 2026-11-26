@@ -50,8 +50,20 @@ bool Application::Initialize()
         return false;
     }
 
-    m_playerX = (static_cast<float>(kWindowWidth) - kPlayerSize) * 0.5F;
-    m_playerY = (static_cast<float>(kWindowHeight) - kPlayerSize) * 0.5F;
+    Entity& player = m_scene.CreateEntity("Player");
+    m_playerEntityId = player.GetId();
+    player.GetTransform().position = {
+        (static_cast<float>(kWindowWidth) - kPlayerSize) * 0.5F,
+        (static_cast<float>(kWindowHeight) - kPlayerSize) * 0.5F
+    };
+
+    RenderComponent2D& playerVisual = player.GetRenderComponent();
+    playerVisual.size = {kPlayerSize, kPlayerSize};
+    playerVisual.red = 91;
+    playerVisual.green = 160;
+    playerVisual.blue = 255;
+    playerVisual.visible = true;
+
     m_isRunning = true;
     m_time.Reset();
 
@@ -80,6 +92,9 @@ void Application::Shutdown()
         m_window = nullptr;
     }
 
+    m_scene.Clear();
+    m_playerEntityId = 0;
+
     SDL_Quit();
     m_isRunning = false;
 }
@@ -102,6 +117,12 @@ void Application::Update()
     if (Input::IsKeyDown(SDL_SCANCODE_ESCAPE))
     {
         m_isRunning = false;
+    }
+
+    Entity* player = m_scene.FindEntity(m_playerEntityId);
+    if (player == nullptr)
+    {
+        return;
     }
 
     const float deltaSeconds = std::min(m_time.DeltaSeconds(), kMaxDeltaSeconds);
@@ -133,15 +154,26 @@ void Application::Update()
         directionY *= kDiagonalScale;
     }
 
-    m_playerX += directionX * kPlayerSpeed * deltaSeconds;
-    m_playerY += directionY * kPlayerSpeed * deltaSeconds;
+    Transform2D& transform = player->GetTransform();
+    transform.position.x += directionX * kPlayerSpeed * deltaSeconds;
+    transform.position.y += directionY * kPlayerSpeed * deltaSeconds;
+
+    const RenderComponent2D& visual = player->GetRenderComponent();
+    const float renderedWidth = visual.size.x * transform.scale.x;
+    const float renderedHeight = visual.size.y * transform.scale.y;
 
     int windowWidth = 0;
     int windowHeight = 0;
     SDL_GetWindowSize(m_window, &windowWidth, &windowHeight);
 
-    m_playerX = std::clamp(m_playerX, 0.0F, std::max(0.0F, static_cast<float>(windowWidth) - kPlayerSize));
-    m_playerY = std::clamp(m_playerY, 0.0F, std::max(0.0F, static_cast<float>(windowHeight) - kPlayerSize));
+    transform.position.x = std::clamp(
+        transform.position.x,
+        0.0F,
+        std::max(0.0F, static_cast<float>(windowWidth) - renderedWidth));
+    transform.position.y = std::clamp(
+        transform.position.y,
+        0.0F,
+        std::max(0.0F, static_cast<float>(windowHeight) - renderedHeight));
 }
 
 void Application::Render()
@@ -153,17 +185,29 @@ void Application::Render()
     m_camera.SetViewportSize(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
     m_camera.SetPosition({static_cast<float>(windowWidth) * 0.5F, static_cast<float>(windowHeight) * 0.5F});
 
-    const Transform2D playerTransform{{m_playerX, m_playerY}, {1.0F, 1.0F}};
-
     m_renderer.Clear(24, 27, 36);
-    m_renderer.DrawFilledRect(
-        playerTransform,
-        m_camera,
-        {std::min(kPlayerSize, static_cast<float>(windowWidth)),
-         std::min(kPlayerSize, static_cast<float>(windowHeight))},
-        91,
-        160,
-        255);
+    m_scene.ForEachEntity([this](const Entity& entity)
+    {
+        if (!entity.IsActive())
+        {
+            return;
+        }
+
+        const RenderComponent2D& visual = entity.GetRenderComponent();
+        if (!visual.visible)
+        {
+            return;
+        }
+
+        m_renderer.DrawFilledRect(
+            entity.GetTransform(),
+            m_camera,
+            visual.size,
+            visual.red,
+            visual.green,
+            visual.blue,
+            visual.alpha);
+    });
     m_renderer.Present();
 }
 } // namespace ember

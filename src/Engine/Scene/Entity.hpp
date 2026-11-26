@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Scene/RenderComponent2D.hpp"
 #include "Engine/Scene/Transform2D.hpp"
 
 #include <cstdint>
@@ -12,7 +13,7 @@ using EntityId = std::uint64_t;
 
 class Scene;
 
-// An entity is a lightweight scene object with an identity and a 2D transform.
+// An entity is a lightweight scene object with identity, transform, and render data.
 class Entity
 {
 public:
@@ -23,6 +24,9 @@ public:
 
     [[nodiscard]] Transform2D& GetTransform() { return m_transform; }
     [[nodiscard]] const Transform2D& GetTransform() const { return m_transform; }
+
+    [[nodiscard]] RenderComponent2D& GetRenderComponent() { return m_renderComponent; }
+    [[nodiscard]] const RenderComponent2D& GetRenderComponent() const { return m_renderComponent; }
 
     [[nodiscard]] bool IsActive() const { return m_active; }
     void SetActive(bool active) { m_active = active; }
@@ -38,6 +42,7 @@ private:
     EntityId m_id = 0;
     std::string m_name;
     Transform2D m_transform{};
+    RenderComponent2D m_renderComponent{};
     bool m_active = true;
 };
 } // namespace ember

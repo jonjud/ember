@@ -29,6 +29,27 @@ public:
     [[nodiscard]] bool IsEmpty() const { return m_entities.empty(); }
     [[nodiscard]] std::vector<EntityId> GetEntityIds() const;
 
+    // Iterate without allocating a temporary entity list.
+    template <typename Function>
+    void ForEachEntity(Function&& function)
+    {
+        for (auto& [id, entity] : m_entities)
+        {
+            (void)id;
+            function(*entity);
+        }
+    }
+
+    template <typename Function>
+    void ForEachEntity(Function&& function) const
+    {
+        for (const auto& [id, entity] : m_entities)
+        {
+            (void)id;
+            function(*entity);
+        }
+    }
+
     // Removes all entities. IDs are not reused during this Scene's lifetime.
     void Clear();
 

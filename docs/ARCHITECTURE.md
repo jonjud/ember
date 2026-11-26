@@ -23,6 +23,7 @@ src/
 │   │   └── Renderer2D.hpp/.cpp
 │   └── Scene/
 │       ├── Entity.hpp
+│       ├── RenderComponent2D.hpp
 │       ├── Scene.hpp/.cpp
 │       └── Transform2D.hpp
 └── main.cpp
@@ -30,13 +31,14 @@ src/
 
 ## Current responsibilities
 
-- **Core / Application:** owns the SDL window and runs the event/update/render loop.
+- **Core / Application:** owns the SDL window, active scene, and event/update/render loop.
 - **Core / Time:** measures frame delta time using SDL's high-resolution performance counter.
 - **Platform / Input:** exposes keyboard state through an engine-facing API.
 - **Math / Vector2:** engine-owned 2D vector type, independent of SDL.
-- **Scene / Entity:** provides a stable 64-bit entity ID, name, active state, and owned Transform2D.
-- **Scene / Scene:** owns entities, creates and destroys them, looks them up by ID, and returns IDs in deterministic order. Entity references remain stable when other entities are inserted; destroying that entity invalidates its reference.
+- **Scene / Entity:** provides a stable 64-bit entity ID, name, active state, Transform2D, and RenderComponent2D.
+- **Scene / Scene:** owns entities, creates and destroys them, looks them up by ID, and iterates without allocating a temporary list. Entity references remain stable when other entities are inserted; destroying that entity invalidates its reference.
 - **Scene / Transform2D:** stores an object's world position, scale, and rotation in radians.
+- **Scene / RenderComponent2D:** stores filled-rectangle size, RGBA color, and visibility.
 - **Renderer / Camera2D:** converts world positions and sizes into screen coordinates and applies camera zoom and rotation.
 - **Renderer / Renderer2D:** owns the SDL renderer, draws primitives and sprites, and manages loaded texture lifetimes.
 - **main.cpp:** contains only the process entry point.
@@ -46,11 +48,15 @@ src/
 - Construct a `Scene`, optionally providing its name.
 - Call `CreateEntity(name)` to create an entity and receive a stable reference.
 - Read or update its transform through `GetTransform()`.
+- Configure its simple visual through `GetRenderComponent()`.
 - Use `GetId()` to retain its identity and `FindEntity(id)` to look it up later.
 - Call `DestroyEntity(id)` to remove one entity or `Clear()` to remove all entities.
+- Use `ForEachEntity(callback)` to update or render entities without allocating a temporary list.
 - Entity IDs are monotonically assigned and are not reused during a scene's lifetime. ID exhaustion is reported with `std::overflow_error`.
 
-The scene model is currently independent of the application loop and renderer. The next step is to make the active scene part of the runtime and render active entities.
+## Runtime scene rendering
+
+The application owns a scene. Its sample player is an ordinary entity with a Transform2D and RenderComponent2D. Input updates the entity transform, and the render loop draws every active entity whose render component is visible. The scene does not depend on SDL; SDL-specific drawing remains inside Renderer2D.
 
 ## Renderer texture workflow
 
@@ -88,4 +94,4 @@ Third-party APIs should be hidden behind narrow engine-facing interfaces when do
 
 ## Next milestone
 
-Connect Scene to the application lifecycle and render active entities using their Transform2D data and the existing camera-aware Renderer2D API.
+Add component-oriented tests and expand RenderComponent2D to support texture-backed sprites while keeping SDL details inside the renderer.
