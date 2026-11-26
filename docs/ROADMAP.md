@@ -12,7 +12,8 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Add high-resolution frame timing
 - [x] Add a keyboard input adapter
 - [x] Add a frame-rate-independent movement test
-- [ ] Verify builds and runtime behavior on Windows
+- [x] Verify Windows CI build
+- [ ] Verify interactive runtime behavior on Windows
 - [ ] Add logging and diagnostics
 
 ## Phase 2 — 2D Core

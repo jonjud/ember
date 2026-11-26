@@ -34,18 +34,22 @@ src/
 └── main.cpp
 
 tests/
+├── AssetDirectoryTests.cpp
+├── AssetManagerTests.cpp
 ├── SceneTests.cpp
 └── TextureCacheTests.cpp
 ```
 
 ## Current responsibilities
 
-- **Core / Application:** owns the SDL window, active scene, texture cache, and event/update/render loop.
+- **Core / Application:** owns the SDL window, active scene, project-facing AssetManager, and event/update/render loop.
 - **Core / Time:** measures frame delta time using SDL's high-resolution performance counter.
 - **Platform / Input:** exposes keyboard state through an engine-facing API.
 - **Math / Vector2:** engine-owned 2D vector type, independent of SDL.
 - **Resources / TextureHandle:** small, renderer-independent identifier for a texture resource. A handle is non-owning and is valid only while its owning renderer retains the resource.
 - **Resources / TextureCache:** shares texture handles by normalized file path, counts active references, and destroys a texture when its final reference is released. It uses injected load/destroy callbacks, keeping SDL out of the resource cache and allowing deterministic unit tests.
+- **Resources / AssetDirectory:** resolves project-relative asset paths and rejects empty, absolute, and lexically escaping paths.
+- **Resources / AssetManager:** project-facing façade that combines validated asset paths with the reference-counted texture cache.
 - **Scene / Entity:** provides a stable 64-bit entity ID, name, active state, Transform2D, and RenderComponent2D.
 - **Scene / Scene:** owns entities, creates and destroys them, looks them up by ID, and iterates without allocating a temporary list. Entity references remain stable when other entities are inserted; destroying that entity invalidates its reference.
 - **Scene / Transform2D:** stores an object's world position, scale, and rotation in radians.
@@ -89,15 +93,15 @@ tests/
 - Call `Clear()` before shutting down the renderer to release every remaining texture.
 - A failed load returns an empty handle and does not create a cache entry.
 
-The cache uses callbacks rather than SDL types. The AssetManager connects the validated project-relative path workflow to the cache. The Application connects its callbacks to Renderer2D and clears the cache before destroying the renderer. Do not release a path while an entity still intends to draw its handle.
+The cache uses callbacks rather than SDL types. The AssetManager connects the validated project-relative path workflow to the cache. The Application clears the cache before destroying the renderer. Do not release a path while an entity still intends to draw its handle.
 
 ## Renderer texture workflow
 
 - `Renderer2D::LoadTexture(path)` loads a BMP image through SDL3 and returns an engine-owned `TextureHandle`.
-- `Renderer2D::DestroyTexture(handle)` releases an individual texture. Prefer the TextureCache for shared assets.
+- `Renderer2D::DestroyTexture(handle)` releases an individual texture. Prefer the AssetManager for shared project assets.
 - Camera-aware sprite drawing applies object position, scale, rotation, camera conversion, and per-component RGBA tint.
 - Texture handles are lightweight, non-owning IDs; SDL texture pointers remain private to the renderer.
-- The first loader intentionally supports BMP only. PNG/JPEG support can be added behind the same interface.
+- The first loader intentionally supports BMP only. PNG/JPEG support will be added behind the same interface.
 
 ## Planned layers
 
@@ -124,4 +128,4 @@ Third-party APIs should be hidden behind narrow engine-facing interfaces when do
 
 ## Next milestone
 
-Add image format support beyond BMP and a small asset directory convention, then build scene serialization on top of stable resource identifiers.
+Add PNG/JPEG decoding behind the existing renderer texture-loading interface, then build scene serialization on top of stable resource identifiers.
