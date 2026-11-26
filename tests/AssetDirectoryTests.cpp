@@ -11,12 +11,12 @@ void Check(bool condition, const char* description)
 {
     if (!condition)
     {
-        std::cerr << "[FAIL] " << description << '\\n';
+        std::cerr << "[FAIL] " << description << '\n';
         ++g_failures;
     }
     else
     {
-        std::cout << "[PASS] " << description << '\\n';
+        std::cout << "[PASS] " << description << '\n';
     }
 }
 }
@@ -43,10 +43,10 @@ int main()
 
     if (g_failures != 0)
     {
-        std::cerr << g_failures << " asset directory test(s) failed.\\n";
+        std::cerr << g_failures << " asset directory test(s) failed.\n";
         return 1;
     }
 
-    std::cout << "All asset directory tests passed.\\n";
+    std::cout << "All asset directory tests passed.\n";
     return 0;
 }
