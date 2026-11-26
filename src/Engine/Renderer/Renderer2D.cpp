@@ -2,6 +2,8 @@
 
 #include <SDL3/SDL.h>
 
+#include <array>
+#include <cmath>
 #include <iostream>
 
 namespace ember
@@ -106,11 +108,52 @@ void Renderer2D::DrawFilledRect(
         return;
     }
 
-    const Vector2 screenPosition = camera.WorldToScreen(transform.position);
-    const Vector2 screenSize = camera.WorldToScreenSize({size.x * transform.scale.x, size.y * transform.scale.y});
-    const SDL_FRect rectangle{screenPosition.x, screenPosition.y, screenSize.x, screenSize.y};
-    SDL_SetRenderDrawColor(m_renderer, red, green, blue, alpha);
-    SDL_RenderFillRect(m_renderer, &rectangle);
+    const Vector2 scaledSize{
+        size.x * transform.scale.x,
+        size.y * transform.scale.y
+    };
+    const Vector2 center{
+        transform.position.x + scaledSize.x * 0.5F,
+        transform.position.y + scaledSize.y * 0.5F
+    };
+
+    const float halfWidth = scaledSize.x * 0.5F;
+    const float halfHeight = scaledSize.y * 0.5F;
+    const float cosine = std::cos(transform.rotation);
+    const float sine = std::sin(transform.rotation);
+    const std::array<Vector2, 4> localCorners{
+        Vector2{-halfWidth, -halfHeight},
+        Vector2{ halfWidth, -halfHeight},
+        Vector2{ halfWidth,  halfHeight},
+        Vector2{-halfWidth,  halfHeight}
+    };
+
+    const SDL_FColor color{
+        static_cast<float>(red) / 255.0F,
+        static_cast<float>(green) / 255.0F,
+        static_cast<float>(blue) / 255.0F,
+        static_cast<float>(alpha) / 255.0F
+    };
+    std::array<SDL_Vertex, 4> vertices{};
+
+    for (std::size_t i = 0; i < localCorners.size(); ++i)
+    {
+        const Vector2& corner = localCorners[i];
+        const Vector2 worldCorner{
+            center.x + corner.x * cosine - corner.y * sine,
+            center.y + corner.x * sine + corner.y * cosine
+        };
+        const Vector2 screenCorner = camera.WorldToScreen(worldCorner);
+        vertices[i] = SDL_Vertex{
+            {screenCorner.x, screenCorner.y},
+            color,
+            {0.0F, 0.0F}
+        };
+    }
+
+    constexpr int indices[]{0, 1, 2, 0, 2, 3};
+    SDL_RenderGeometry(m_renderer, nullptr, vertices.data(),
+                       static_cast<int>(vertices.size()), indices, 6);
 }
 
 TextureHandle Renderer2D::LoadTexture(const std::string& filePath)
@@ -169,6 +212,54 @@ void Renderer2D::DrawTexture(TextureHandle texture, float x, float y, float widt
 
     const SDL_FRect destination{x, y, width, height};
     SDL_RenderTexture(m_renderer, iterator->second, nullptr, &destination);
+}
+
+void Renderer2D::DrawTexture(
+    TextureHandle texture,
+    const Transform2D& transform,
+    const Camera2D& camera,
+    const Vector2& size)
+{
+    if (m_renderer == nullptr)
+    {
+        return;
+    }
+
+    const auto iterator = m_textures.find(texture.id);
+    if (iterator == m_textures.end())
+    {
+        return;
+    }
+
+    const Vector2 scaledSize{
+        size.x * transform.scale.x,
+        size.y * transform.scale.y
+    };
+    const Vector2 worldCenter{
+        transform.position.x + scaledSize.x * 0.5F,
+        transform.position.y + scaledSize.y * 0.5F
+    };
+    const Vector2 screenSize = camera.WorldToScreenSize(scaledSize);
+    const Vector2 screenCenter = camera.WorldToScreen(worldCenter);
+    const SDL_FRect destination{
+        screenCenter.x - screenSize.x * 0.5F,
+        screenCenter.y - screenSize.y * 0.5F,
+        screenSize.x,
+        screenSize.y
+    };
+
+    constexpr double kRadiansToDegrees = 180.0 / 3.14159265358979323846;
+    const double screenRotation =
+        static_cast<double>(transform.rotation - camera.GetRotation()) * kRadiansToDegrees;
+
+    SDL_RenderTextureRotated(
+        m_renderer,
+        iterator->second,
+        nullptr,
+        &destination,
+        screenRotation,
+        nullptr,
+        SDL_FLIP_NONE);
 }
 
 void Renderer2D::Present()
