@@ -280,6 +280,7 @@ void EditorApplication::Render()
     DrawInspector();
     DrawAssetBrowser();
     DrawInputSettings();
+    DrawProjectSettings();
     DrawViewport();
 
     ImGui::SetNextWindowPos(ImVec2(0.0F, 0.0F), ImGuiCond_Always);
@@ -623,6 +624,31 @@ void EditorApplication::DrawInputSettings()
                 "Input actions restored to default bindings");
         }
         ImGui::TextDisabled("Keys cannot be shared by different actions. Settings save to the project.");
+    }
+    ImGui::End();
+}
+
+void EditorApplication::DrawProjectSettings()
+{
+    ImGui::SetNextWindowPos(ImVec2(0.0F, 620.0F), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(280.0F, 260.0F), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Project Settings"))
+    {
+        ImGui::BeginDisabled(m_isPlaying);
+        ImGui::SetNextItemWidth(-1.0F);
+        ImGui::InputText("Project Name", m_projectName, sizeof(m_projectName));
+        ImGui::SetNextItemWidth(-1.0F);
+        ImGui::InputText("Startup Scene", m_startupScenePath, sizeof(m_startupScenePath));
+        ImGui::TextDisabled("Scene path is relative to the .emberproject file.");
+        if (ImGui::Button("Save Project Settings"))
+        {
+            if (SaveProjectSettings())
+            {
+                std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                    "Project settings saved");
+            }
+        }
+        ImGui::EndDisabled();
     }
     ImGui::End();
 }
@@ -1496,12 +1522,17 @@ void EditorApplication::LoadInputSettings()
         }
 
         m_projectConfiguration = ProjectConfiguration{};
+        std::snprintf(m_projectName, sizeof(m_projectName), "%s", m_projectConfiguration.name.c_str());
+        m_startupScenePath[0] = '\\0';
         m_inputMap = InputMap::CreateDefaultMovementMap();
         (void)SaveInputSettings();
         return;
     }
 
     m_projectConfiguration = std::move(*loaded);
+    std::snprintf(m_projectName, sizeof(m_projectName), "%s", m_projectConfiguration.name.c_str());
+    std::snprintf(m_startupScenePath, sizeof(m_startupScenePath), "%s",
+        m_projectConfiguration.startupScene.generic_string().c_str());
     if (!m_projectConfiguration.inputBindingsConfigured)
     {
         m_inputMap = InputMap::CreateDefaultMovementMap();
@@ -1559,6 +1590,28 @@ bool EditorApplication::SaveInputSettings()
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "Input settings save failed: %.190s", error.c_str());
+        return false;
+    }
+    return true;
+}
+
+bool EditorApplication::SaveProjectSettings()
+{
+    const std::string name = m_projectName;
+    const std::filesystem::path startupScene = m_startupScenePath;
+    if (name.empty())
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Project name must not be empty");
+        return false;
+    }
+
+    const ProjectConfiguration previous = m_projectConfiguration;
+    m_projectConfiguration.name = name;
+    m_projectConfiguration.startupScene = startupScene;
+    if (!SaveInputSettings())
+    {
+        m_projectConfiguration = previous;
         return false;
     }
     return true;

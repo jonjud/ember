@@ -42,6 +42,7 @@ private:
     void DrawInspector();
     void DrawAssetBrowser();
     void DrawInputSettings();
+    void DrawProjectSettings();
     void DrawViewport();
     void CreateEntity();
     void StartPlayMode();
@@ -53,6 +54,7 @@ private:
     void LoadSelectedTextureSettings();
     void LoadInputSettings();
     [[nodiscard]] bool SaveInputSettings();
+    [[nodiscard]] bool SaveProjectSettings();
     [[nodiscard]] SDL_Texture* GetPreviewTexture(const AssetMetadata& metadata);
     void ClearPreviewTextures();
 
@@ -70,6 +72,8 @@ private:
     std::vector<std::string> m_customInputActions;
     std::string m_rebindAction;
     bool m_replaceActionOnRebind = true;
+    char m_projectName[128] = "Untitled Project";
+    char m_startupScenePath[260]{};
     char m_newInputActionName[64]{};
     char m_renamedInputActionName[64]{};
     std::string m_selectedCustomInputAction;
