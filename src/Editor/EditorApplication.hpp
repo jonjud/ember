@@ -2,6 +2,7 @@
 
 #include "Engine/Resources/AssetImportService.hpp"
 #include "Engine/Resources/AssetRegistry.hpp"
+#include "Engine/Renderer/Camera2D.hpp"
 #include "Engine/Scene/Scene.hpp"
 
 #include <cstdint>
@@ -43,6 +44,7 @@ private:
     SDL_Renderer* m_renderer = nullptr;
     bool m_isRunning = false;
     Scene m_scene{"Untitled Scene"};
+    Camera2D m_viewportCamera;
     AssetRegistry m_assetRegistry{"assets"};
     AssetImportService m_assetImportService{"assets"};
     EntityId m_selectedEntity = 0;

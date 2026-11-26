@@ -419,8 +419,181 @@ void EditorApplication::DrawViewport()
     ImGui::SetNextWindowSize(ImVec2(800.0F, 620.0F), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("2D Viewport"))
     {
-        ImGui::TextDisabled("Viewport rendering and camera controls are coming next.");
-        ImGui::Text("Entities in scene: %zu", m_scene.GetEntityCount());
+        ImGui::TextDisabled("Middle-drag: pan | Mouse wheel: zoom | Left-click: select");
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Reset View"))
+        {
+            m_viewportCamera.SetPosition({0.0F, 0.0F});
+            m_viewportCamera.SetZoom(1.0F);
+            m_viewportCamera.SetRotation(0.0F);
+        }
+        ImGui::SameLine();
+        ImGui::Text("Zoom: %.0f%%", m_viewportCamera.GetZoom() * 100.0F);
+
+        ImVec2 canvasSize = ImGui::GetContentRegionAvail();
+        canvasSize.x = std::max(canvasSize.x, 64.0F);
+        canvasSize.y = std::max(canvasSize.y, 64.0F);
+        ImGui::InvisibleButton("##EMBERViewportCanvas", canvasSize,
+            ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle);
+
+        const ImVec2 canvasMin = ImGui::GetItemRectMin();
+        const ImVec2 canvasMax = ImGui::GetItemRectMax();
+        const bool hovered = ImGui::IsItemHovered();
+        const ImVec2 viewportSize{canvasMax.x - canvasMin.x, canvasMax.y - canvasMin.y};
+        m_viewportCamera.SetViewportSize(viewportSize.x, viewportSize.y);
+
+        if (hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Middle))
+        {
+            const ImVec2 delta = ImGui::GetIO().MouseDelta;
+            const Vector2 cameraPosition = m_viewportCamera.GetPosition();
+            const float zoom = m_viewportCamera.GetZoom();
+            m_viewportCamera.SetPosition({
+                cameraPosition.x - delta.x / zoom,
+                cameraPosition.y - delta.y / zoom
+            });
+        }
+
+        if (hovered && ImGui::GetIO().MouseWheel != 0.0F)
+        {
+            const float nextZoom = std::clamp(
+                m_viewportCamera.GetZoom() * (ImGui::GetIO().MouseWheel > 0.0F ? 1.1F : 0.9F),
+                0.1F, 8.0F);
+            m_viewportCamera.SetZoom(nextZoom);
+        }
+
+        const ImVec2 mouse = ImGui::GetIO().MousePos;
+        if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        {
+            const Vector2 localMouse{mouse.x - canvasMin.x, mouse.y - canvasMin.y};
+            const Vector2 worldMouse = m_viewportCamera.GetPosition() +
+                (localMouse - Vector2{viewportSize.x * 0.5F, viewportSize.y * 0.5F}) *
+                    (1.0F / m_viewportCamera.GetZoom());
+
+            EntityId hitEntity = 0;
+            m_scene.ForEachEntity([&](const Entity& entity)
+            {
+                const auto& render = entity.GetRenderComponent();
+                if (!entity.IsActive() || !render.visible) return;
+
+                const auto& transform = entity.GetTransform();
+                const Vector2 scaledSize{
+                    render.size.x * transform.scale.x,
+                    render.size.y * transform.scale.y
+                };
+                const Vector2 center{
+                    transform.position.x + scaledSize.x * 0.5F,
+                    transform.position.y + scaledSize.y * 0.5F
+                };
+                const float cosine = std::cos(transform.rotation);
+                const float sine = std::sin(transform.rotation);
+                const Vector2 offset = worldMouse - center;
+                const Vector2 localPoint{
+                    offset.x * cosine + offset.y * sine,
+                    -offset.x * sine + offset.y * cosine
+                };
+                if (std::abs(localPoint.x) <= std::abs(scaledSize.x) * 0.5F &&
+                    std::abs(localPoint.y) <= std::abs(scaledSize.y) * 0.5F)
+                {
+                    hitEntity = entity.GetId();
+                }
+            });
+            m_selectedEntity = hitEntity;
+        }
+
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        drawList->PushClipRect(canvasMin, canvasMax, true);
+        drawList->AddRectFilled(canvasMin, canvasMax, IM_COL32(25, 29, 38, 255));
+
+        const float zoom = m_viewportCamera.GetZoom();
+        const Vector2 cameraPosition = m_viewportCamera.GetPosition();
+        float gridStep = 64.0F;
+        if (gridStep * zoom < 16.0F)
+        {
+            gridStep *= std::ceil(16.0F / (gridStep * zoom));
+        }
+        const float halfWorldWidth = viewportSize.x * 0.5F / zoom;
+        const float halfWorldHeight = viewportSize.y * 0.5F / zoom;
+        const float left = cameraPosition.x - halfWorldWidth;
+        const float right = cameraPosition.x + halfWorldWidth;
+        const float top = cameraPosition.y - halfWorldHeight;
+        const float bottom = cameraPosition.y + halfWorldHeight;
+        const auto toCanvas = [&](const Vector2& world)
+        {
+            const Vector2 screen = m_viewportCamera.WorldToScreen(world);
+            return ImVec2(canvasMin.x + screen.x, canvasMin.y + screen.y);
+        };
+
+        const float firstGridX = std::floor(left / gridStep) * gridStep;
+        for (float x = firstGridX; x <= right && x - firstGridX < gridStep * 1000.0F; x += gridStep)
+        {
+            const ImVec2 a = toCanvas({x, top});
+            const ImVec2 b = toCanvas({x, bottom});
+            drawList->AddLine(a, b, IM_COL32(48, 54, 67, 255));
+        }
+        const float firstGridY = std::floor(top / gridStep) * gridStep;
+        for (float y = firstGridY; y <= bottom && y - firstGridY < gridStep * 1000.0F; y += gridStep)
+        {
+            const ImVec2 a = toCanvas({left, y});
+            const ImVec2 b = toCanvas({right, y});
+            drawList->AddLine(a, b, IM_COL32(48, 54, 67, 255));
+        }
+        drawList->AddLine(toCanvas({0.0F, top}), toCanvas({0.0F, bottom}), IM_COL32(105, 115, 140, 255), 1.5F);
+        drawList->AddLine(toCanvas({left, 0.0F}), toCanvas({right, 0.0F}), IM_COL32(105, 115, 140, 255), 1.5F);
+
+        m_scene.ForEachEntity([&](const Entity& entity)
+        {
+            const auto& render = entity.GetRenderComponent();
+            if (!entity.IsActive() || !render.visible) return;
+
+            const auto& transform = entity.GetTransform();
+            const Vector2 scaledSize{
+                render.size.x * transform.scale.x,
+                render.size.y * transform.scale.y
+            };
+            const Vector2 center{
+                transform.position.x + scaledSize.x * 0.5F,
+                transform.position.y + scaledSize.y * 0.5F
+            };
+            const float cosine = std::cos(transform.rotation);
+            const float sine = std::sin(transform.rotation);
+            const float halfWidth = scaledSize.x * 0.5F;
+            const float halfHeight = scaledSize.y * 0.5F;
+            const Vector2 localCorners[4]{
+                {-halfWidth, -halfHeight}, {halfWidth, -halfHeight},
+                {halfWidth, halfHeight}, {-halfWidth, halfHeight}
+            };
+            ImVec2 corners[4]{};
+            for (int i = 0; i < 4; ++i)
+            {
+                const Vector2& corner = localCorners[i];
+                const Vector2 worldCorner{
+                    center.x + corner.x * cosine - corner.y * sine,
+                    center.y + corner.x * sine + corner.y * cosine
+                };
+                corners[i] = toCanvas(worldCorner);
+            }
+
+            const ImU32 tint = IM_COL32(render.red, render.green, render.blue, render.alpha);
+            drawList->AddConvexPolyFilled(corners, 4, tint);
+            drawList->AddPolyline(corners, 4, IM_COL32(12, 14, 20, 255), ImDrawFlags_Closed, 1.0F);
+
+            if (!render.textureAssetId.empty())
+            {
+                const ImVec2 centerPoint = toCanvas(center);
+                drawList->AddText(centerPoint, IM_COL32(20, 20, 24, 230), "Texture");
+            }
+
+            if (entity.GetId() == m_selectedEntity)
+            {
+                drawList->AddPolyline(corners, 4, IM_COL32(255, 210, 80, 255), ImDrawFlags_Closed, 2.0F);
+                const ImVec2 labelPosition{corners[0].x, corners[0].y - 18.0F};
+                drawList->AddText(labelPosition, IM_COL32(255, 225, 140, 255), entity.GetName().c_str());
+            }
+        });
+
+        drawList->PopClipRect();
+        ImGui::TextDisabled("%zu entities | Only active, visible render components are shown. Texture assets are placeholders in this editor preview.",
+            m_scene.GetEntityCount());
     }
     ImGui::End();
 }
