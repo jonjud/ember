@@ -7,15 +7,17 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Initialize the CMake project
 - [x] Integrate SDL3
 - [x] Create an application entry point
-- [x] Add a window, event loop, and basic 2D render test
-- [ ] Verify builds on Windows
-- [ ] Add frame timing and a stable update loop
-- [ ] Add keyboard and mouse input abstraction
-- [ ] Separate the application layer from the engine core
+- [x] Create a window and event loop
+- [x] Extract the application lifecycle into an engine module
+- [x] Add high-resolution frame timing
+- [x] Add a keyboard input adapter
+- [x] Add a frame-rate-independent movement test
+- [ ] Verify builds and runtime behavior on Windows
+- [ ] Add logging and diagnostics
 
 ## Phase 2 — 2D Core
 
-- [ ] Renderer abstraction
+- [ ] Renderer2D abstraction
 - [ ] Texture and asset loading
 - [ ] Sprite rendering
 - [ ] Transform and 2D camera
@@ -47,7 +49,6 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [ ] Windows game export
 - [ ] Project templates
 - [ ] Automated tests
-- [ ] Logging and diagnostics
 - [ ] Profiler
 - [ ] User documentation
 
@@ -56,5 +57,5 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 1. Keep dependencies optional or isolated where practical.
 2. Do not add a subsystem before a small use case proves it is needed.
 3. Keep editor code separate from runtime code.
-4. Prefer small pull requests and buildable commits.
+4. Prefer small, buildable milestones.
 5. Do not claim a platform is supported until it has been built and tested there.
