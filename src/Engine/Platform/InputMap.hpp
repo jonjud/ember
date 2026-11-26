@@ -20,6 +20,8 @@ public:
 
     [[nodiscard]] bool IsActionDown(std::string_view action) const;
     [[nodiscard]] const std::vector<SDL_Scancode>& GetBindings(std::string_view action) const;
+    [[nodiscard]] const std::unordered_map<std::string, std::vector<SDL_Scancode>>&
+        GetAllBindings() const noexcept { return m_bindings; }
 
     [[nodiscard]] static InputMap CreateDefaultMovementMap();
 

@@ -2,6 +2,7 @@
 
 #include "Engine/Scene/SceneSerializer.hpp"
 #include "Engine/Platform/Input.hpp"
+#include "Engine/Project/ProjectConfigurationStore.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
@@ -94,6 +95,7 @@ bool EditorApplication::Initialize()
         return false;
     }
 
+    LoadInputSettings();
     RefreshAssets();
     m_isRunning = true;
     return true;
@@ -212,6 +214,11 @@ void EditorApplication::ProcessEvents()
                             "%.180s already uses that key", action.c_str());
                     }
                     m_rebindAction.clear();
+                    if (added && !SaveInputSettings())
+                    {
+                        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                            "Binding changed but project settings could not be saved");
+                    }
                 }
                 continue;
             }
@@ -440,6 +447,11 @@ void EditorApplication::DrawInputSettings()
             if (ImGui::SmallButton("Clear"))
             {
                 m_inputMap.ClearAction(action);
+                if (!SaveInputSettings())
+                {
+                    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                        "Could not save input settings");
+                }
             }
             ImGui::PopID();
         };
@@ -477,6 +489,7 @@ void EditorApplication::DrawInputSettings()
                     == m_customInputActions.end())
                 {
                     m_customInputActions.push_back(action);
+                    (void)SaveInputSettings();
                 }
                 m_rebindAction = action;
                 m_replaceActionOnRebind = false;
@@ -484,7 +497,7 @@ void EditorApplication::DrawInputSettings()
                     "Press a key to bind action: %.180s", action.c_str());
             }
         }
-        ImGui::TextDisabled("Rebind replaces keys; +Key adds another. Changes are session-only for now.");
+        ImGui::TextDisabled("Rebind replaces keys; +Key adds another. Settings save to ember.emberproject.");
     }
     ImGui::End();
 }
@@ -1339,6 +1352,90 @@ void EditorApplication::RefreshAssets()
         const char* reason = diagnostics.empty() ? "Asset scan failed." : diagnostics.front().message.c_str();
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Asset scan failed: %.210s", reason);
     }
+}
+
+
+void EditorApplication::LoadInputSettings()
+{
+    std::string error;
+    auto loaded = ProjectConfigurationStore::Load(m_projectFilePath, &error);
+    if (!loaded)
+    {
+        // A missing project file is a first-run case. Other invalid files are
+        // preserved so the editor never silently overwrites user data.
+        if (std::filesystem::exists(m_projectFilePath))
+        {
+            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                "Input settings not loaded: %.190s", error.c_str());
+            return;
+        }
+
+        m_projectConfiguration = ProjectConfiguration{};
+        m_inputMap = InputMap::CreateDefaultMovementMap();
+        (void)SaveInputSettings();
+        return;
+    }
+
+    m_projectConfiguration = std::move(*loaded);
+    if (!m_projectConfiguration.inputBindingsConfigured)
+    {
+        m_inputMap = InputMap::CreateDefaultMovementMap();
+    }
+    else
+    {
+        InputMap loadedMap;
+        for (const auto& [action, keys] : m_projectConfiguration.inputBindings)
+        {
+            for (const std::int32_t key : keys)
+            {
+                if (!loadedMap.BindAction(action, static_cast<SDL_Scancode>(key)))
+                {
+                    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                        "Invalid input binding ignored: %.180s", action.c_str());
+                }
+            }
+        }
+        m_inputMap = std::move(loadedMap);
+    }
+
+    m_customInputActions.clear();
+    for (const auto& [action, keys] : m_projectConfiguration.inputBindings)
+    {
+        (void)keys;
+        if (action != "MoveLeft" && action != "MoveRight" &&
+            action != "MoveUp" && action != "MoveDown")
+        {
+            m_customInputActions.push_back(action);
+        }
+    }
+}
+
+bool EditorApplication::SaveInputSettings()
+{
+    m_projectConfiguration.inputBindings.clear();
+    m_projectConfiguration.inputBindingsConfigured = true;
+    for (const auto& [action, keys] : m_inputMap.GetAllBindings())
+    {
+        auto& storedKeys = m_projectConfiguration.inputBindings[action];
+        for (const SDL_Scancode key : keys)
+        {
+            storedKeys.push_back(static_cast<std::int32_t>(key));
+        }
+    }
+    for (const std::string& action : m_customInputActions)
+    {
+        m_projectConfiguration.inputBindings.try_emplace(action);
+    }
+
+    std::string error;
+    if (!ProjectConfigurationStore::Save(
+            m_projectFilePath, m_projectConfiguration, &error))
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Input settings save failed: %.190s", error.c_str());
+        return false;
+    }
+    return true;
 }
 
 void EditorApplication::LoadSelectedTextureSettings()

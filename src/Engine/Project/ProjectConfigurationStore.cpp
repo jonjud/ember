@@ -75,6 +75,20 @@ bool Validate(const ProjectConfiguration& configuration, std::string* error)
     {
         return Fail(error, "Startup scene must be a safe project-relative path.");
     }
+    for (const auto& [action, keys] : configuration.inputBindings)
+    {
+        if (action.empty())
+        {
+            return Fail(error, "Input action names must not be empty.");
+        }
+        for (const std::int32_t key : keys)
+        {
+            if (key <= 0 || key >= 512)
+            {
+                return Fail(error, "Input bindings contain an invalid scancode.");
+            }
+        }
+    }
     return true;
 }
 }
@@ -99,7 +113,8 @@ bool ProjectConfigurationStore::Save(
             {"schema_version", configuration.schemaVersion},
             {"name", configuration.name},
             {"asset_directory", configuration.assetDirectory.generic_string()},
-            {"startup_scene", configuration.startupScene.generic_string()}
+            {"startup_scene", configuration.startupScene.generic_string()},
+            {"input_bindings", configuration.inputBindings}
         };
 
         const auto parent = projectFilePath.parent_path();
@@ -150,13 +165,29 @@ std::optional<ProjectConfiguration> ProjectConfigurationStore::Load(
 
         const Json document = Json::parse(input);
         ProjectConfiguration configuration;
-        configuration.schemaVersion =
+        const std::uint32_t storedSchemaVersion =
             document.at("schema_version").get<std::uint32_t>();
+        if (storedSchemaVersion != 1 &&
+            storedSchemaVersion != ProjectConfiguration::CurrentSchemaVersion)
+        {
+            if (error != nullptr)
+            {
+                *error = "Unsupported project configuration schema version.";
+            }
+            return std::nullopt;
+        }
+        configuration.schemaVersion = ProjectConfiguration::CurrentSchemaVersion;
         configuration.name = document.at("name").get<std::string>();
         configuration.assetDirectory =
             document.at("asset_directory").get<std::string>();
         configuration.startupScene =
             document.at("startup_scene").get<std::string>();
+        if (storedSchemaVersion >= 2 && document.contains("input_bindings"))
+        {
+            configuration.inputBindings =
+                document.at("input_bindings").get<std::map<std::string, std::vector<std::int32_t>>>();
+            configuration.inputBindingsConfigured = true;
+        }
 
         if (!Validate(configuration, error))
         {

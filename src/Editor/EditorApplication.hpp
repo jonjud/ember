@@ -6,8 +6,10 @@
 #include "Engine/Renderer/Camera2D.hpp"
 #include "Engine/Scene/Scene.hpp"
 #include "Engine/Platform/InputMap.hpp"
+#include "Engine/Project/ProjectConfiguration.hpp"
 
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -49,6 +51,8 @@ private:
     void LoadScene();
     void RefreshAssets();
     void LoadSelectedTextureSettings();
+    void LoadInputSettings();
+    [[nodiscard]] bool SaveInputSettings();
     [[nodiscard]] SDL_Texture* GetPreviewTexture(const AssetMetadata& metadata);
     void ClearPreviewTextures();
 
@@ -61,6 +65,8 @@ private:
     bool m_isPlaying = false;
     Time m_time;
     InputMap m_inputMap = InputMap::CreateDefaultMovementMap();
+    ProjectConfiguration m_projectConfiguration;
+    std::filesystem::path m_projectFilePath{"ember.emberproject"};
     std::vector<std::string> m_customInputActions;
     std::string m_rebindAction;
     bool m_replaceActionOnRebind = true;

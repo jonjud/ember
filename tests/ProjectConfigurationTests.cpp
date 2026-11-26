@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 namespace
 {
@@ -36,6 +37,8 @@ int main()
     configuration.name = "Sample Game";
     configuration.assetDirectory = "Content/Assets";
     configuration.startupScene = "Scenes/Main.emberscene";
+    configuration.inputBindings["MoveLeft"] = {4, 80};
+    configuration.inputBindings["Jump"] = {44};
 
     std::string error;
     Check(ember::ProjectConfigurationStore::Save(projectFile, configuration, &error),
@@ -51,6 +54,10 @@ int main()
               "Asset directory survives round-trip");
         Check(loaded->startupScene == std::filesystem::path("Scenes/Main.emberscene"),
               "Startup scene survives round-trip");
+        Check(loaded->inputBindings.at("MoveLeft") == std::vector<std::int32_t>{4, 80},
+              "Multiple input bindings survive round-trip");
+        Check(loaded->inputBindings.at("Jump") == std::vector<std::int32_t>{44},
+              "Custom action bindings survive round-trip");
 
         const auto resolvedAssets =
             ember::ProjectConfigurationStore::ResolveAssetDirectory(projectFile, *loaded);
@@ -64,6 +71,15 @@ int main()
               *resolvedScene == (root / "Scenes" / "Main.emberscene").lexically_normal(),
               "Startup scene resolves relative to the project file");
     }
+
+    configuration.inputBindings.clear();
+    configuration.inputBindingsConfigured = true;
+    Check(ember::ProjectConfigurationStore::Save(projectFile, configuration, &error),
+          "An intentionally empty input map can be saved");
+    const auto emptyBindings = ember::ProjectConfigurationStore::Load(projectFile, &error);
+    Check(emptyBindings.has_value() && emptyBindings->inputBindingsConfigured &&
+          emptyBindings->inputBindings.empty(),
+          "An intentionally empty input map remains empty after loading");
 
     configuration.startupScene.clear();
     Check(ember::ProjectConfigurationStore::Save(projectFile, configuration, &error),
@@ -91,6 +107,17 @@ int main()
     configuration.name.clear();
     Check(!ember::ProjectConfigurationStore::Save(projectFile, configuration, &error),
           "Empty project names are rejected");
+
+    configuration.name = "Sample Game";
+    configuration.inputBindings["Invalid"] = {0};
+    Check(!ember::ProjectConfigurationStore::Save(projectFile, configuration, &error),
+          "Unknown scancode values are rejected");
+
+    std::ofstream(projectFile, std::ios::trunc)
+        << R"({"schema_version":1,"name":"Legacy","asset_directory":"assets","startup_scene":""})";
+    const auto legacy = ember::ProjectConfigurationStore::Load(projectFile, &error);
+    Check(legacy.has_value() && legacy->inputBindings.empty(),
+          "Version 1 project files migrate with empty input settings");
 
     std::ofstream(projectFile, std::ios::trunc)
         << R"({"schema_version":99,"name":"Future","asset_directory":"assets","startup_scene":""})";
