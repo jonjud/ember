@@ -144,10 +144,13 @@ if(BUILD_TESTING)
     add_executable(ember_asset_manager_tests
         tests/AssetManagerTests.cpp
         src/Engine/Resources/AssetManager.cpp
+        src/Engine/Resources/AssetRegistry.cpp
+        src/Engine/Resources/AssetMetadataStore.cpp
         src/Engine/Resources/AssetDirectory.cpp
         src/Engine/Resources/TextureCache.cpp
     )
     target_include_directories(ember_asset_manager_tests PRIVATE src)
+    target_link_libraries(ember_asset_manager_tests PRIVATE nlohmann_json::nlohmann_json)
     add_test(NAME ember_asset_manager_tests COMMAND ember_asset_manager_tests)
 endif()
 
