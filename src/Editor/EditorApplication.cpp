@@ -146,7 +146,7 @@ void EditorApplication::UpdatePlayMode()
     const float deltaSeconds = std::clamp(m_time.DeltaSeconds(), 0.0F, 0.05F);
     auto& position = entity->GetTransform().position;
     position.x += direction.x * inverseLength * movement.speed * deltaSeconds;
-    position.y += direction.y * inverseLength * m_playMovementSpeed * deltaSeconds;
+    position.y += direction.y * inverseLength * movement.speed * deltaSeconds;
 }
 
 void EditorApplication::Shutdown()

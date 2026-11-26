@@ -57,7 +57,6 @@ private:
     Scene m_playScene{"Play Scene"};
     bool m_isPlaying = false;
     Time m_time;
-    float m_playMovementSpeed = 240.0F;
     Camera2D m_viewportCamera;
     AssetRegistry m_assetRegistry{"assets"};
     AssetImportService m_assetImportService{"assets"};
