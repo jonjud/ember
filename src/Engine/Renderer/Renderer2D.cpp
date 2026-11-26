@@ -1,6 +1,7 @@
 #include "Engine/Renderer/Renderer2D.hpp"
 
 #include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
 
 #include <array>
 #include <cmath>
@@ -164,10 +165,10 @@ TextureHandle Renderer2D::LoadTexture(const std::string& filePath)
         return {};
     }
 
-    SDL_Surface* surface = SDL_LoadBMP(filePath.c_str());
+    SDL_Surface* surface = IMG_Load(filePath.c_str());
     if (surface == nullptr)
     {
-        std::cerr << "EMBER: Failed to load BMP '" << filePath << "': " << SDL_GetError() << '\n';
+        std::cerr << "EMBER: Failed to load image '" << filePath << "': " << SDL_GetError() << '\n';
         return {};
     }
 

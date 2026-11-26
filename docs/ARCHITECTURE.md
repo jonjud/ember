@@ -80,7 +80,7 @@ tests/
 
 - Construct an `AssetManager` with the project's asset folder (defaults to `assets/`).
 - Connect its texture backend after the renderer is initialized.
-- Use `LoadTexture("sprites/player.bmp")` with a path relative to the asset folder; paths that escape the folder are rejected.
+- Use `LoadTexture("sprites/player.png")` with a path relative to the asset folder; BMP, PNG, and JPEG files are supported.
 - Call `ReleaseTexture` once for each successful load when no component needs that reference anymore.
 - Call `Clear()` before shutting down the renderer.
 
@@ -97,11 +97,11 @@ The cache uses callbacks rather than SDL types. The AssetManager connects the va
 
 ## Renderer texture workflow
 
-- `Renderer2D::LoadTexture(path)` loads a BMP image through SDL3 and returns an engine-owned `TextureHandle`.
+- `Renderer2D::LoadTexture(path)` decodes BMP, PNG, and JPEG images through SDL3_image and returns an engine-owned `TextureHandle`.
 - `Renderer2D::DestroyTexture(handle)` releases an individual texture. Prefer the AssetManager for shared project assets.
 - Camera-aware sprite drawing applies object position, scale, rotation, camera conversion, and per-component RGBA tint.
 - Texture handles are lightweight, non-owning IDs; SDL texture pointers remain private to the renderer.
-- The first loader intentionally supports BMP only. PNG/JPEG support will be added behind the same interface.
+- Image decoding is isolated behind the existing `Renderer2D::LoadTexture` interface.
 
 ## Planned layers
 
@@ -119,7 +119,8 @@ Editor
 
 ## Dependency policy
 
-- SDL3: windowing, event handling, keyboard input, initial rendering backend, and BMP decoding.
+- SDL3: windowing, event handling, keyboard input, and initial rendering backend.
+- SDL3_image: BMP, PNG, and JPEG image decoding (stb_image backend).
 - Dear ImGui: planned editor interface; not part of the runtime core.
 - Box2D: planned 2D physics backend.
 - miniaudio: planned audio backend.
@@ -128,4 +129,4 @@ Third-party APIs should be hidden behind narrow engine-facing interfaces when do
 
 ## Next milestone
 
-Add PNG/JPEG decoding behind the existing renderer texture-loading interface, then build scene serialization on top of stable resource identifiers.
+Add a small sample asset project and asset metadata/import settings, then build scene serialization on top of stable resource identifiers.

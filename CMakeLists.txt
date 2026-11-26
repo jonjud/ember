@@ -26,6 +26,39 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(SDL3)
 
+# Keep SDL_image focused on the common 2D project formats.
+set(SDLIMAGE_SAMPLES OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_TESTS OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_INSTALL OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_VENDORED OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_BACKEND_STB ON CACHE BOOL "" FORCE)
+set(SDLIMAGE_BMP ON CACHE BOOL "" FORCE)
+set(SDLIMAGE_JPG ON CACHE BOOL "" FORCE)
+set(SDLIMAGE_PNG ON CACHE BOOL "" FORCE)
+set(SDLIMAGE_AVIF OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_GIF OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_JXL OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_LBM OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_PCX OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_PNM OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_QOI OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_SVG OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_TGA OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_TIF OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_WEBP OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_XCF OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_XPM OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_XV OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+    SDL3_image
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
+    GIT_TAG release-3.2.4
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(SDL3_image)
+
 add_library(ember_engine STATIC
     src/Engine/Core/Application.cpp
     src/Engine/Core/Time.cpp
@@ -39,7 +72,7 @@ add_library(ember_engine STATIC
 )
 
 target_include_directories(ember_engine PUBLIC src)
-target_link_libraries(ember_engine PUBLIC SDL3::SDL3)
+target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image)
 
 add_executable(ember_editor
     src/main.cpp
