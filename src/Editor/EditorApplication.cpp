@@ -7,14 +7,34 @@
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_sdlrenderer3.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <iostream>
+#include <vector>
 
 namespace
 {
 constexpr int kWindowWidth = 1440;
 constexpr int kWindowHeight = 900;
-constexpr float kMenuHeight = 24.0F;
+
+const char* AssetTypeName(ember::AssetType type)
+{
+    switch (type)
+    {
+    case ember::AssetType::Texture: return "Texture";
+    case ember::AssetType::Audio: return "Audio";
+    case ember::AssetType::Scene: return "Scene";
+    }
+    return "Unknown";
+}
+
+bool MatchesAssetType(ember::AssetType type, int filter)
+{
+    return filter == 0 ||
+        (filter == 1 && type == ember::AssetType::Texture) ||
+        (filter == 2 && type == ember::AssetType::Audio) ||
+        (filter == 3 && type == ember::AssetType::Scene);
+}
 }
 
 namespace ember
@@ -28,14 +48,14 @@ bool EditorApplication::Initialize()
 {
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
-        std::cerr << "EMBER Editor: SDL initialization failed: " << SDL_GetError() << '\\n';
+        std::cerr << "EMBER Editor: SDL initialization failed: " << SDL_GetError() << '\n';
         return false;
     }
 
     m_window = SDL_CreateWindow("EMBER Editor", kWindowWidth, kWindowHeight, SDL_WINDOW_RESIZABLE);
     if (m_window == nullptr)
     {
-        std::cerr << "EMBER Editor: Window creation failed: " << SDL_GetError() << '\\n';
+        std::cerr << "EMBER Editor: Window creation failed: " << SDL_GetError() << '\n';
         Shutdown();
         return false;
     }
@@ -43,7 +63,7 @@ bool EditorApplication::Initialize()
     m_renderer = SDL_CreateRenderer(m_window, nullptr);
     if (m_renderer == nullptr)
     {
-        std::cerr << "EMBER Editor: Renderer creation failed: " << SDL_GetError() << '\\n';
+        std::cerr << "EMBER Editor: Renderer creation failed: " << SDL_GetError() << '\n';
         Shutdown();
         return false;
     }
@@ -55,17 +75,18 @@ bool EditorApplication::Initialize()
 
     if (!ImGui_ImplSDL3_InitForSDLRenderer(m_window, m_renderer))
     {
-        std::cerr << "EMBER Editor: ImGui SDL3 platform initialization failed.\\n";
+        std::cerr << "EMBER Editor: ImGui SDL3 platform initialization failed.\n";
         Shutdown();
         return false;
     }
     if (!ImGui_ImplSDLRenderer3_Init(m_renderer))
     {
-        std::cerr << "EMBER Editor: ImGui SDL renderer initialization failed.\\n";
+        std::cerr << "EMBER Editor: ImGui SDL renderer initialization failed.\n";
         Shutdown();
         return false;
     }
 
+    RefreshAssets();
     m_isRunning = true;
     return true;
 }
@@ -177,6 +198,15 @@ void EditorApplication::DrawMenuBar()
         ImGui::EndMenu();
     }
 
+    if (ImGui::BeginMenu("Assets"))
+    {
+        if (ImGui::MenuItem("Refresh Asset Browser"))
+        {
+            RefreshAssets();
+        }
+        ImGui::EndMenu();
+    }
+
     ImGui::EndMainMenuBar();
 }
 
@@ -278,15 +308,120 @@ void EditorApplication::DrawAssetBrowser()
     ImGui::SetNextWindowSize(ImVec2(800.0F, 220.0F), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Asset Browser"))
     {
-        ImGui::TextDisabled("Asset registry integration is the next editor task.");
+        ImGui::Text("Asset root: %s", m_assetRegistry.GetDirectory().GetRoot().string().c_str());
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Refresh"))
+        {
+            RefreshAssets();
+        }
+        ImGui::SameLine();
+        ImGui::TextDisabled("%zu indexed assets | %zu diagnostics",
+            m_assetRegistry.GetAssetCount(), m_assetRegistry.GetDiagnostics().size());
+
+        ImGui::InputText("Search", m_assetSearch, sizeof(m_assetSearch));
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(120.0F);
+        ImGui::Combo("Type", &m_assetTypeFilter, "All\0Textures\0Audio\0Scenes\0");
+
+        std::vector<const AssetMetadata*> assets;
+        assets.reserve(m_assetRegistry.GetAssets().size());
+        for (const auto& [assetId, metadata] : m_assetRegistry.GetAssets())
+        {
+            (void)assetId;
+            if (!MatchesAssetType(metadata.type, m_assetTypeFilter))
+            {
+                continue;
+            }
+            const std::string source = metadata.source.generic_string();
+            if (m_assetSearch[0] != '\0' &&
+                metadata.assetId.find(m_assetSearch) == std::string::npos &&
+                source.find(m_assetSearch) == std::string::npos)
+            {
+                continue;
+            }
+            assets.push_back(&metadata);
+        }
+        std::sort(assets.begin(), assets.end(), [](const AssetMetadata* left, const AssetMetadata* right)
+        {
+            return left->source.generic_string() < right->source.generic_string();
+        });
+
+        if (ImGui::BeginTable("AssetList", 3,
+            ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+            ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY,
+            ImVec2(0.0F, 105.0F)))
+        {
+            ImGui::TableSetupColumn("Asset", ImGuiTableColumnFlags_WidthStretch, 0.45F);
+            ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 85.0F);
+            ImGui::TableSetupColumn("Source", ImGuiTableColumnFlags_WidthStretch, 0.55F);
+            ImGui::TableHeadersRow();
+
+            for (const AssetMetadata* metadata : assets)
+            {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                const bool selected = m_selectedAssetId == metadata->assetId;
+                const std::string label = metadata->assetId + "##asset";
+                if (ImGui::Selectable(label.c_str(), selected,
+                    ImGuiSelectableFlags_SpanAllColumns))
+                {
+                    m_selectedAssetId = metadata->assetId;
+                }
+
+                ImGui::TableSetColumnIndex(1);
+                ImGui::TextUnformatted(AssetTypeName(metadata->type));
+                ImGui::TableSetColumnIndex(2);
+                const std::string source = metadata->source.generic_string();
+                ImGui::TextUnformatted(source.c_str());
+            }
+            ImGui::EndTable();
+        }
+
+        const AssetMetadata* selected = m_assetRegistry.Find(m_selectedAssetId);
+        if (selected != nullptr)
+        {
+            ImGui::Separator();
+            ImGui::Text("Selected: %s", selected->assetId.c_str());
+            ImGui::SameLine();
+            ImGui::TextDisabled("(%s)", AssetTypeName(selected->type));
+            ImGui::Text("Source: %s", selected->source.generic_string().c_str());
+        }
+        else if (!m_selectedAssetId.empty())
+        {
+            ImGui::TextDisabled("The previously selected asset is no longer indexed.");
+        }
+
+        if (ImGui::CollapsingHeader("Import / Scan Diagnostics"))
+        {
+            const auto& diagnostics = m_assetRegistry.GetDiagnostics();
+            if (diagnostics.empty())
+            {
+                ImGui::TextDisabled("No asset diagnostics.");
+            }
+            else
+            {
+                for (const auto& diagnostic : diagnostics)
+                {
+                    ImGui::PushID(&diagnostic);
+                    ImGui::TextWrapped("%s: %s",
+                        diagnostic.path.string().c_str(), diagnostic.message.c_str());
+                    ImGui::PopID();
+                }
+            }
+        }
+
+        ImGui::Separator();
         ImGui::Text("Scene file: %s", m_scenePath);
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(220.0F);
         ImGui::InputText("Path", m_scenePath, sizeof(m_scenePath));
-        if (ImGui::Button("Save Scene"))
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Save Scene"))
         {
             SaveScene();
         }
         ImGui::SameLine();
-        if (ImGui::Button("Load Scene"))
+        if (ImGui::SmallButton("Load Scene"))
         {
             LoadScene();
         }
@@ -340,6 +475,28 @@ void EditorApplication::LoadScene()
     else
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Load failed: %.220s", error.c_str());
+    }
+}
+
+void EditorApplication::RefreshAssets()
+{
+    const bool scanSucceeded = m_assetRegistry.Scan();
+    if (!m_selectedAssetId.empty() && m_assetRegistry.Find(m_selectedAssetId) == nullptr)
+    {
+        m_selectedAssetId.clear();
+    }
+
+    if (scanSucceeded)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Asset scan complete: %zu assets, %zu diagnostics",
+            m_assetRegistry.GetAssetCount(), m_assetRegistry.GetDiagnostics().size());
+    }
+    else
+    {
+        const auto& diagnostics = m_assetRegistry.GetDiagnostics();
+        const char* reason = diagnostics.empty() ? "Asset scan failed." : diagnostics.front().message.c_str();
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Asset scan failed: %.210s", reason);
     }
 }
 } // namespace ember

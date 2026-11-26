@@ -49,7 +49,7 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Main editor layout (menu bar, hierarchy, inspector, asset browser, viewport placeholders)
 - [x] Scene hierarchy (create/select entities)
 - [x] Inspector (edit entity name, active state, transform, and render properties)
-- [ ] Asset browser
+- [x] Asset browser (registry-backed list, type filter, search, selection, refresh, diagnostics)
 - [ ] 2D viewport
 - [ ] Play / stop workflow
 
