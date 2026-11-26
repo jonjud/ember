@@ -22,6 +22,8 @@ src/
 │   │   ├── Camera2D.hpp/.cpp
 │   │   └── Renderer2D.hpp/.cpp
 │   └── Scene/
+│       ├── Entity.hpp
+│       ├── Scene.hpp/.cpp
 │       └── Transform2D.hpp
 └── main.cpp
 ```
@@ -32,10 +34,23 @@ src/
 - **Core / Time:** measures frame delta time using SDL's high-resolution performance counter.
 - **Platform / Input:** exposes keyboard state through an engine-facing API.
 - **Math / Vector2:** engine-owned 2D vector type, independent of SDL.
+- **Scene / Entity:** provides a stable 64-bit entity ID, name, active state, and owned Transform2D.
+- **Scene / Scene:** owns entities, creates and destroys them, looks them up by ID, and returns IDs in deterministic order. Entity references remain stable when other entities are inserted; destroying that entity invalidates its reference.
 - **Scene / Transform2D:** stores an object's world position, scale, and rotation in radians.
 - **Renderer / Camera2D:** converts world positions and sizes into screen coordinates and applies camera zoom and rotation.
 - **Renderer / Renderer2D:** owns the SDL renderer, draws primitives and sprites, and manages loaded texture lifetimes.
 - **main.cpp:** contains only the process entry point.
+
+## Scene and entity workflow
+
+- Construct a `Scene`, optionally providing its name.
+- Call `CreateEntity(name)` to create an entity and receive a stable reference.
+- Read or update its transform through `GetTransform()`.
+- Use `GetId()` to retain its identity and `FindEntity(id)` to look it up later.
+- Call `DestroyEntity(id)` to remove one entity or `Clear()` to remove all entities.
+- Entity IDs are monotonically assigned and are not reused during a scene's lifetime. ID exhaustion is reported with `std::overflow_error`.
+
+The scene model is currently independent of the application loop and renderer. The next step is to make the active scene part of the runtime and render active entities.
 
 ## Renderer texture workflow
 
@@ -73,4 +88,4 @@ Third-party APIs should be hidden behind narrow engine-facing interfaces when do
 
 ## Next milestone
 
-Introduce a scene/entity model and connect it to the existing transform and camera-aware renderer.
+Connect Scene to the application lifecycle and render active entities using their Transform2D data and the existing camera-aware Renderer2D API.

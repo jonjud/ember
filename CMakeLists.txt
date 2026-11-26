@@ -28,6 +28,7 @@ FetchContent_MakeAvailable(SDL3)
 add_library(ember_engine STATIC
     src/Engine/Core/Application.cpp
     src/Engine/Core/Time.cpp
+    src/Engine/Scene/Scene.cpp
     src/Engine/Renderer/Camera2D.cpp
     src/Engine/Platform/Input.cpp
     src/Engine/Renderer/Renderer2D.cpp
