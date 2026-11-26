@@ -2,19 +2,27 @@
 
 A lightweight, 2D-first game engine written in modern C++.
 
-EMBER is being built from the ground up. The first milestone focuses on a reliable desktop foundation: window creation, the main loop, input handling, and a simple 2D renderer.
+EMBER is being built from the ground up. The project currently focuses on a modular desktop foundation: application lifecycle, frame timing, keyboard input, and a simple movement/rendering test.
 
 ## Project status
 
 **Early development — Phase 1: Engine Foundation**
 
-See [ROADMAP.md](docs/ROADMAP.md) for the planned milestones.
+See [ROADMAP.md](docs/ROADMAP.md) for planned milestones and [ARCHITECTURE.md](docs/ARCHITECTURE.md) for the current design.
 
 ## Technology
 
 - C++20
-- CMake
-- SDL3 (windowing, input, and initial 2D rendering)
+- CMake 3.24+
+- SDL3
+
+## Current prototype
+
+- Opens a resizable 1280×720 window.
+- Moves a test rectangle with WASD or arrow keys.
+- Uses frame delta time for consistent movement speed.
+- Normalizes diagonal movement.
+- Press Escape to quit.
 
 ## Build
 
@@ -38,11 +46,15 @@ Run the executable:
 ```text
 EMBER/
 ├── docs/
+│   ├── ARCHITECTURE.md
+│   └── ROADMAP.md
 ├── src/
+│   ├── Engine/
+│   │   ├── Core/
+│   │   └── Platform/
 │   └── main.cpp
 ├── .gitignore
-├── CMakeLists.txt
-└── README.md
+└── CMakeLists.txt
 ```
 
 ## Design principles
