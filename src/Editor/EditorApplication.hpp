@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 struct SDL_Renderer;
 struct SDL_Texture;
@@ -38,6 +39,7 @@ private:
     void DrawSceneHierarchy();
     void DrawInspector();
     void DrawAssetBrowser();
+    void DrawInputSettings();
     void DrawViewport();
     void CreateEntity();
     void StartPlayMode();
@@ -59,6 +61,10 @@ private:
     bool m_isPlaying = false;
     Time m_time;
     InputMap m_inputMap = InputMap::CreateDefaultMovementMap();
+    std::vector<std::string> m_customInputActions;
+    std::string m_rebindAction;
+    bool m_replaceActionOnRebind = true;
+    char m_newInputActionName[64]{};
     Camera2D m_viewportCamera;
     AssetRegistry m_assetRegistry{"assets"};
     AssetImportService m_assetImportService{"assets"};

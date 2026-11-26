@@ -184,6 +184,29 @@ void EditorApplication::ProcessEvents()
         }
         else if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat)
         {
+            if (!m_rebindAction.empty())
+            {
+                if (event.key.scancode == SDL_SCANCODE_ESCAPE)
+                {
+                    m_rebindAction.clear();
+                    std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Key binding cancelled");
+                }
+                else if (event.key.scancode != SDL_SCANCODE_UNKNOWN)
+                {
+                    if (m_replaceActionOnRebind)
+                    {
+                        m_inputMap.ClearAction(m_rebindAction);
+                    }
+                    const std::string action = m_rebindAction;
+                    const bool added = m_inputMap.BindAction(action, event.key.scancode);
+                    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                        added ? "Bound %s to %s" : "%s already uses that key",
+                        added ? action.c_str() : action.c_str());
+                    m_rebindAction.clear();
+                }
+                continue;
+            }
+
             const ImGuiIO& io = ImGui::GetIO();
             if (!io.WantCaptureKeyboard && !io.WantTextInput)
             {
@@ -210,6 +233,7 @@ void EditorApplication::Render()
     DrawSceneHierarchy();
     DrawInspector();
     DrawAssetBrowser();
+    DrawInputSettings();
     DrawViewport();
 
     ImGui::SetNextWindowPos(ImVec2(0.0F, 0.0F), ImGuiCond_Always);
@@ -353,6 +377,105 @@ void EditorApplication::DrawInspector()
             }
         }
         ImGui::EndDisabled();
+    }
+    ImGui::End();
+}
+
+void EditorApplication::DrawInputSettings()
+{
+    ImGui::SetNextWindowPos(ImVec2(1080.0F, 620.0F), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(360.0F, 260.0F), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Input Settings"))
+    {
+        ImGui::TextDisabled("Play Mode keyboard actions");
+        if (!m_rebindAction.empty())
+        {
+            ImGui::TextColored(ImVec4(1.0F, 0.78F, 0.25F, 1.0F),
+                "Press a key for %s (Esc to cancel)", m_rebindAction.c_str());
+        }
+
+        const auto drawActionRow = [this](const std::string& action)
+        {
+            ImGui::PushID(action.c_str());
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::TextUnformatted(action.c_str());
+            ImGui::TableSetColumnIndex(1);
+            const auto& bindings = m_inputMap.GetBindings(action);
+            if (bindings.empty())
+            {
+                ImGui::TextDisabled("Unbound");
+            }
+            else
+            {
+                for (std::size_t i = 0; i < bindings.size(); ++i)
+                {
+                    if (i > 0) ImGui::SameLine();
+                    const char* keyName = SDL_GetScancodeName(bindings[i]);
+                    ImGui::Text("%s", keyName != nullptr && keyName[0] != '\\0' ? keyName : "Unknown");
+                }
+            }
+            ImGui::TableSetColumnIndex(2);
+            if (ImGui::SmallButton("Rebind"))
+            {
+                m_rebindAction = action;
+                m_replaceActionOnRebind = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::SmallButton("+Key"))
+            {
+                m_rebindAction = action;
+                m_replaceActionOnRebind = false;
+            }
+            ImGui::SameLine();
+            if (ImGui::SmallButton("Clear"))
+            {
+                m_inputMap.ClearAction(action);
+            }
+            ImGui::PopID();
+        };
+
+        if (ImGui::BeginTable("InputActionBindings", 3,
+            ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+            ImGuiTableFlags_SizingStretchProp))
+        {
+            ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, 92.0F);
+            ImGui::TableSetupColumn("Keys", ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Edit", ImGuiTableColumnFlags_WidthFixed, 150.0F);
+            ImGui::TableHeadersRow();
+
+            drawActionRow("MoveLeft");
+            drawActionRow("MoveRight");
+            drawActionRow("MoveUp");
+            drawActionRow("MoveDown");
+            for (const std::string& action : m_customInputActions)
+            {
+                drawActionRow(action);
+            }
+            ImGui::EndTable();
+        }
+
+        ImGui::Separator();
+        ImGui::SetNextItemWidth(180.0F);
+        ImGui::InputText("New action", m_newInputActionName, sizeof(m_newInputActionName));
+        ImGui::SameLine();
+        if (ImGui::Button("Add + Bind"))
+        {
+            const std::string action = m_newInputActionName;
+            if (!action.empty())
+            {
+                if (std::find(m_customInputActions.begin(), m_customInputActions.end(), action)
+                    == m_customInputActions.end())
+                {
+                    m_customInputActions.push_back(action);
+                }
+                m_rebindAction = action;
+                m_replaceActionOnRebind = false;
+                std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                    "Press a key to bind action: %.180s", action.c_str());
+            }
+        }
+        ImGui::TextDisabled("Rebind replaces keys; +Key adds another. Changes are session-only for now.");
     }
     ImGui::End();
 }
