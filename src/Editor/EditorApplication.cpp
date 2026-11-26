@@ -199,9 +199,18 @@ void EditorApplication::ProcessEvents()
                     }
                     const std::string action = m_rebindAction;
                     const bool added = m_inputMap.BindAction(action, event.key.scancode);
-                    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-                        added ? "Bound %s to %s" : "%s already uses that key",
-                        added ? action.c_str() : action.c_str());
+                    const char* keyName = SDL_GetScancodeName(event.key.scancode);
+                    if (added)
+                    {
+                        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                            "Bound %.100s to %.100s", action.c_str(),
+                            keyName != nullptr ? keyName : "Unknown");
+                    }
+                    else
+                    {
+                        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                            "%.180s already uses that key", action.c_str());
+                    }
                     m_rebindAction.clear();
                 }
                 continue;
@@ -412,7 +421,7 @@ void EditorApplication::DrawInputSettings()
                 {
                     if (i > 0) ImGui::SameLine();
                     const char* keyName = SDL_GetScancodeName(bindings[i]);
-                    ImGui::Text("%s", keyName != nullptr && keyName[0] != '\\0' ? keyName : "Unknown");
+                    ImGui::Text("%s", keyName != nullptr && keyName[0] != '\0' ? keyName : "Unknown");
                 }
             }
             ImGui::TableSetColumnIndex(2);
