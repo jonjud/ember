@@ -44,6 +44,7 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Load the configured startup scene when the editor opens
 - [x] Editor Scene Manager: create, load, save, and choose startup scene
 - [x] Open scene assets directly from the Asset Browser
+- [x] Track scene dirty state and show Save / Discard / Cancel before scene switches
 - [x] Versioned JSON scene serialization with stable entity and asset IDs
 - [ ] Collision and Box2D integration
 

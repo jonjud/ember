@@ -295,6 +295,7 @@ void EditorApplication::Render()
     DrawInputSettings();
     DrawProjectSettings();
     DrawViewport();
+    DrawUnsavedChangesModal();
 
     ImGui::SetNextWindowPos(ImVec2(0.0F, 0.0F), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(1440.0F, 24.0F), ImGuiCond_Always);
@@ -323,7 +324,7 @@ void EditorApplication::DrawMenuBar()
     if (ImGui::BeginMenu("File"))
     {
         ImGui::BeginDisabled(m_isPlaying);
-        if (ImGui::MenuItem("Save Scene", "Ctrl+S")) SaveScene();
+        if (ImGui::MenuItem("Save Scene", "Ctrl+S")) (void)SaveScene();
         if (ImGui::MenuItem("Load Scene")) LoadScene();
         ImGui::EndDisabled();
         ImGui::Separator();
@@ -360,7 +361,8 @@ void EditorApplication::DrawSceneHierarchy()
     if (ImGui::Begin("Scene Hierarchy"))
     {
         Scene& activeScene = GetActiveScene();
-        ImGui::Text("%s", activeScene.GetName().c_str());
+        ImGui::Text("%s%s", activeScene.GetName().c_str(),
+            (!m_isPlaying && m_sceneDirty) ? " *" : "");
         ImGui::SameLine();
         ImGui::BeginDisabled(m_isPlaying);
         if (ImGui::SmallButton("+")) CreateEntity();
@@ -399,26 +401,34 @@ void EditorApplication::DrawInspector()
         {
             char name[128]{};
             std::snprintf(name, sizeof(name), "%s", entity->GetName().c_str());
-            if (ImGui::InputText("Name", name, sizeof(name))) entity->SetName(name);
+            if (ImGui::InputText("Name", name, sizeof(name)))
+            {
+                entity->SetName(name);
+                MarkSceneDirty();
+            }
 
             bool active = entity->IsActive();
-            if (ImGui::Checkbox("Active", &active)) entity->SetActive(active);
+            if (ImGui::Checkbox("Active", &active))
+            {
+                entity->SetActive(active);
+                MarkSceneDirty();
+            }
 
             ImGui::SeparatorText("Transform");
             auto& transform = entity->GetTransform();
-            ImGui::DragFloat2("Position", &transform.position.x, 0.1F);
-            ImGui::DragFloat2("Scale", &transform.scale.x, 0.01F);
-            ImGui::DragFloat("Rotation (rad)", &transform.rotation, 0.01F);
+            if (ImGui::DragFloat2("Position", &transform.position.x, 0.1F)) MarkSceneDirty();
+            if (ImGui::DragFloat2("Scale", &transform.scale.x, 0.01F)) MarkSceneDirty();
+            if (ImGui::DragFloat("Rotation (rad)", &transform.rotation, 0.01F)) MarkSceneDirty();
 
             ImGui::SeparatorText("Movement");
             auto& movement = entity->GetMovementComponent();
-            ImGui::Checkbox("Enable keyboard movement", &movement.enabled);
-            ImGui::DragFloat("Movement speed", &movement.speed, 1.0F, 0.0F, 2000.0F);
+            if (ImGui::Checkbox("Enable keyboard movement", &movement.enabled)) MarkSceneDirty();
+            if (ImGui::DragFloat("Movement speed", &movement.speed, 1.0F, 0.0F, 2000.0F)) MarkSceneDirty();
 
             ImGui::SeparatorText("Renderer");
             auto& render = entity->GetRenderComponent();
-            ImGui::Checkbox("Visible", &render.visible);
-            ImGui::DragFloat2("Size", &render.size.x, 0.5F, 0.0F, 4096.0F);
+            if (ImGui::Checkbox("Visible", &render.visible)) MarkSceneDirty();
+            if (ImGui::DragFloat2("Size", &render.size.x, 0.5F, 0.0F, 4096.0F)) MarkSceneDirty();
             int color[4]{render.red, render.green, render.blue, render.alpha};
             if (ImGui::InputInt4("Tint RGBA", color))
             {
@@ -426,6 +436,7 @@ void EditorApplication::DrawInspector()
                 render.green = static_cast<std::uint8_t>(std::clamp(color[1], 0, 255));
                 render.blue = static_cast<std::uint8_t>(std::clamp(color[2], 0, 255));
                 render.alpha = static_cast<std::uint8_t>(std::clamp(color[3], 0, 255));
+                MarkSceneDirty();
             }
 
             ImGui::Separator();
@@ -434,6 +445,7 @@ void EditorApplication::DrawInspector()
                 const EntityId id = entity->GetId();
                 (void)m_scene.DestroyEntity(id);
                 m_selectedEntity = 0;
+                MarkSceneDirty();
             }
         }
         ImGui::EndDisabled();
@@ -747,9 +759,7 @@ void EditorApplication::DrawAssetBrowser()
                     m_projectConfiguration.assetDirectory / selected->source;
                 if (ImGui::Button("Open Selected Scene"))
                 {
-                    const std::string path = projectRelativeScene.generic_string();
-                    std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", path.c_str());
-                    LoadScene();
+                    RequestLoadScene(projectRelativeScene);
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Set as Startup Scene"))
@@ -828,23 +838,17 @@ void EditorApplication::DrawAssetBrowser()
         ImGui::InputText("Project-relative scene path", m_scenePath, sizeof(m_scenePath));
         if (ImGui::Button("New Scene"))
         {
-            m_scene = Scene("Untitled Scene");
-            m_selectedEntity = 0;
-            const std::string path =
-                (m_projectConfiguration.assetDirectory / "scenes/untitled.emberscene").generic_string();
-            std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", path.c_str());
-            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-                "New empty scene created (not saved yet)");
+            RequestNewScene(m_projectConfiguration.assetDirectory / "scenes/untitled.emberscene");
         }
         ImGui::SameLine();
         if (ImGui::Button("Load Scene")) LoadScene();
         ImGui::SameLine();
-        if (ImGui::Button("Save Scene")) SaveScene();
+        if (ImGui::Button("Save Scene")) (void)SaveScene();
         ImGui::SameLine();
         if (ImGui::Button("Set Current as Startup"))
         {
             std::snprintf(m_startupScenePath, sizeof(m_startupScenePath),
-                "%s", m_scenePath);
+                "%s", m_currentScenePath.generic_string().c_str());
             if (SaveProjectSettings())
             {
                 std::snprintf(m_statusMessage, sizeof(m_statusMessage),
@@ -852,7 +856,8 @@ void EditorApplication::DrawAssetBrowser()
             }
         }
         ImGui::EndDisabled();
-        ImGui::TextDisabled("Scene paths are relative to the project file. New Scene replaces the current in-memory scene.");
+        ImGui::TextDisabled("Load path is project-relative. Save Scene writes to the current scene path.");
+        ImGui::TextDisabled(m_sceneDirty ? "Unsaved scene changes (*)" : "Scene saved");
     }
     ImGui::End();
 }
@@ -1296,6 +1301,16 @@ void EditorApplication::DrawViewport()
                         transform.position.y = SnapValue(transform.position.y, m_positionSnap);
                     }
                 }
+
+                const auto& current = entity->GetTransform();
+                if (current.position.x != m_dragStartEntityPosition.x ||
+                    current.position.y != m_dragStartEntityPosition.y ||
+                    current.rotation != m_dragStartEntityRotation ||
+                    current.scale.x != m_dragStartEntityScale.x ||
+                    current.scale.y != m_dragStartEntityScale.y)
+                {
+                    MarkSceneDirty();
+                }
             }
             else
             {
@@ -1509,62 +1524,150 @@ void EditorApplication::CreateEntity()
     if (m_isPlaying) return;
     Entity& entity = m_scene.CreateEntity("Entity");
     m_selectedEntity = entity.GetId();
+    MarkSceneDirty();
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Created entity %llu", static_cast<unsigned long long>(m_selectedEntity));
 }
 
-void EditorApplication::SaveScene()
+bool EditorApplication::SaveScene()
 {
-    if (m_isPlaying) return;
+    if (m_isPlaying) return false;
     const auto resolvedPath = ResolveProjectScenePath(
-        m_projectFilePath, m_projectConfiguration, m_scenePath);
+        m_projectFilePath, m_projectConfiguration, m_currentScenePath);
     if (!resolvedPath)
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-            "Scene path must be a safe project-relative path");
-        return;
+            "Current scene path must be a safe project-relative path");
+        return false;
     }
 
     std::string error;
     if (SceneSerializer::Save(m_scene, *resolvedPath, &error))
     {
+        m_sceneDirty = false;
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-            "Saved scene: %.200s", m_scenePath);
+            "Saved scene: %.200s", m_currentScenePath.generic_string().c_str());
         (void)m_assetRegistry.Scan();
+        return true;
     }
-    else
-    {
-        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-            "Save failed: %.220s", error.c_str());
-    }
+
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+        "Save failed: %.220s", error.c_str());
+    return false;
 }
 
 void EditorApplication::LoadScene()
 {
     if (m_isPlaying) return;
+    RequestLoadScene(m_scenePath);
+}
+
+bool EditorApplication::LoadSceneFromPath(const std::filesystem::path& path)
+{
     const auto resolvedPath = ResolveProjectScenePath(
-        m_projectFilePath, m_projectConfiguration, m_scenePath);
+        m_projectFilePath, m_projectConfiguration, path);
     if (!resolvedPath)
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "Scene path must be a safe project-relative path");
-        return;
+        return false;
     }
 
     Scene loadedScene;
     std::string error;
-    if (SceneSerializer::Load(loadedScene, *resolvedPath, &error))
-    {
-        m_scene = std::move(loadedScene);
-        m_selectedEntity = 0;
-        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-            "Loaded scene: %.200s", m_scenePath);
-    }
-    else
+    if (!SceneSerializer::Load(loadedScene, *resolvedPath, &error))
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "Load failed: %.220s", error.c_str());
+        return false;
     }
+
+    m_scene = std::move(loadedScene);
+    m_currentScenePath = path;
+    std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", path.generic_string().c_str());
+    m_selectedEntity = 0;
+    m_sceneDirty = false;
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+        "Loaded scene: %.200s", path.generic_string().c_str());
+    return true;
+}
+
+void EditorApplication::RequestNewScene(const std::filesystem::path& path)
+{
+    if (m_isPlaying) return;
+    m_pendingSceneChange = 1;
+    m_pendingScenePath = path;
+    if (m_sceneDirty) ImGui::OpenPopup("Unsaved Scene Changes");
+    else ApplyPendingSceneChange();
+}
+
+void EditorApplication::RequestLoadScene(const std::filesystem::path& path)
+{
+    if (m_isPlaying) return;
+    m_pendingSceneChange = 2;
+    m_pendingScenePath = path;
+    if (m_sceneDirty) ImGui::OpenPopup("Unsaved Scene Changes");
+    else ApplyPendingSceneChange();
+}
+
+void EditorApplication::ApplyPendingSceneChange()
+{
+    const int change = m_pendingSceneChange;
+    const std::filesystem::path path = m_pendingScenePath;
+    if (change == 1)
+    {
+        m_scene = Scene("Untitled Scene");
+        m_currentScenePath = path;
+        m_selectedEntity = 0;
+        m_sceneDirty = true;
+        std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", path.generic_string().c_str());
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "New empty scene created (not saved yet)");
+    }
+    else if (change == 2)
+    {
+        (void)LoadSceneFromPath(path);
+    }
+    m_pendingSceneChange = 0;
+    m_pendingScenePath.clear();
+}
+
+void EditorApplication::DrawUnsavedChangesModal()
+{
+    if (m_pendingSceneChange == 0) return;
+    if (ImGui::BeginPopupModal("Unsaved Scene Changes", nullptr,
+        ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted("The current scene has unsaved changes.");
+        ImGui::TextUnformatted("Save before switching scenes?");
+        if (ImGui::Button("Save", ImVec2(110.0F, 0.0F)))
+        {
+            if (SaveScene())
+            {
+                ApplyPendingSceneChange();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Discard", ImVec2(110.0F, 0.0F)))
+        {
+            ApplyPendingSceneChange();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(110.0F, 0.0F)))
+        {
+            m_pendingSceneChange = 0;
+            m_pendingScenePath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void EditorApplication::MarkSceneDirty()
+{
+    if (!m_isPlaying) m_sceneDirty = true;
 }
 
 void EditorApplication::LoadStartupScene()
@@ -1602,6 +1705,8 @@ void EditorApplication::LoadStartupScene()
 
     m_scene = std::move(loadedScene);
     m_selectedEntity = 0;
+    m_sceneDirty = false;
+    m_currentScenePath = m_projectConfiguration.startupScene;
     std::snprintf(m_scenePath, sizeof(m_scenePath), "%s",
         m_projectConfiguration.startupScene.generic_string().c_str());
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
