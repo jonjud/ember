@@ -17,7 +17,7 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 
 ## Phase 2 — 2D Core
 
-- [ ] Renderer2D abstraction
+- [x] Renderer2D abstraction
 - [ ] Texture and asset loading
 - [ ] Sprite rendering
 - [ ] Transform and 2D camera

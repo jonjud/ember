@@ -14,19 +14,22 @@ src/
 │   ├── Core/
 │   │   ├── Application.hpp/.cpp
 │   │   └── Time.hpp/.cpp
-│   └── Platform/
-│       └── Input.hpp/.cpp
+│   ├── Platform/
+│   │   └── Input.hpp/.cpp
+│   └── Renderer/
+│       └── Renderer2D.hpp/.cpp
 └── main.cpp
 ```
 
 ## Current responsibilities
 
-- **Core / Application:** owns the SDL window and renderer, runs the event/update/render loop, and controls application lifetime.
+- **Core / Application:** owns the SDL window and runs the event/update/render loop.
 - **Core / Time:** measures frame delta time using SDL's high-resolution performance counter.
 - **Platform / Input:** exposes keyboard state through an engine-facing API.
+- **Renderer / Renderer2D:** owns the SDL renderer and provides clear, filled-rectangle, and present operations.
 - **main.cpp:** contains only the process entry point.
 
-The current render test is a movable rectangle. WASD and arrow keys move it; Escape exits. Movement uses delta time and is normalized diagonally.
+The current render test is a movable rectangle. WASD and arrow keys move it; Escape exits. Movement uses delta time and is normalized diagonally. The renderer requests VSync to avoid an unrestricted render loop where the platform supports it.
 
 ## Planned layers
 
@@ -53,4 +56,4 @@ Third-party APIs should be hidden behind narrow engine-facing interfaces when do
 
 ## Next milestone
 
-Separate rendering from application orchestration by introducing a small Renderer2D interface. Then add texture loading and render a sprite before introducing scenes or entities.
+Add a texture resource abstraction and sprite drawing. Keep image loading and lifetime management out of the application loop.

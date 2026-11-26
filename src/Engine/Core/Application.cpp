@@ -2,6 +2,8 @@
 
 #include "Engine/Platform/Input.hpp"
 
+#include <SDL3/SDL.h>
+
 #include <algorithm>
 #include <iostream>
 
@@ -29,15 +31,21 @@ bool Application::Initialize()
         return false;
     }
 
-    if (!SDL_CreateWindowAndRenderer(
-            "EMBER Engine",
-            kWindowWidth,
-            kWindowHeight,
-            SDL_WINDOW_RESIZABLE,
-            &m_window,
-            &m_renderer))
+    m_window = SDL_CreateWindow(
+        "EMBER Engine",
+        kWindowWidth,
+        kWindowHeight,
+        SDL_WINDOW_RESIZABLE);
+
+    if (m_window == nullptr)
     {
         std::cerr << "EMBER: Window creation failed: " << SDL_GetError() << '\n';
+        Shutdown();
+        return false;
+    }
+
+    if (!m_renderer.Initialize(m_window))
+    {
         Shutdown();
         return false;
     }
@@ -64,11 +72,7 @@ void Application::Run()
 
 void Application::Shutdown()
 {
-    if (m_renderer != nullptr)
-    {
-        SDL_DestroyRenderer(m_renderer);
-        m_renderer = nullptr;
-    }
+    m_renderer.Shutdown();
 
     if (m_window != nullptr)
     {
@@ -146,18 +150,15 @@ void Application::Render()
     int windowHeight = 0;
     SDL_GetWindowSize(m_window, &windowWidth, &windowHeight);
 
-    SDL_SetRenderDrawColor(m_renderer, 24, 27, 36, 255);
-    SDL_RenderClear(m_renderer);
-
-    const SDL_FRect playerRect{
+    m_renderer.Clear(24, 27, 36);
+    m_renderer.DrawFilledRect(
         m_playerX,
         m_playerY,
         std::min(kPlayerSize, static_cast<float>(windowWidth)),
-        std::min(kPlayerSize, static_cast<float>(windowHeight))
-    };
-
-    SDL_SetRenderDrawColor(m_renderer, 91, 160, 255, 255);
-    SDL_RenderFillRect(m_renderer, &playerRect);
-    SDL_RenderPresent(m_renderer);
+        std::min(kPlayerSize, static_cast<float>(windowHeight)),
+        91,
+        160,
+        255);
+    m_renderer.Present();
 }
 } // namespace ember

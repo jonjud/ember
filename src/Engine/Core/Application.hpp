@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Engine/Core/Time.hpp"
+#include "Engine/Renderer/Renderer2D.hpp"
 
-#include <SDL3/SDL.h>
+struct SDL_Window;
 
 namespace ember
 {
@@ -25,7 +26,7 @@ private:
     void Render();
 
     SDL_Window* m_window = nullptr;
-    SDL_Renderer* m_renderer = nullptr;
+    Renderer2D m_renderer;
     bool m_isRunning = false;
     float m_playerX = 0.0F;
     float m_playerY = 0.0F;

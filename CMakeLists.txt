@@ -29,6 +29,7 @@ add_library(ember_engine STATIC
     src/Engine/Core/Application.cpp
     src/Engine/Core/Time.cpp
     src/Engine/Platform/Input.cpp
+    src/Engine/Renderer/Renderer2D.cpp
 )
 
 target_include_directories(ember_engine PUBLIC src)
