@@ -157,7 +157,9 @@ void Renderer2D::DrawFilledRect(
                        static_cast<int>(vertices.size()), indices, 6);
 }
 
-TextureHandle Renderer2D::LoadTexture(const std::string& filePath)
+TextureHandle Renderer2D::LoadTexture(
+    const std::string& filePath,
+    const TextureImportSettings& settings)
 {
     if (m_renderer == nullptr || filePath.empty())
     {
@@ -172,12 +174,76 @@ TextureHandle Renderer2D::LoadTexture(const std::string& filePath)
         return {};
     }
 
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(m_renderer, surface);
+    SDL_Surface* uploadSurface = surface;
+    if (settings.premultiplyAlpha)
+    {
+        uploadSurface = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
+        if (uploadSurface == nullptr)
+        {
+            std::cerr << "EMBER: Failed to convert image for premultiplied alpha '" << filePath
+                      << "': " << SDL_GetError() << '\n';
+            SDL_DestroySurface(surface);
+            return {};
+        }
+
+        if (SDL_MUSTLOCK(uploadSurface) && !SDL_LockSurface(uploadSurface))
+        {
+            std::cerr << "EMBER: Failed to lock image for alpha processing '" << filePath
+                      << "': " << SDL_GetError() << '\n';
+            SDL_DestroySurface(uploadSurface);
+            SDL_DestroySurface(surface);
+            return {};
+        }
+
+        for (int y = 0; y < uploadSurface->h; ++y)
+        {
+            auto* row = static_cast<std::uint8_t*>(uploadSurface->pixels)
+                      + static_cast<std::ptrdiff_t>(y) * uploadSurface->pitch;
+            for (int x = 0; x < uploadSurface->w; ++x)
+            {
+                std::uint8_t* pixel = row + static_cast<std::ptrdiff_t>(x) * 4;
+                const unsigned int alpha = pixel[3];
+                pixel[0] = static_cast<std::uint8_t>((static_cast<unsigned int>(pixel[0]) * alpha + 127U) / 255U);
+                pixel[1] = static_cast<std::uint8_t>((static_cast<unsigned int>(pixel[1]) * alpha + 127U) / 255U);
+                pixel[2] = static_cast<std::uint8_t>((static_cast<unsigned int>(pixel[2]) * alpha + 127U) / 255U);
+            }
+        }
+
+        if (SDL_MUSTLOCK(uploadSurface))
+        {
+            SDL_UnlockSurface(uploadSurface);
+        }
+    }
+
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(m_renderer, uploadSurface);
+    if (uploadSurface != surface)
+    {
+        SDL_DestroySurface(uploadSurface);
+    }
     SDL_DestroySurface(surface);
 
     if (texture == nullptr)
     {
         std::cerr << "EMBER: Failed to create texture from '" << filePath << "': " << SDL_GetError() << '\n';
+        return {};
+    }
+
+    const SDL_ScaleMode scaleMode = settings.filter == TextureFilter::Linear
+        ? SDL_SCALEMODE_LINEAR
+        : SDL_SCALEMODE_NEAREST;
+    if (!SDL_SetTextureScaleMode(texture, scaleMode))
+    {
+        std::cerr << "EMBER: Failed to apply texture filtering for '" << filePath
+                  << "': " << SDL_GetError() << '\n';
+        SDL_DestroyTexture(texture);
+        return {};
+    }
+
+    if (settings.premultiplyAlpha && !SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND_PREMULTIPLIED))
+    {
+        std::cerr << "EMBER: Failed to apply premultiplied alpha blending for '" << filePath
+                  << "': " << SDL_GetError() << '\n';
+        SDL_DestroyTexture(texture);
         return {};
     }
 
