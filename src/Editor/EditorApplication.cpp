@@ -133,6 +133,21 @@ void EditorApplication::ProcessEvents()
         {
             m_isRunning = false;
         }
+        else if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat)
+        {
+            const ImGuiIO& io = ImGui::GetIO();
+            if (!io.WantCaptureKeyboard && !io.WantTextInput)
+            {
+                if (event.key.key == SDLK_F5 && (event.key.mod & SDL_KMOD_SHIFT) != 0)
+                {
+                    StopPlayMode();
+                }
+                else if (event.key.key == SDLK_F5)
+                {
+                    StartPlayMode();
+                }
+            }
+        }
     }
 }
 
