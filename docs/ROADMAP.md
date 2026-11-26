@@ -1,94 +1,80 @@
 # EMBER Engine Roadmap
 
-EMBER is developed as a 2D-first engine. Each milestone should produce a runnable, testable result before the next layer is added.
+EMBER is a 2D-first engine. Each milestone should produce a buildable, testable result before the next layer is added.
 
 ## Phase 1 — Engine Foundation
 
-- [x] Initialize the CMake project
-- [x] Integrate SDL3
-- [x] Create an application entry point
-- [x] Create a window and event loop
-- [x] Extract the application lifecycle into an engine module
-- [x] Add high-resolution frame timing
-- [x] Add a keyboard input adapter
-- [x] Add a frame-rate-independent movement test
-- [x] Verify Windows CI build
+- [x] Initialize CMake project and integrate SDL3
+- [x] Application entry point, window, and event loop
+- [x] High-resolution frame timing
+- [x] Keyboard input adapter
+- [x] Frame-rate-independent movement proof of concept
+- [x] Windows CI build
 - [ ] Verify interactive runtime behavior on Windows
 - [ ] Add logging and diagnostics
 
-## Phase 2 — 2D Core
+## Phase 2 — 2D Core and Project Assets
 
-- [x] Renderer2D abstraction
-- [x] BMP texture loading
-- [x] PNG/JPEG image decoding through SDL3_image
-- [x] Texture handle lifetime management
-- [x] Sprite drawing API
-- [x] Basic Transform2D position and scale
-- [x] Camera2D world-to-screen conversion and zoom
-- [x] Transform rotation and camera rotation
-- [x] Camera-aware transformed rectangle and sprite drawing
-- [x] Scene and entity model
-- [x] Connect active Scene to the application/render loop
-- [x] Add a basic render component for texture-backed sprites
-- [x] Add a path-based reference-counted texture cache
-- [x] Add an asset root resolver with traversal checks
-- [x] Add project-facing AssetManager for validated texture loading
-- [x] Versioned asset metadata sidecar format and texture import settings
-- [x] Asset metadata project scanning and diagnostics registry
-- [x] Resolve and load texture assets through stable IDs in AssetManager
-- [x] Apply texture filter and premultiplied-alpha import settings at load time
-- [x] Add an asset import settings service API for editor workflows
-- [x] Add editor UI for texture filter and premultiplied-alpha settings
-- [x] Versioned `.emberproject` configuration with validated relative paths
-- [x] Project Settings for project name, asset directory, and startup scene
-- [x] Load the configured startup scene when the editor opens
-- [x] Editor Scene Manager: create, load, save, and choose startup scene
-- [x] Open scene assets directly from the Asset Browser
-- [x] Track scene dirty state and show Save / Discard / Cancel before scene switches
-- [x] Versioned JSON scene serialization with stable entity and asset IDs
-- [ ] Collision and Box2D integration
+- [x] Renderer2D, primitive drawing, and sprite API
+- [x] BMP, PNG, and JPEG texture loading
+- [x] Texture handles and reference-counted texture cache
+- [x] Transform2D and Camera2D (position, scale, rotation, zoom)
+- [x] Scene and Entity model with stable IDs
+- [x] RenderComponent2D for rectangles and texture-backed sprites
+- [x] AssetDirectory path resolution and traversal checks
+- [x] AssetManager and stable-ID asset loading
+- [x] Versioned .emberasset metadata and AssetRegistry diagnostics
+- [x] Texture import settings (filtering and premultiplied alpha)
+- [x] Versioned .emberproject configuration (schema v2)
+- [x] Project Settings: name, asset directory, startup scene
+- [x] Startup scene loading and Scene Manager workflow
+- [x] Versioned .emberscene serialization and migration/validation
+- [x] Scene dirty-state tracking with Save / Discard / Cancel prompts
+- [ ] Collision detection and Box2D integration
 
 ## Phase 3 — Editor
 
-- [x] Dear ImGui integration (editor-only SDL3 platform and renderer backends)
-- [x] Main editor layout (menu bar, hierarchy, inspector, asset browser, viewport placeholders)
-- [x] Scene hierarchy (create/select entities)
-- [x] Duplicate and delete entities from hierarchy, menu, and keyboard shortcuts
-- [x] Inspector (edit entity name, active state, transform, and render properties)
-- [x] Asset browser (registry-backed list, type filter, search, selection, refresh, diagnostics)
-- [x] 2D viewport preview (scene rectangles, grid, camera pan/zoom, entity picking)
-- [x] Registry-backed texture previews in the 2D viewport (filter and premultiplied-alpha settings)
-- [x] Direct entity position editing by dragging selected entities in the 2D viewport
-- [x] 2D translation gizmo with world-space X/Y axis-constrained dragging
-- [x] 2D rotation and scale gizmo tools
-- [x] Optional transform snapping for position, rotation, and scale
-- [x] Local-space and world-space move/scale gizmo orientation
-- [x] Play / stop workflow with an isolated Scene clone
-- [x] Basic Play Mode runtime update loop with frame-rate-independent WASD / arrow-key movement
-- [x] Per-entity MovementComponent2D with Inspector settings and scene serialization
+- [x] Dear ImGui editor integration isolated from ember_engine
+- [x] Main editor layout and menu
+- [x] Scene Hierarchy and Inspector
+- [x] Asset Browser with search, type filtering, refresh, and diagnostics
+- [x] 2D viewport preview, grid, camera pan/zoom, and entity picking
+- [x] Texture previews in viewport
+- [x] Drag entities in viewport
+- [x] Move, Rotate, and Scale gizmos
+- [x] Transform snapping and Local / World orientation
+- [x] Play / Stop using an isolated Scene clone
+- [x] Play Mode movement with WASD / arrow keys
+- [x] Per-entity MovementComponent2D and Inspector controls
+- [x] Duplicate and delete entities through UI and shortcuts
+- [x] Scene dirty-state prompts before destructive scene operations
+- [x] Persistent Input Settings: named actions, rebinding, custom actions, conflict checks, reset defaults
+- [ ] Undo / Redo
+- [ ] Multi-selection and hierarchy organization
+- [ ] Editor usability and runtime integration verification
 
 ## Phase 4 — Game Systems
 
+- [ ] General component update/lifecycle API
+- [ ] Collision and physics integration (planned Box2D backend)
 - [ ] Animation
-- [ ] Audio
+- [ ] Audio (planned miniaudio backend)
 - [ ] UI system
-- [x] Named keyboard action mapping with configurable key bindings and default movement actions
-- [x] Persistent Editor Input Settings with rebinding, custom action management, duplicate-key protection, and reset-to-default
-- [ ] Save and load scenes
+- [ ] Runtime input action mapping integration
 - [ ] Scripting interface
 
 ## Phase 5 — Packaging and Quality
 
-- [ ] Windows game export
+- [ ] Windows game export / runtime executable
 - [ ] Project templates
-- [ ] Automated tests
+- [ ] Automated tests executed in CI
 - [ ] Profiler
-- [ ] User documentation
+- [ ] User documentation and samples
 
 ## Development rules
 
-1. Keep dependencies optional or isolated where practical.
+1. Keep third-party dependencies isolated behind narrow engine-facing interfaces where practical.
 2. Do not add a subsystem before a small use case proves it is needed.
 3. Keep editor code separate from runtime code.
 4. Prefer small, buildable milestones.
-5. Do not claim a platform is supported until it has been built and tested there.
+5. Distinguish CI compilation/tests from interactive runtime verification.

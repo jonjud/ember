@@ -2,56 +2,39 @@
 
 A lightweight, 2D-first game engine written in modern C++.
 
-EMBER is being built from the ground up. The project currently has a modular desktop foundation: application lifecycle, frame timing, keyboard input, an SDL-backed 2D renderer, scene/entity support, and a reference-counted texture cache.
+EMBER is in early development. It currently includes an SDL3-backed 2D engine foundation, scene/entity model, project asset pipeline, JSON scene/project persistence, and an ImGui editor with a basic Play Mode.
 
 ## Project status
 
-**Early development — Phase 2: 2D Core**
-
-See [ROADMAP.md](docs/ROADMAP.md) for planned milestones and [ARCHITECTURE.md](docs/ARCHITECTURE.md) for the current design.
+**Early development — 2D core and editor foundation.** See [ROADMAP.md](docs/ROADMAP.md) for planned work and [ARCHITECTURE.md](docs/ARCHITECTURE.md) for current design and known gaps.
 
 ## Technology
 
 - C++20
 - CMake 3.24+
-- SDL3
+- SDL3 3.2.10 and SDL3_image
+- Dear ImGui (editor only)
+- nlohmann/json
 
-## Current prototype
+## Current capabilities
 
-- Opens a resizable 1280×720 window.
-- Moves a test rectangle with WASD or arrow keys.
-- Uses frame delta time for consistent movement speed.
-- Normalizes diagonal movement.
-- Uses a dedicated Renderer2D module for drawing.
-- Loads BMP images into engine-managed texture handles.
-- Renders texture-backed scene entities as sprites with transform and tint support.
-- Reuses loaded textures through a path-based reference-counted cache.
-- Requests VSync where supported.
-- Press Escape to quit.
+- SDL application lifecycle, window, event loop, timing, and keyboard input.
+- Renderer2D with primitives, sprites, camera transforms, and BMP/PNG/JPEG loading.
+- Scene/Entity model, Transform2D, RenderComponent2D, and per-entity MovementComponent2D.
+- Reference-counted texture cache and project-facing AssetManager.
+- Stable-ID asset metadata, registry scanning, diagnostics, and texture import settings.
+- Versioned .emberproject configuration and .emberscene scene serialization.
+- Editor panels: Scene Hierarchy, Inspector, Asset Browser, Project Settings, and interactive 2D viewport.
+- Move/Rotate/Scale gizmos, snapping, Local/World orientation, entity duplicate/delete.
+- Isolated Play/Stop workflow and basic keyboard movement.
+- Persistent editor input action settings.
 
-## Texture API
-
-For direct renderer ownership:
-
-```cpp
-const ember::TextureHandle sprite = renderer.LoadTexture("assets/player.bmp");
-if (sprite)
-{
-    renderer.DrawTexture(sprite, 100.0F, 100.0F, 64.0F, 64.0F);
-    renderer.DestroyTexture(sprite);
-}
-```
-
-For shared assets, configure a `TextureCache` with renderer-backed load and destroy callbacks. Each successful `Load(path)` must be paired with one `Release(path)`. Repeated loads of the same normalized path return the same handle; the texture is destroyed after its final reference is released. Clear the cache before shutting down its renderer.
-
-The cache deliberately does not own scene components' references. A component may borrow a handle, so release the corresponding asset only after no scene object needs to draw it.
-
-## Build
+## Build and test
 
 Requirements:
 - CMake 3.24 or newer
 - A C++20 compiler
-- Git (for fetching SDL3 through CMake FetchContent)
+- Git (for fetching dependencies through CMake FetchContent)
 
 ```sh
 cmake -S . -B build
@@ -59,8 +42,7 @@ cmake --build build --config Debug
 ctest --test-dir build -C Debug --output-on-failure
 ```
 
-Run the executable:
-
+Run the editor:
 - Windows: `build/Debug/ember.exe` (multi-config generators) or `build/ember.exe`
 - Linux/macOS: `./build/ember`
 
@@ -68,29 +50,29 @@ Run the executable:
 
 ```text
 EMBER/
-├── .github/
-│   └── workflows/
+├── .github/workflows/
 ├── docs/
 ├── src/
+│   ├── Editor/
 │   ├── Engine/
 │   │   ├── Core/
 │   │   ├── Math/
 │   │   ├── Platform/
+│   │   ├── Project/
 │   │   ├── Renderer/
 │   │   ├── Resources/
 │   │   └── Scene/
 │   └── main.cpp
 ├── tests/
-├── .gitignore
 └── CMakeLists.txt
 ```
 
 ## Design principles
 
-1. Keep the core small and modular.
+1. Keep the core modular and editor code separate from runtime code.
 2. Prefer understandable code over premature abstraction.
-3. Build runnable vertical slices and test each milestone.
-4. Keep third-party dependencies isolated.
+3. Build runnable vertical slices and validate them with tests.
+4. Isolate third-party dependencies behind narrow interfaces where useful.
 5. Treat 2D as the first-class target; consider 3D only after the foundation is stable.
 
 ## License
