@@ -35,13 +35,13 @@ const AssetRegistry& AssetManager::GetRegistry() const noexcept
 TextureHandle AssetManager::LoadTexture(const std::filesystem::path& relativePath)
 {
     const std::string key = ResolveKey(relativePath);
-    return key.empty() ? TextureHandle{} : m_textureCache.Load(key);
+    return key.empty() ? TextureHandle{} : m_textureCache.Load(key, {});
 }
 
 bool AssetManager::ReleaseTexture(const std::filesystem::path& relativePath)
 {
     const std::string key = ResolveKey(relativePath);
-    return !key.empty() && m_textureCache.Release(key);
+    return !key.empty() && m_textureCache.Release(key, {});
 }
 
 TextureHandle AssetManager::LoadTextureById(const std::string& assetId)
@@ -67,14 +67,14 @@ TextureHandle AssetManager::LoadTextureById(const std::string& assetId)
         }
 
         const std::string key = resolved->generic_string();
-        const TextureHandle texture = m_textureCache.Load(key);
+        const TextureHandle texture = m_textureCache.Load(key, metadata->texture);
         if (!texture)
         {
             return {};
         }
 
         m_assetTextureReferences.emplace(
-            assetId, AssetTextureReference{*resolved, 1});
+            assetId, AssetTextureReference{*resolved, metadata->texture, 1});
         return texture;
     }
 
@@ -84,7 +84,7 @@ TextureHandle AssetManager::LoadTextureById(const std::string& assetId)
     }
 
     const TextureHandle texture =
-        m_textureCache.Load(reference->second.resolvedPath.generic_string());
+        m_textureCache.Load(reference->second.resolvedPath.generic_string(), reference->second.settings);
     if (!texture)
     {
         return {};
@@ -103,7 +103,7 @@ bool AssetManager::ReleaseTextureById(const std::string& assetId)
         return false;
     }
 
-    if (!m_textureCache.Release(reference->second.resolvedPath.generic_string()))
+    if (!m_textureCache.Release(reference->second.resolvedPath.generic_string(), reference->second.settings))
     {
         return false;
     }

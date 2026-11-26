@@ -23,14 +23,16 @@ bool TextureCache::SetBackend(LoadFunction load, DestroyFunction destroy)
     return true;
 }
 
-TextureHandle TextureCache::Load(const std::string& filePath)
+TextureHandle TextureCache::Load(
+    const std::string& filePath,
+    const TextureImportSettings& settings)
 {
     if (!m_load || !m_destroy)
     {
         return {};
     }
 
-    const std::string key = NormalizePath(filePath);
+    const std::string key = MakeKey(filePath, settings);
     if (key.empty())
     {
         return {};
@@ -48,7 +50,9 @@ TextureHandle TextureCache::Load(const std::string& filePath)
         return existing->second.texture;
     }
 
-    const TextureHandle texture = m_load(key);
+    const std::string normalizedPath =
+        std::filesystem::path(filePath).lexically_normal().generic_string();
+    const TextureHandle texture = m_load(normalizedPath, settings);
     if (!texture)
     {
         return {};
@@ -58,9 +62,11 @@ TextureHandle TextureCache::Load(const std::string& filePath)
     return texture;
 }
 
-bool TextureCache::Release(const std::string& filePath)
+bool TextureCache::Release(
+    const std::string& filePath,
+    const TextureImportSettings& settings)
 {
-    const std::string key = NormalizePath(filePath);
+    const std::string key = MakeKey(filePath, settings);
     const auto existing = m_entries.find(key);
     if (existing == m_entries.end())
     {
@@ -85,9 +91,9 @@ void TextureCache::Clear()
 {
     if (m_destroy)
     {
-        for (const auto& [path, entry] : m_entries)
+        for (const auto& [key, entry] : m_entries)
         {
-            (void)path;
+            (void)key;
             m_destroy(entry.texture);
         }
     }
@@ -99,19 +105,27 @@ std::size_t TextureCache::GetCachedAssetCount() const
     return m_entries.size();
 }
 
-std::size_t TextureCache::GetReferenceCount(const std::string& filePath) const
+std::size_t TextureCache::GetReferenceCount(
+    const std::string& filePath,
+    const TextureImportSettings& settings) const
 {
-    const auto existing = m_entries.find(NormalizePath(filePath));
+    const auto existing = m_entries.find(MakeKey(filePath, settings));
     return existing == m_entries.end() ? 0 : existing->second.referenceCount;
 }
 
-std::string TextureCache::NormalizePath(const std::string& filePath)
+std::string TextureCache::MakeKey(
+    const std::string& filePath,
+    const TextureImportSettings& settings)
 {
     if (filePath.empty())
     {
         return {};
     }
 
-    return std::filesystem::path(filePath).lexically_normal().generic_string();
+    const std::string normalized =
+        std::filesystem::path(filePath).lexically_normal().generic_string();
+    return normalized + "|filter=" +
+        (settings.filter == TextureFilter::Nearest ? "nearest" : "linear") +
+        "|premultiply=" + (settings.premultiplyAlpha ? "1" : "0");
 }
 } // namespace ember

@@ -54,7 +54,7 @@ tests/
 - **Platform / Input:** exposes keyboard state through an engine-facing API.
 - **Math / Vector2:** engine-owned 2D vector type, independent of SDL.
 - **Resources / TextureHandle:** small, renderer-independent identifier for a texture resource. A handle is non-owning and is valid only while its owning renderer retains the resource.
-- **Resources / TextureCache:** shares texture handles by normalized file path, counts active references, and destroys a texture when its final reference is released. It uses injected load/destroy callbacks, keeping SDL out of the resource cache and allowing deterministic unit tests.
+- **Resources / TextureCache:** shares texture handles by normalized file path and import settings, counts active references, and destroys a texture when its final reference is released. Different filter/alpha settings create distinct cached variants. It uses injected load/destroy callbacks, keeping SDL out of the resource cache and allowing deterministic unit tests.
 - **Resources / AssetDirectory:** resolves project-relative asset paths and rejects empty, absolute, and lexically escaping paths.
 - **Resources / AssetManager:** project-facing façade that scans the AssetRegistry, resolves stable texture asset IDs, and combines validated paths with the reference-counted texture cache. Stable-ID acquisitions pin their resolved source path until all references are released, even if metadata is rescanned.
 - **Resources / AssetMetadata:** stores a stable project asset ID, asset type, source path, and texture import settings. Runtime texture handles are never persisted.
@@ -117,7 +117,7 @@ The cache uses callbacks rather than SDL types. The AssetManager connects the va
 ## Asset metadata workflow
 
 - Each imported asset can have a JSON sidecar with the `.emberasset` extension.
-- Metadata stores a stable asset ID, asset type, project-relative source path, and texture import settings such as nearest/linear filtering and alpha premultiplication.
+- Metadata stores a stable asset ID, asset type, project-relative source path, and texture import settings such as nearest/linear filtering and alpha premultiplication. Stable-ID texture loads pass these settings into Renderer2D; nearest/linear filtering selects the SDL texture scale mode, and premultiplied alpha converts source pixels to premultiplied RGBA and uses premultiplied blending.
 - Metadata schema versioning allows the format to evolve without silently accepting incompatible files.
 - Runtime handles are intentionally excluded; they are transient renderer-owned values and must be reacquired when a project loads.
 
@@ -163,6 +163,6 @@ Third-party APIs should be hidden behind narrow engine-facing interfaces when do
 
 ## Next milestone
 
-Connect stable texture asset IDs to the AssetManager and add editor-facing asset import settings.
+Add editor-facing asset import settings and begin the project configuration/editor foundation.
 
 \n## Stable asset ID loading workflow\n\n- Construct an \`AssetManager\` with the project's asset root and configure its texture backend after renderer initialization.\n- Call \`ScanAssets()\` to populate its metadata registry from \`.emberasset\` sidecars.\n- Use \`FindAsset(assetId)\` to inspect metadata or \`LoadTextureById(assetId)\` to acquire a texture by stable ID.\n- Call \`ReleaseTextureById(assetId)\` once for each successful stable-ID load. The manager remembers the original resolved source path, so a registry rescan does not redirect or leak outstanding references.\n- Only assets whose metadata type is \`Texture\` can be loaded through the texture API. Unknown IDs and other asset types return an empty handle.\n- Path-based \`LoadTexture\` and \`ReleaseTexture\` remain available for runtime and migration workflows.\n

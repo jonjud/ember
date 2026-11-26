@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Resources/AssetMetadata.hpp"
 #include "Engine/Resources/TextureHandle.hpp"
 
 #include <cstddef>
@@ -9,12 +10,11 @@
 
 namespace ember
 {
-// Shares loaded textures by normalized asset path. Each successful Load increments
-// the reference count; Release decrements it and destroys the texture at zero.
 class TextureCache
 {
 public:
-    using LoadFunction = std::function<TextureHandle(const std::string&)>;
+    using LoadFunction = std::function<TextureHandle(
+        const std::string&, const TextureImportSettings&)>;
     using DestroyFunction = std::function<void(TextureHandle)>;
 
     TextureCache() = default;
@@ -23,15 +23,19 @@ public:
     TextureCache(const TextureCache&) = delete;
     TextureCache& operator=(const TextureCache&) = delete;
 
-    // Configure the renderer callbacks. The cache must be empty when changing backend.
     [[nodiscard]] bool SetBackend(LoadFunction load, DestroyFunction destroy);
-
-    [[nodiscard]] TextureHandle Load(const std::string& filePath);
-    [[nodiscard]] bool Release(const std::string& filePath);
+    [[nodiscard]] TextureHandle Load(
+        const std::string& filePath,
+        const TextureImportSettings& settings = {});
+    [[nodiscard]] bool Release(
+        const std::string& filePath,
+        const TextureImportSettings& settings = {});
     void Clear();
 
     [[nodiscard]] std::size_t GetCachedAssetCount() const;
-    [[nodiscard]] std::size_t GetReferenceCount(const std::string& filePath) const;
+    [[nodiscard]] std::size_t GetReferenceCount(
+        const std::string& filePath,
+        const TextureImportSettings& settings = {}) const;
 
 private:
     struct Entry
@@ -40,7 +44,9 @@ private:
         std::size_t referenceCount = 0;
     };
 
-    [[nodiscard]] static std::string NormalizePath(const std::string& filePath);
+    [[nodiscard]] static std::string MakeKey(
+        const std::string& filePath,
+        const TextureImportSettings& settings);
 
     LoadFunction m_load;
     DestroyFunction m_destroy;

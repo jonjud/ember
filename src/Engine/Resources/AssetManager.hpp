@@ -42,6 +42,7 @@ private:
     struct AssetTextureReference
     {
         std::filesystem::path resolvedPath;
+        TextureImportSettings settings{};
         std::size_t referenceCount = 0;
     };
 

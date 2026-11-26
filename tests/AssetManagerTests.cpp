@@ -36,6 +36,8 @@ int main()
     ember::AssetMetadata playerMetadata;
     playerMetadata.assetId = "asset-player";
     playerMetadata.source = "sprites/player.bmp";
+    playerMetadata.texture.filter = ember::TextureFilter::Linear;
+    playerMetadata.texture.premultiplyAlpha = true;
     Check(ember::AssetMetadataStore::Save(
         root / "sprites" / "player.emberasset", playerMetadata),
         "Player metadata is written");

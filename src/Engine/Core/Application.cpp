@@ -51,7 +51,7 @@ bool Application::Initialize()
     }
 
     if (!m_assets.SetTextureBackend(
-            [this](const std::string& path) { return m_renderer.LoadTexture(path); },
+            [this](const std::string& path, const TextureImportSettings& settings) { return m_renderer.LoadTexture(path, settings); },
             [this](TextureHandle texture) { m_renderer.DestroyTexture(texture); }))
     {
         std::cerr << "EMBER: Texture cache backend could not be initialized.\n";

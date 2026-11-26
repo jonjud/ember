@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/Renderer/Camera2D.hpp"
+#include "Engine/Resources/AssetMetadata.hpp"
 #include "Engine/Resources/TextureHandle.hpp"
 #include "Engine/Scene/Transform2D.hpp"
 
@@ -44,7 +45,7 @@ public:
         std::uint8_t green,
         std::uint8_t blue,
         std::uint8_t alpha = 255);
-    [[nodiscard]] TextureHandle LoadTexture(const std::string& filePath);
+    [[nodiscard]] TextureHandle LoadTexture(const std::string& filePath, const TextureImportSettings& settings = {});
     void DestroyTexture(TextureHandle texture);
     void DrawTexture(TextureHandle texture, float x, float y, float width, float height);
     void DrawTexture(

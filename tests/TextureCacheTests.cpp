@@ -78,6 +78,18 @@ int main()
     Check(destroyed[one.id] == 1 && destroyed[two.id] == 1,
           "Clear destroys every cached texture exactly once");
 
+    ember::TextureImportSettings linearSettings;
+    linearSettings.filter = ember::TextureFilter::Linear;
+    const auto nearest = cache.Load("assets/shared.bmp");
+    const auto linear = cache.Load("assets/shared.bmp", linearSettings);
+    Check(nearest && linear && nearest.id != linear.id,
+          "Different import settings use distinct cached texture variants");
+    Check(cache.GetCachedAssetCount() == 2,
+          "Cache tracks each import-settings variant independently");
+    Check(cache.Release("assets/shared.bmp"), "Default settings variant can be released");
+    Check(cache.Release("assets/shared.bmp", linearSettings),
+          "Linear settings variant can be released");
+
     if (g_failures != 0)
     {
         std::cerr << g_failures << " texture cache test(s) failed.\n";
