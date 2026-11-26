@@ -1,12 +1,32 @@
-# Initial Architecture
+# EMBER Engine Architecture
 
-The first version deliberately keeps the architecture small.
+EMBER is a 2D-first engine written in C++20. The architecture is intentionally small and grows only when a working use case requires another subsystem.
 
 ## Current executable
 
-`ember_editor` is currently a bootstrap executable. It initializes SDL3, creates a resizable window, processes quit events, and draws a temporary rectangle.
+The `ember` executable is the application entry point. It creates an `ember::Application` and delegates initialization, the main loop, and shutdown to the engine library.
 
-The executable is not yet a full editor.
+## Current source layout
+
+```text
+src/
+├── Engine/
+│   ├── Core/
+│   │   ├── Application.hpp/.cpp
+│   │   └── Time.hpp/.cpp
+│   └── Platform/
+│       └── Input.hpp/.cpp
+└── main.cpp
+```
+
+## Current responsibilities
+
+- **Core / Application:** owns the SDL window and renderer, runs the event/update/render loop, and controls application lifetime.
+- **Core / Time:** measures frame delta time using SDL's high-resolution performance counter.
+- **Platform / Input:** exposes keyboard state through an engine-facing API.
+- **main.cpp:** contains only the process entry point.
+
+The current render test is a movable rectangle. WASD and arrow keys move it; Escape exits. Movement uses delta time and is normalized diagonally.
 
 ## Planned layers
 
@@ -24,13 +44,13 @@ Editor
 
 ## Dependency policy
 
-- SDL3: initial platform, input, and rendering foundation.
+- SDL3: windowing, event handling, keyboard input, and initial rendering backend.
 - Dear ImGui: planned editor interface; not part of the runtime core.
 - Box2D: planned 2D physics backend.
 - miniaudio: planned audio backend.
 
-Third-party code should remain behind narrow engine-facing interfaces where that provides a real portability or testing benefit.
+Third-party APIs should be hidden behind narrow engine-facing interfaces when doing so provides a concrete portability, testing, or maintenance benefit.
 
-## Immediate next step
+## Next milestone
 
-Build and run the bootstrap application on the target development machine. Once the window and render test are confirmed, extract the application loop and input handling into small engine modules.
+Separate rendering from application orchestration by introducing a small Renderer2D interface. Then add texture loading and render a sprite before introducing scenes or entities.
