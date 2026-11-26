@@ -40,7 +40,7 @@ int main()
     Check(defaults.GetBindings("MoveUp").size() == 2, "Default map supports W and Up");
     Check(defaults.GetBindings("MoveDown").size() == 2, "Default map supports S and Down");
 
-    map.BindAction("Jump", SDL_SCANCODE_SPACE);
+    (void)map.BindAction("Jump", SDL_SCANCODE_SPACE);
     map.Clear();
     Check(map.GetBindings("Jump").empty(), "All actions can be cleared");
 
