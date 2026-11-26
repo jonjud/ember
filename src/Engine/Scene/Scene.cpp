@@ -61,6 +61,23 @@ std::vector<EntityId> Scene::GetEntityIds() const
     return ids;
 }
 
+Scene Scene::Clone() const
+{
+    Scene clone(m_name);
+    clone.m_nextEntityId = m_nextEntityId;
+
+    for (const auto& [id, entity] : m_entities)
+    {
+        auto copiedEntity = std::unique_ptr<Entity>(new Entity(id, entity->m_name));
+        copiedEntity->m_transform = entity->m_transform;
+        copiedEntity->m_renderComponent = entity->m_renderComponent;
+        copiedEntity->m_active = entity->m_active;
+        clone.m_entities.emplace(id, std::move(copiedEntity));
+    }
+
+    return clone;
+}
+
 void Scene::Clear()
 {
     m_entities.clear();

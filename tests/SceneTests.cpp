@@ -107,6 +107,37 @@ int main()
     ember::Entity& afterClear = scene.CreateEntity("AfterClear");
     Check(afterClear.GetId() > enemyId, "Clear does not reuse earlier entity IDs");
 
+    afterClear.GetTransform().position = {15.0F, 25.0F};
+    afterClear.GetRenderComponent().visible = true;
+    afterClear.GetRenderComponent().size = {90.0F, 45.0F};
+    afterClear.SetActive(false);
+    ember::Scene playCopy = scene.Clone();
+    Check(playCopy.GetName() == scene.GetName(), "Scene clone preserves the scene name");
+    Check(playCopy.GetEntityCount() == scene.GetEntityCount(), "Scene clone preserves entity count");
+    const ember::Entity* copiedEntity = playCopy.FindEntity(afterClear.GetId());
+    Check(copiedEntity != nullptr && copiedEntity != &afterClear,
+          "Scene clone creates independent entity objects with matching IDs");
+    Check(copiedEntity != nullptr &&
+          copiedEntity->GetTransform().position.x == 15.0F &&
+          copiedEntity->GetTransform().position.y == 25.0F,
+          "Scene clone preserves entity transforms");
+    Check(copiedEntity != nullptr && !copiedEntity->IsActive() &&
+          copiedEntity->GetRenderComponent().visible &&
+          copiedEntity->GetRenderComponent().size.x == 90.0F,
+          "Scene clone preserves active and render component state");
+    if (ember::Entity* copiedMutable = playCopy.FindEntity(afterClear.GetId()))
+    {
+        copiedMutable->SetName("Changed In Play");
+        copiedMutable->GetTransform().position.x = 999.0F;
+    }
+    Check(afterClear.GetName() == "AfterClear" &&
+          afterClear.GetTransform().position.x == 15.0F,
+          "Scene clone changes do not modify the source scene");
+    const ember::EntityId nextSourceId = scene.CreateEntity("NextSource").GetId();
+    const ember::EntityId nextCopyId = playCopy.CreateEntity("NextCopy").GetId();
+    Check(nextSourceId == nextCopyId,
+          "Scene clone preserves the next entity ID sequence");
+
     if (g_failures != 0)
     {
         std::cerr << g_failures << " scene test(s) failed.\n";

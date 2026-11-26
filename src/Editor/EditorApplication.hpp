@@ -35,6 +35,9 @@ private:
     void DrawAssetBrowser();
     void DrawViewport();
     void CreateEntity();
+    void StartPlayMode();
+    void StopPlayMode();
+    [[nodiscard]] Scene& GetActiveScene();
     void SaveScene();
     void LoadScene();
     void RefreshAssets();
@@ -44,6 +47,8 @@ private:
     SDL_Renderer* m_renderer = nullptr;
     bool m_isRunning = false;
     Scene m_scene{"Untitled Scene"};
+    Scene m_playScene{"Play Scene"};
+    bool m_isPlaying = false;
     Camera2D m_viewportCamera;
     AssetRegistry m_assetRegistry{"assets"};
     AssetImportService m_assetImportService{"assets"};

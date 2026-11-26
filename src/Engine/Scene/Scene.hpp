@@ -55,6 +55,9 @@ public:
     // Removes all entities. IDs are not reused during this Scene's lifetime.
     void Clear();
 
+    // Creates an independent scene copy while preserving entity IDs and render data.
+    [[nodiscard]] Scene Clone() const;
+
 private:
     friend class SceneSerializer;
 

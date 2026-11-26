@@ -51,7 +51,7 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Inspector (edit entity name, active state, transform, and render properties)
 - [x] Asset browser (registry-backed list, type filter, search, selection, refresh, diagnostics)
 - [x] 2D viewport preview (scene rectangles, grid, camera pan/zoom, entity picking)
-- [ ] Play / stop workflow
+- [x] Play / stop workflow with an isolated Scene clone (runtime simulation still pending)
 
 ## Phase 4 — Game Systems
 

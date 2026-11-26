@@ -174,8 +174,10 @@ void EditorApplication::DrawMenuBar()
 
     if (ImGui::BeginMenu("File"))
     {
+        ImGui::BeginDisabled(m_isPlaying);
         if (ImGui::MenuItem("Save Scene", "Ctrl+S")) SaveScene();
         if (ImGui::MenuItem("Load Scene")) LoadScene();
+        ImGui::EndDisabled();
         ImGui::Separator();
         if (ImGui::MenuItem("Exit")) m_isRunning = false;
         ImGui::EndMenu();
@@ -184,6 +186,13 @@ void EditorApplication::DrawMenuBar()
     if (ImGui::BeginMenu("Entity"))
     {
         if (ImGui::MenuItem("Create Empty Entity")) CreateEntity();
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Scene"))
+    {
+        if (!m_isPlaying && ImGui::MenuItem("Play", "F5")) StartPlayMode();
+        if (m_isPlaying && ImGui::MenuItem("Stop", "Shift+F5")) StopPlayMode();
         ImGui::EndMenu();
     }
 
@@ -202,12 +211,15 @@ void EditorApplication::DrawSceneHierarchy()
     ImGui::SetNextWindowSize(ImVec2(280.0F, 590.0F), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Hierarchy"))
     {
-        ImGui::Text("%s", m_scene.GetName().c_str());
+        Scene& activeScene = GetActiveScene();
+        ImGui::Text("%s", activeScene.GetName().c_str());
         ImGui::SameLine();
+        ImGui::BeginDisabled(m_isPlaying);
         if (ImGui::SmallButton("+")) CreateEntity();
+        ImGui::EndDisabled();
         ImGui::Separator();
 
-        m_scene.ForEachEntity([this](Entity& entity)
+        activeScene.ForEachEntity([this](Entity& entity)
         {
             const bool selected = entity.GetId() == m_selectedEntity;
             char label[160]{};
@@ -217,7 +229,7 @@ void EditorApplication::DrawSceneHierarchy()
             if (ImGui::Selectable(label, selected)) m_selectedEntity = entity.GetId();
         });
 
-        if (m_scene.IsEmpty()) ImGui::TextDisabled("No entities. Press + to create one.");
+        if (activeScene.IsEmpty()) ImGui::TextDisabled("No entities. Press + to create one.");
     }
     ImGui::End();
 }
@@ -228,7 +240,9 @@ void EditorApplication::DrawInspector()
     ImGui::SetNextWindowSize(ImVec2(360.0F, 590.0F), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Inspector"))
     {
-        Entity* entity = m_scene.FindEntity(m_selectedEntity);
+        Scene& activeScene = GetActiveScene();
+        ImGui::BeginDisabled(m_isPlaying);
+        Entity* entity = activeScene.FindEntity(m_selectedEntity);
         if (entity == nullptr)
         {
             ImGui::TextDisabled("Select an entity to inspect its properties.");
@@ -269,6 +283,7 @@ void EditorApplication::DrawInspector()
                 m_selectedEntity = 0;
             }
         }
+        ImGui::EndDisabled();
     }
     ImGui::End();
 }
@@ -402,6 +417,7 @@ void EditorApplication::DrawAssetBrowser()
         }
 
         ImGui::Separator();
+        ImGui::BeginDisabled(m_isPlaying);
         ImGui::Text("Scene file: %s", m_scenePath);
         ImGui::SameLine();
         ImGui::SetNextItemWidth(220.0F);
@@ -410,6 +426,7 @@ void EditorApplication::DrawAssetBrowser()
         if (ImGui::SmallButton("Save Scene")) SaveScene();
         ImGui::SameLine();
         if (ImGui::SmallButton("Load Scene")) LoadScene();
+        ImGui::EndDisabled();
     }
     ImGui::End();
 }
@@ -420,6 +437,12 @@ void EditorApplication::DrawViewport()
     ImGui::SetNextWindowSize(ImVec2(800.0F, 620.0F), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("2D Viewport"))
     {
+        Scene& activeScene = GetActiveScene();
+        if (m_isPlaying)
+        {
+            ImGui::TextColored(ImVec4(0.35F, 0.9F, 0.55F, 1.0F),
+                "PLAY MODE - isolated scene preview (runtime simulation is not connected yet)");
+        }
         ImGui::TextDisabled("Middle-drag: pan | Mouse wheel: zoom | Left-click: select");
         ImGui::SameLine();
         if (ImGui::SmallButton("Reset View"))
@@ -471,7 +494,7 @@ void EditorApplication::DrawViewport()
                     (1.0F / m_viewportCamera.GetZoom());
 
             EntityId hitEntity = 0;
-            m_scene.ForEachEntity([&](const Entity& entity)
+            activeScene.ForEachEntity([&](const Entity& entity)
             {
                 const auto& render = entity.GetRenderComponent();
                 if (!entity.IsActive() || !render.visible) return;
@@ -541,7 +564,7 @@ void EditorApplication::DrawViewport()
         drawList->AddLine(toCanvas({0.0F, top}), toCanvas({0.0F, bottom}), IM_COL32(105, 115, 140, 255), 1.5F);
         drawList->AddLine(toCanvas({left, 0.0F}), toCanvas({right, 0.0F}), IM_COL32(105, 115, 140, 255), 1.5F);
 
-        m_scene.ForEachEntity([&](const Entity& entity)
+        activeScene.ForEachEntity([&](const Entity& entity)
         {
             const auto& render = entity.GetRenderComponent();
             if (!entity.IsActive() || !render.visible) return;
@@ -594,13 +617,38 @@ void EditorApplication::DrawViewport()
 
         drawList->PopClipRect();
         ImGui::TextDisabled("%zu entities | Only active, visible render components are shown. Texture assets are placeholders in this editor preview.",
-            m_scene.GetEntityCount());
+            activeScene.GetEntityCount());
     }
     ImGui::End();
 }
 
+Scene& EditorApplication::GetActiveScene()
+{
+    return m_isPlaying ? m_playScene : m_scene;
+}
+
+void EditorApplication::StartPlayMode()
+{
+    if (m_isPlaying) return;
+    m_playScene = m_scene.Clone();
+    m_isPlaying = true;
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+        "Play mode started: running an isolated copy of the current scene");
+}
+
+void EditorApplication::StopPlayMode()
+{
+    if (!m_isPlaying) return;
+    m_isPlaying = false;
+    m_playScene.Clear();
+    if (m_scene.FindEntity(m_selectedEntity) == nullptr) m_selectedEntity = 0;
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+        "Play mode stopped: authoring scene restored unchanged");
+}
+
 void EditorApplication::CreateEntity()
 {
+    if (m_isPlaying) return;
     Entity& entity = m_scene.CreateEntity("Entity");
     m_selectedEntity = entity.GetId();
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
@@ -609,6 +657,7 @@ void EditorApplication::CreateEntity()
 
 void EditorApplication::SaveScene()
 {
+    if (m_isPlaying) return;
     std::string error;
     if (SceneSerializer::Save(m_scene, m_scenePath, &error))
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Saved scene: %.200s", m_scenePath);
@@ -618,6 +667,7 @@ void EditorApplication::SaveScene()
 
 void EditorApplication::LoadScene()
 {
+    if (m_isPlaying) return;
     Scene loadedScene;
     std::string error;
     if (SceneSerializer::Load(loadedScene, m_scenePath, &error))
