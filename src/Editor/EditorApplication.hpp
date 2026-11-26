@@ -58,6 +58,9 @@ private:
     AssetRegistry m_assetRegistry{"assets"};
     AssetImportService m_assetImportService{"assets"};
     EntityId m_selectedEntity = 0;
+    EntityId m_dragEntityId = 0;
+    Vector2 m_dragStartMouseWorld{};
+    Vector2 m_dragStartEntityPosition{};
     std::string m_selectedAssetId;
     std::string m_importSettingsAssetId;
     int m_textureFilter = 0;

@@ -563,7 +563,7 @@ void EditorApplication::DrawViewport()
             ImGui::TextColored(ImVec4(0.35F, 0.9F, 0.55F, 1.0F),
                 "PLAY MODE - isolated scene preview (runtime simulation is not connected yet)");
         }
-        ImGui::TextDisabled("Middle-drag: pan | Mouse wheel: zoom | Left-click: select");
+        ImGui::TextDisabled("Middle-drag: pan | Mouse wheel: zoom | Left-click: select | Left-drag selected entity: move");
         ImGui::SameLine();
         if (ImGui::SmallButton("Reset View"))
         {
@@ -606,13 +606,25 @@ void EditorApplication::DrawViewport()
         }
 
         const ImVec2 mouse = ImGui::GetIO().MousePos;
+        const auto screenToWorld = [&](const ImVec2& screenPosition)
+        {
+            const Vector2 screenOffset{
+                screenPosition.x - canvasMin.x - viewportSize.x * 0.5F,
+                screenPosition.y - canvasMin.y - viewportSize.y * 0.5F
+            };
+            const float inverseZoom = 1.0F / m_viewportCamera.GetZoom();
+            const float cosine = std::cos(m_viewportCamera.GetRotation());
+            const float sine = std::sin(m_viewportCamera.GetRotation());
+            const Vector2 worldOffset{
+                (screenOffset.x * cosine - screenOffset.y * sine) * inverseZoom,
+                (screenOffset.x * sine + screenOffset.y * cosine) * inverseZoom
+            };
+            return m_viewportCamera.GetPosition() + worldOffset;
+        };
+        const Vector2 worldMouse = screenToWorld(mouse);
+
         if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         {
-            const Vector2 localMouse{mouse.x - canvasMin.x, mouse.y - canvasMin.y};
-            const Vector2 worldMouse = m_viewportCamera.GetPosition() +
-                (localMouse - Vector2{viewportSize.x * 0.5F, viewportSize.y * 0.5F}) *
-                    (1.0F / m_viewportCamera.GetZoom());
-
             EntityId hitEntity = 0;
             activeScene.ForEachEntity([&](const Entity& entity)
             {
@@ -642,6 +654,36 @@ void EditorApplication::DrawViewport()
                 }
             });
             m_selectedEntity = hitEntity;
+            m_dragEntityId = 0;
+
+            if (!m_isPlaying && hitEntity != 0)
+            {
+                if (Entity* entity = activeScene.FindEntity(hitEntity))
+                {
+                    m_dragEntityId = hitEntity;
+                    m_dragStartMouseWorld = worldMouse;
+                    m_dragStartEntityPosition = entity->GetTransform().position;
+                }
+            }
+        }
+
+        if (!m_isPlaying && m_dragEntityId != 0 &&
+            ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+        {
+            if (Entity* entity = activeScene.FindEntity(m_dragEntityId))
+            {
+                const Vector2 movement = worldMouse - m_dragStartMouseWorld;
+                entity->GetTransform().position = m_dragStartEntityPosition + movement;
+            }
+            else
+            {
+                m_dragEntityId = 0;
+            }
+        }
+
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+        {
+            m_dragEntityId = 0;
         }
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
