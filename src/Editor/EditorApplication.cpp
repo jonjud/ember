@@ -44,6 +44,23 @@ float SnapValue(float value, float increment)
 {
     return increment > 0.0F ? std::round(value / increment) * increment : value;
 }
+
+bool IsDefaultInputAction(std::string_view action)
+{
+    return action == "MoveLeft" || action == "MoveRight" ||
+        action == "MoveUp" || action == "MoveDown";
+}
+
+std::string FindConflictingAction(
+    const ember::InputMap& inputMap, SDL_Scancode key, std::string_view ignoredAction)
+{
+    for (const auto& [action, keys] : inputMap.GetAllBindings())
+    {
+        if (action == ignoredAction) continue;
+        if (std::find(keys.begin(), keys.end(), key) != keys.end()) return action;
+    }
+    return {};
+}
 }
 
 namespace ember
@@ -195,23 +212,36 @@ void EditorApplication::ProcessEvents()
                 }
                 else if (event.key.scancode != SDL_SCANCODE_UNKNOWN)
                 {
+                    const std::string action = m_rebindAction;
+                    InputMap candidate = m_inputMap;
                     if (m_replaceActionOnRebind)
                     {
-                        m_inputMap.ClearAction(m_rebindAction);
+                        candidate.ClearAction(action);
                     }
-                    const std::string action = m_rebindAction;
-                    const bool added = m_inputMap.BindAction(action, event.key.scancode);
+                    const std::string conflict =
+                        FindConflictingAction(candidate, event.key.scancode, action);
                     const char* keyName = SDL_GetScancodeName(event.key.scancode);
-                    if (added)
+                    bool added = false;
+                    if (!conflict.empty())
                     {
                         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-                            "Bound %.100s to %.100s", action.c_str(),
-                            keyName != nullptr ? keyName : "Unknown");
+                            "Key already belongs to %.150s", conflict.c_str());
                     }
                     else
                     {
-                        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-                            "%.180s already uses that key", action.c_str());
+                        added = candidate.BindAction(action, event.key.scancode);
+                        if (added)
+                        {
+                            m_inputMap = std::move(candidate);
+                            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                                "Bound %.100s to %.100s", action.c_str(),
+                                keyName != nullptr && keyName[0] != '\0' ? keyName : "Unknown");
+                        }
+                        else
+                        {
+                            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                                "That key is already bound to this action");
+                        }
                     }
                     m_rebindAction.clear();
                     if (added && !SaveInputSettings())
@@ -400,7 +430,7 @@ void EditorApplication::DrawInspector()
 void EditorApplication::DrawInputSettings()
 {
     ImGui::SetNextWindowPos(ImVec2(1080.0F, 620.0F), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(360.0F, 260.0F), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(440.0F, 420.0F), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Input Settings"))
     {
         ImGui::TextDisabled("Play Mode keyboard actions");
@@ -460,7 +490,7 @@ void EditorApplication::DrawInputSettings()
             ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
             ImGuiTableFlags_SizingStretchProp))
         {
-            ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, 92.0F);
+            ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthFixed, 100.0F);
             ImGui::TableSetupColumn("Keys", ImGuiTableColumnFlags_WidthStretch);
             ImGui::TableSetupColumn("Edit", ImGuiTableColumnFlags_WidthFixed, 150.0F);
             ImGui::TableHeadersRow();
@@ -476,28 +506,123 @@ void EditorApplication::DrawInputSettings()
             ImGui::EndTable();
         }
 
-        ImGui::Separator();
-        ImGui::SetNextItemWidth(180.0F);
+        ImGui::SeparatorText("Create action");
+        ImGui::SetNextItemWidth(210.0F);
         ImGui::InputText("New action", m_newInputActionName, sizeof(m_newInputActionName));
         ImGui::SameLine();
         if (ImGui::Button("Add + Bind"))
         {
             const std::string action = m_newInputActionName;
-            if (!action.empty())
+            if (action.empty() || IsDefaultInputAction(action) ||
+                std::find(m_customInputActions.begin(), m_customInputActions.end(), action)
+                    != m_customInputActions.end())
             {
-                if (std::find(m_customInputActions.begin(), m_customInputActions.end(), action)
-                    == m_customInputActions.end())
-                {
-                    m_customInputActions.push_back(action);
-                    (void)SaveInputSettings();
-                }
-                m_rebindAction = action;
-                m_replaceActionOnRebind = false;
                 std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-                    "Press a key to bind action: %.180s", action.c_str());
+                    "Action name is empty or already exists");
+            }
+            else
+            {
+                m_customInputActions.push_back(action);
+                (void)m_inputMap.CreateAction(action);
+                m_selectedCustomInputAction = action;
+                if (SaveInputSettings())
+                {
+                    m_rebindAction = action;
+                    m_replaceActionOnRebind = false;
+                    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                        "Press a key to bind action: %.170s", action.c_str());
+                    m_newInputActionName[0] = '\0';
+                }
             }
         }
-        ImGui::TextDisabled("Rebind replaces keys; +Key adds another. Settings save to ember.emberproject.");
+
+        ImGui::SeparatorText("Manage custom action");
+        if (m_customInputActions.empty())
+        {
+            ImGui::TextDisabled("No custom actions yet.");
+        }
+        else
+        {
+            if (std::find(m_customInputActions.begin(), m_customInputActions.end(),
+                m_selectedCustomInputAction) == m_customInputActions.end())
+            {
+                m_selectedCustomInputAction = m_customInputActions.front();
+                std::snprintf(m_renamedInputActionName, sizeof(m_renamedInputActionName),
+                    "%s", m_selectedCustomInputAction.c_str());
+            }
+            if (ImGui::BeginCombo("Action", m_selectedCustomInputAction.c_str()))
+            {
+                for (const std::string& action : m_customInputActions)
+                {
+                    const bool selected = action == m_selectedCustomInputAction;
+                    if (ImGui::Selectable(action.c_str(), selected))
+                    {
+                        m_selectedCustomInputAction = action;
+                        std::snprintf(m_renamedInputActionName,
+                            sizeof(m_renamedInputActionName), "%s", action.c_str());
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::SetNextItemWidth(210.0F);
+            ImGui::InputText("New name", m_renamedInputActionName,
+                sizeof(m_renamedInputActionName));
+            ImGui::SameLine();
+            if (ImGui::Button("Rename"))
+            {
+                const std::string newName = m_renamedInputActionName;
+                if (newName.empty() || IsDefaultInputAction(newName) ||
+                    std::find(m_customInputActions.begin(), m_customInputActions.end(), newName)
+                        != m_customInputActions.end())
+                {
+                    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                        "New action name is empty or already exists");
+                }
+                else if (m_inputMap.RenameAction(m_selectedCustomInputAction, newName))
+                {
+                    const std::string oldName = m_selectedCustomInputAction;
+                    for (std::string& action : m_customInputActions)
+                    {
+                        if (action == oldName) action = newName;
+                    }
+                    if (m_rebindAction == oldName) m_rebindAction = newName;
+                    m_selectedCustomInputAction = newName;
+                    (void)SaveInputSettings();
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Delete"))
+            {
+                const std::string removed = m_selectedCustomInputAction;
+                m_inputMap.ClearAction(removed);
+                m_customInputActions.erase(
+                    std::remove(m_customInputActions.begin(), m_customInputActions.end(), removed),
+                    m_customInputActions.end());
+                if (m_rebindAction == removed) m_rebindAction.clear();
+                m_selectedCustomInputAction = m_customInputActions.empty()
+                    ? std::string{} : m_customInputActions.front();
+                if (!m_selectedCustomInputAction.empty())
+                {
+                    std::snprintf(m_renamedInputActionName,
+                        sizeof(m_renamedInputActionName), "%s",
+                        m_selectedCustomInputAction.c_str());
+                }
+                (void)SaveInputSettings();
+            }
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button("Reset All to Defaults"))
+        {
+            m_inputMap = InputMap::CreateDefaultMovementMap();
+            m_customInputActions.clear();
+            m_selectedCustomInputAction.clear();
+            m_rebindAction.clear();
+            (void)SaveInputSettings();
+            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                "Input actions restored to default bindings");
+        }
+        ImGui::TextDisabled("Keys cannot be shared by different actions. Settings save to the project.");
     }
     ImGui::End();
 }
@@ -1406,6 +1531,7 @@ void EditorApplication::LoadInputSettings()
             action != "MoveUp" && action != "MoveDown")
         {
             m_customInputActions.push_back(action);
+            (void)m_inputMap.CreateAction(action);
         }
     }
 }

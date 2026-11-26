@@ -13,9 +13,11 @@ namespace ember
 class InputMap
 {
 public:
+    [[nodiscard]] bool CreateAction(std::string_view action);
     [[nodiscard]] bool BindAction(std::string_view action, SDL_Scancode key);
     [[nodiscard]] bool UnbindAction(std::string_view action, SDL_Scancode key);
     void ClearAction(std::string_view action);
+    [[nodiscard]] bool RenameAction(std::string_view oldName, std::string_view newName);
     void Clear();
 
     [[nodiscard]] bool IsActionDown(std::string_view action) const;

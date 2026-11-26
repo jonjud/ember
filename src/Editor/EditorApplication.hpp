@@ -71,6 +71,8 @@ private:
     std::string m_rebindAction;
     bool m_replaceActionOnRebind = true;
     char m_newInputActionName[64]{};
+    char m_renamedInputActionName[64]{};
+    std::string m_selectedCustomInputAction;
     Camera2D m_viewportCamera;
     AssetRegistry m_assetRegistry{"assets"};
     AssetImportService m_assetImportService{"assets"};

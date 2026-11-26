@@ -3,9 +3,16 @@
 #include "Engine/Platform/Input.hpp"
 
 #include <algorithm>
+#include <utility>
 
 namespace ember
 {
+bool InputMap::CreateAction(std::string_view action)
+{
+    if (action.empty()) return false;
+    return m_bindings.try_emplace(std::string(action)).second;
+}
+
 bool InputMap::BindAction(std::string_view action, SDL_Scancode key)
 {
     if (action.empty() || key == SDL_SCANCODE_UNKNOWN)
@@ -49,6 +56,26 @@ bool InputMap::UnbindAction(std::string_view action, SDL_Scancode key)
 void InputMap::ClearAction(std::string_view action)
 {
     m_bindings.erase(std::string(action));
+}
+
+bool InputMap::RenameAction(std::string_view oldName, std::string_view newName)
+{
+    if (oldName.empty() || newName.empty() || oldName == newName ||
+        m_bindings.contains(std::string(newName)))
+    {
+        return false;
+    }
+
+    const auto oldIt = m_bindings.find(std::string(oldName));
+    if (oldIt == m_bindings.end())
+    {
+        return false;
+    }
+
+    auto keys = std::move(oldIt->second);
+    m_bindings.erase(oldIt);
+    m_bindings.emplace(std::string(newName), std::move(keys));
+    return true;
 }
 
 void InputMap::Clear()

@@ -20,7 +20,8 @@ void Check(bool condition, const char* message)
 int main()
 {
     ember::InputMap map;
-    Check(!map.BindAction("", SDL_SCANCODE_A), "Empty action names are rejected");
+    Check(!map.CreateAction(""), "Empty action names are rejected");
+    Check(map.CreateAction("EmptyAction"), "An action can exist before it has a key");
     Check(!map.BindAction("Move", SDL_SCANCODE_UNKNOWN), "Unknown keys are rejected");
     Check(map.BindAction("MoveLeft", SDL_SCANCODE_A), "A key can be bound to an action");
     Check(!map.BindAction("MoveLeft", SDL_SCANCODE_A), "Duplicate bindings are rejected");
@@ -33,6 +34,14 @@ int main()
 
     map.ClearAction("MoveLeft");
     Check(map.GetBindings("MoveLeft").empty(), "An action can be cleared");
+    Check(map.BindAction("Jump", SDL_SCANCODE_SPACE), "Custom action can be created");
+    Check(!map.RenameAction("Jump", "MoveLeft"), "Actions cannot be renamed to an existing name");
+    Check(map.RenameAction("Jump", "Interact"), "Custom action can be renamed");
+    Check(map.RenameAction("EmptyAction", "Pause"), "Unbound custom actions can be renamed");
+    Check(map.GetBindings("Interact").size() == 1 &&
+          map.GetBindings("Interact").front() == SDL_SCANCODE_SPACE,
+          "Renaming preserves action bindings");
+    Check(!map.RenameAction("Missing", "Other"), "Missing actions cannot be renamed");
 
     const ember::InputMap defaults = ember::InputMap::CreateDefaultMovementMap();
     Check(defaults.GetBindings("MoveLeft").size() == 2, "Default map supports A and Left");
@@ -40,7 +49,6 @@ int main()
     Check(defaults.GetBindings("MoveUp").size() == 2, "Default map supports W and Up");
     Check(defaults.GetBindings("MoveDown").size() == 2, "Default map supports S and Down");
 
-    (void)map.BindAction("Jump", SDL_SCANCODE_SPACE);
     map.Clear();
     Check(map.GetBindings("Jump").empty(), "All actions can be cleared");
 
