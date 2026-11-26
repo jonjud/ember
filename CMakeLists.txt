@@ -92,6 +92,7 @@ add_library(ember_engine STATIC
     src/Engine/Scene/SceneSerializer.cpp
     src/Engine/Renderer/Camera2D.cpp
     src/Engine/Platform/Input.cpp
+    src/Engine/Platform/InputMap.cpp
     src/Engine/Renderer/Renderer2D.cpp
 )
 
@@ -120,6 +121,13 @@ target_include_directories(ember_editor PRIVATE src)
 target_link_libraries(ember_editor PRIVATE ember_engine ember_imgui SDL3::SDL3)
 
 if(BUILD_TESTING)
+    add_executable(ember_input_map_tests
+        tests/InputMapTests.cpp
+    )
+    target_include_directories(ember_input_map_tests PRIVATE src)
+    target_link_libraries(ember_input_map_tests PRIVATE ember_engine)
+    add_test(NAME ember_input_map_tests COMMAND ember_input_map_tests)
+
     add_executable(ember_scene_tests
         tests/SceneTests.cpp
         src/Engine/Scene/Scene.cpp
