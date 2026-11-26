@@ -32,8 +32,8 @@ src/
 - **Core / Time:** measures frame delta time using SDL's high-resolution performance counter.
 - **Platform / Input:** exposes keyboard state through an engine-facing API.
 - **Math / Vector2:** engine-owned 2D vector type, independent of SDL.
-- **Scene / Transform2D:** stores an object's world position and scale.
-- **Renderer / Camera2D:** converts world positions and sizes into screen coordinates and applies camera zoom.
+- **Scene / Transform2D:** stores an object's world position, scale, and rotation in radians.
+- **Renderer / Camera2D:** converts world positions and sizes into screen coordinates and applies camera zoom and rotation.
 - **Renderer / Renderer2D:** owns the SDL renderer, draws primitives and sprites, and manages loaded texture lifetimes.
 - **main.cpp:** contains only the process entry point.
 
@@ -44,7 +44,7 @@ src/
 - `DestroyTexture(handle)` releases an individual texture.
 - `Shutdown()` releases every remaining texture before destroying the SDL renderer.
 
-`DrawFilledRect(transform, camera, size, color)` renders a rectangle using world coordinates, object scale, and the camera conversion. The current camera supports position and zoom; rotation is intentionally deferred.
+`DrawFilledRect(transform, camera, size, color)` renders a transformed rectangle using world coordinates, object scale, object rotation, and the camera conversion. `DrawTexture(handle, transform, camera, size)` applies the same position, scale, and rotation workflow to sprites. Transform and camera rotations are stored in radians; the renderer converts the relative sprite rotation to degrees for SDL3.
 
 Texture handles are lightweight IDs; SDL texture pointers remain private to the renderer. The first loader intentionally supports BMP only, avoiding another third-party dependency while the resource API is established. PNG/JPEG support can be added later behind the same interface.
 
@@ -73,4 +73,4 @@ Third-party APIs should be hidden behind narrow engine-facing interfaces when do
 
 ## Next milestone
 
-Extend the current transform and camera APIs with rotation, then apply camera-aware transforms to sprite rendering before introducing scenes and entities.
+Introduce a scene/entity model and connect it to the existing transform and camera-aware renderer.
