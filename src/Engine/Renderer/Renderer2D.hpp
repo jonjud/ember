@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Engine/Renderer/Camera2D.hpp"
+#include "Engine/Scene/Transform2D.hpp"
+
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -35,6 +38,14 @@ public:
         float y,
         float width,
         float height,
+        std::uint8_t red,
+        std::uint8_t green,
+        std::uint8_t blue,
+        std::uint8_t alpha = 255);
+    void DrawFilledRect(
+        const Transform2D& transform,
+        const Camera2D& camera,
+        const Vector2& size,
         std::uint8_t red,
         std::uint8_t green,
         std::uint8_t blue,
