@@ -1,9 +1,8 @@
-#include "Engine/Core/Application.hpp"
+#include "Editor/EditorApplication.hpp"
 
 int main(int, char**)
 {
-    ember::Application application;
-
+    ember::EditorApplication application;
     if (!application.Initialize())
     {
         return 1;

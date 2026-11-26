@@ -49,7 +49,7 @@ tests/
 
 ## Current responsibilities
 
-- **Core / Application:** owns the SDL window, active scene, project-facing AssetManager, and event/update/render loop.
+- **Core / Application:** owns the runtime SDL window, active scene, project-facing AssetManager, and event/update/render loop.\n- **Editor / EditorApplication:** owns the editor window and Dear ImGui lifecycle; it is compiled only into `ember_editor` and does not add Dear ImGui to `ember_engine`.
 - **Core / Time:** measures frame delta time using SDL's high-resolution performance counter.
 - **Platform / Input:** exposes keyboard state through an engine-facing API.
 - **Math / Vector2:** engine-owned 2D vector type, independent of SDL.
@@ -147,7 +147,7 @@ Editor
 
 - SDL3: windowing, event handling, keyboard input, and initial rendering backend.
 - SDL3_image: BMP, PNG, and JPEG image decoding (stb_image backend).
-- Dear ImGui: planned editor interface; not part of the runtime core.
+- Dear ImGui: editor-only interface dependency; not linked into the runtime core.
 - Box2D: planned 2D physics backend.
 - miniaudio: planned audio backend.
 

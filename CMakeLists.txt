@@ -68,6 +68,16 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(SDL3_image)
 
+# Dear ImGui is an editor-only dependency. It is deliberately excluded from
+# ember_engine so runtime/game builds do not inherit editor UI code.
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG v1.91.9b
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(imgui)
+
 add_library(ember_engine STATIC
     src/Engine/Core/Application.cpp
     src/Engine/Core/Time.cpp
@@ -88,11 +98,26 @@ add_library(ember_engine STATIC
 target_include_directories(ember_engine PUBLIC src)
 target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image PRIVATE nlohmann_json::nlohmann_json)
 
+add_library(ember_imgui STATIC
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
+)
+target_include_directories(ember_imgui PUBLIC
+    ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/backends
+)
+target_link_libraries(ember_imgui PUBLIC SDL3::SDL3)
+
 add_executable(ember_editor
     src/main.cpp
+    src/Editor/EditorApplication.cpp
 )
-
-target_link_libraries(ember_editor PRIVATE ember_engine)
+target_include_directories(ember_editor PRIVATE src)
+target_link_libraries(ember_editor PRIVATE ember_engine ember_imgui SDL3::SDL3)
 
 if(BUILD_TESTING)
     add_executable(ember_scene_tests
@@ -178,6 +203,7 @@ endif()
 if(MSVC)
     target_compile_options(ember_engine PRIVATE /W4 /permissive-)
     target_compile_options(ember_editor PRIVATE /W4 /permissive-)
+    target_compile_options(ember_imgui PRIVATE /W4 /permissive-)
     if(BUILD_TESTING)
         target_compile_options(ember_scene_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_texture_cache_tests PRIVATE /W4 /permissive-)
@@ -192,6 +218,7 @@ if(MSVC)
 else()
     target_compile_options(ember_engine PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(ember_editor PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(ember_imgui PRIVATE -Wall -Wextra -Wpedantic)
     if(BUILD_TESTING)
         target_compile_options(ember_scene_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_texture_cache_tests PRIVATE -Wall -Wextra -Wpedantic)
