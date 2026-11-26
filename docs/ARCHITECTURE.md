@@ -32,6 +32,7 @@ src/
 │       ├── Entity.hpp
 │       ├── RenderComponent2D.hpp
 │       ├── Scene.hpp/.cpp
+│       ├── SceneSerializer.hpp/.cpp
 │       └── Transform2D.hpp
 └── main.cpp
 
@@ -40,6 +41,7 @@ tests/
 ├── AssetManagerTests.cpp
 ├── AssetMetadataTests.cpp
 ├── SceneTests.cpp
+├── SceneSerializerTests.cpp
 └── TextureCacheTests.cpp
 ```
 
@@ -57,8 +59,9 @@ tests/
 - **Resources / AssetMetadataStore:** reads and writes versioned JSON sidecar files, rejects unsupported schema versions, and validates project-relative source paths.
 - **Scene / Entity:** provides a stable 64-bit entity ID, name, active state, Transform2D, and RenderComponent2D.
 - **Scene / Scene:** owns entities, creates and destroys them, looks them up by ID, and iterates without allocating a temporary list. Entity references remain stable when other entities are inserted; destroying that entity invalidates its reference.
+- **Scene / SceneSerializer:** saves and loads versioned JSON scenes, preserving entity IDs and scene data while storing stable texture asset IDs instead of transient renderer handles. Failed loads leave the destination scene unchanged.
 - **Scene / Transform2D:** stores an object's world position, scale, and rotation in radians.
-- **Scene / RenderComponent2D:** stores visual size, RGBA tint, visibility, and an optional texture handle. Without a texture it draws a filled rectangle; with a valid texture it draws a sprite.
+- **Scene / RenderComponent2D:** stores visual size, RGBA tint, visibility, a stable texture asset ID, and an optional runtime texture handle. Without a valid handle it draws a filled rectangle; with a valid handle it draws a sprite.
 - **Renderer / Camera2D:** converts world positions and sizes into screen coordinates and applies camera zoom and rotation.
 - **Renderer / Renderer2D:** owns the SDL renderer, draws primitives and sprites, and manages loaded texture lifetimes.
 - **main.cpp:** contains only the process entry point.
@@ -99,6 +102,14 @@ tests/
 - A failed load returns an empty handle and does not create a cache entry.
 
 The cache uses callbacks rather than SDL types. The AssetManager connects the validated project-relative path workflow to the cache. The Application clears the cache before destroying the renderer. Do not release a path while an entity still intends to draw its handle.
+
+## Scene serialization workflow
+
+- Save scenes as versioned `.emberscene` JSON files using `SceneSerializer::Save`.
+- Load with `SceneSerializer::Load`; the destination is replaced only after the complete file has been validated.
+- Entity IDs, names, active states, transforms, render settings, and stable texture asset IDs are persisted.
+- Renderer-owned `TextureHandle` values are never serialized. After loading, resolve each texture asset ID through the asset system and acquire a fresh runtime handle.
+- Unknown schema versions, duplicate/zero entity IDs, malformed values, and invalid numeric ranges are rejected.
 
 ## Asset metadata workflow
 
@@ -141,4 +152,4 @@ Third-party APIs should be hidden behind narrow engine-facing interfaces when do
 
 ## Next milestone
 
-Connect asset metadata to project scanning and import settings, then build scene serialization on top of stable asset IDs.
+Connect stable texture asset IDs to the AssetManager, then add project scanning and editor-facing asset import settings.

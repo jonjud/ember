@@ -76,6 +76,7 @@ add_library(ember_engine STATIC
     src/Engine/Resources/AssetMetadataStore.cpp
     src/Engine/Resources/TextureCache.cpp
     src/Engine/Scene/Scene.cpp
+    src/Engine/Scene/SceneSerializer.cpp
     src/Engine/Renderer/Camera2D.cpp
     src/Engine/Platform/Input.cpp
     src/Engine/Renderer/Renderer2D.cpp
@@ -112,6 +113,15 @@ if(BUILD_TESTING)
     target_include_directories(ember_asset_directory_tests PRIVATE src)
     add_test(NAME ember_asset_directory_tests COMMAND ember_asset_directory_tests)
 
+    add_executable(ember_scene_serializer_tests
+        tests/SceneSerializerTests.cpp
+        src/Engine/Scene/Scene.cpp
+        src/Engine/Scene/SceneSerializer.cpp
+    )
+    target_include_directories(ember_scene_serializer_tests PRIVATE src)
+    target_link_libraries(ember_scene_serializer_tests PRIVATE nlohmann_json::nlohmann_json)
+    add_test(NAME ember_scene_serializer_tests COMMAND ember_scene_serializer_tests)
+
     add_executable(ember_asset_metadata_tests
         tests/AssetMetadataTests.cpp
         src/Engine/Resources/AssetMetadataStore.cpp
@@ -139,6 +149,7 @@ if(MSVC)
         target_compile_options(ember_asset_directory_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_manager_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_metadata_tests PRIVATE /W4 /permissive-)
+        target_compile_options(ember_scene_serializer_tests PRIVATE /W4 /permissive-)
     endif()
 else()
     target_compile_options(ember_engine PRIVATE -Wall -Wextra -Wpedantic)
@@ -149,6 +160,7 @@ else()
         target_compile_options(ember_asset_directory_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_manager_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_metadata_tests PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(ember_scene_serializer_tests PRIVATE -Wall -Wextra -Wpedantic)
     endif()
 endif()
 

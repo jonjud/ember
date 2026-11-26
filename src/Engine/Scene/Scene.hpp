@@ -10,6 +10,8 @@
 
 namespace ember
 {
+class SceneSerializer;
+
 class Scene
 {
 public:
@@ -54,6 +56,8 @@ public:
     void Clear();
 
 private:
+    friend class SceneSerializer;
+
     std::string m_name;
     EntityId m_nextEntityId = 1;
     std::map<EntityId, std::unique_ptr<Entity>> m_entities;

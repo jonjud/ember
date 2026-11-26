@@ -12,6 +12,7 @@ namespace ember
 using EntityId = std::uint64_t;
 
 class Scene;
+class SceneSerializer;
 
 // An entity is a lightweight scene object with identity, transform, and render data.
 class Entity
@@ -33,6 +34,7 @@ public:
 
 private:
     friend class Scene;
+    friend class SceneSerializer;
 
     Entity(EntityId id, std::string name)
         : m_id(id), m_name(std::move(name))
