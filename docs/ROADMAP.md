@@ -22,7 +22,9 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Texture handle lifetime management
 - [x] Sprite drawing API
 - [ ] PNG/JPEG asset loading
-- [ ] Transform and 2D camera
+- [x] Basic Transform2D position and scale
+- [x] Camera2D world-to-screen conversion and zoom
+- [ ] Transform rotation and camera rotation
 - [ ] Scene and entity model
 - [ ] Collision and Box2D integration
 - [ ] Resource cache and asset pipeline
