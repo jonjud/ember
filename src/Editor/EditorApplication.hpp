@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Resources/AssetImportService.hpp"
 #include "Engine/Resources/AssetRegistry.hpp"
 #include "Engine/Scene/Scene.hpp"
 
@@ -36,14 +37,19 @@ private:
     void SaveScene();
     void LoadScene();
     void RefreshAssets();
+    void LoadSelectedTextureSettings();
 
     SDL_Window* m_window = nullptr;
     SDL_Renderer* m_renderer = nullptr;
     bool m_isRunning = false;
     Scene m_scene{"Untitled Scene"};
     AssetRegistry m_assetRegistry{"assets"};
+    AssetImportService m_assetImportService{"assets"};
     EntityId m_selectedEntity = 0;
     std::string m_selectedAssetId;
+    std::string m_importSettingsAssetId;
+    int m_textureFilter = 0;
+    bool m_premultiplyAlpha = false;
     char m_scenePath[260] = "untitled.emberscene";
     char m_assetSearch[128]{};
     int m_assetTypeFilter = 0;

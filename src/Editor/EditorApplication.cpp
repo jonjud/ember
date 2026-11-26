@@ -173,37 +173,22 @@ void EditorApplication::DrawMenuBar()
 
     if (ImGui::BeginMenu("File"))
     {
-        if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
-        {
-            SaveScene();
-        }
-        if (ImGui::MenuItem("Load Scene"))
-        {
-            LoadScene();
-        }
+        if (ImGui::MenuItem("Save Scene", "Ctrl+S")) SaveScene();
+        if (ImGui::MenuItem("Load Scene")) LoadScene();
         ImGui::Separator();
-        if (ImGui::MenuItem("Exit"))
-        {
-            m_isRunning = false;
-        }
+        if (ImGui::MenuItem("Exit")) m_isRunning = false;
         ImGui::EndMenu();
     }
 
     if (ImGui::BeginMenu("Entity"))
     {
-        if (ImGui::MenuItem("Create Empty Entity"))
-        {
-            CreateEntity();
-        }
+        if (ImGui::MenuItem("Create Empty Entity")) CreateEntity();
         ImGui::EndMenu();
     }
 
     if (ImGui::BeginMenu("Assets"))
     {
-        if (ImGui::MenuItem("Refresh Asset Browser"))
-        {
-            RefreshAssets();
-        }
+        if (ImGui::MenuItem("Refresh Asset Browser")) RefreshAssets();
         ImGui::EndMenu();
     }
 
@@ -218,10 +203,7 @@ void EditorApplication::DrawSceneHierarchy()
     {
         ImGui::Text("%s", m_scene.GetName().c_str());
         ImGui::SameLine();
-        if (ImGui::SmallButton("+"))
-        {
-            CreateEntity();
-        }
+        if (ImGui::SmallButton("+")) CreateEntity();
         ImGui::Separator();
 
         m_scene.ForEachEntity([this](Entity& entity)
@@ -231,16 +213,10 @@ void EditorApplication::DrawSceneHierarchy()
             std::snprintf(label, sizeof(label), "%s##%llu",
                 entity.GetName().c_str(),
                 static_cast<unsigned long long>(entity.GetId()));
-            if (ImGui::Selectable(label, selected))
-            {
-                m_selectedEntity = entity.GetId();
-            }
+            if (ImGui::Selectable(label, selected)) m_selectedEntity = entity.GetId();
         });
 
-        if (m_scene.IsEmpty())
-        {
-            ImGui::TextDisabled("No entities. Press + to create one.");
-        }
+        if (m_scene.IsEmpty()) ImGui::TextDisabled("No entities. Press + to create one.");
     }
     ImGui::End();
 }
@@ -260,16 +236,10 @@ void EditorApplication::DrawInspector()
         {
             char name[128]{};
             std::snprintf(name, sizeof(name), "%s", entity->GetName().c_str());
-            if (ImGui::InputText("Name", name, sizeof(name)))
-            {
-                entity->SetName(name);
-            }
+            if (ImGui::InputText("Name", name, sizeof(name))) entity->SetName(name);
 
             bool active = entity->IsActive();
-            if (ImGui::Checkbox("Active", &active))
-            {
-                entity->SetActive(active);
-            }
+            if (ImGui::Checkbox("Active", &active)) entity->SetActive(active);
 
             ImGui::SeparatorText("Transform");
             auto& transform = entity->GetTransform();
@@ -284,10 +254,10 @@ void EditorApplication::DrawInspector()
             int color[4]{render.red, render.green, render.blue, render.alpha};
             if (ImGui::InputInt4("Tint RGBA", color))
             {
-                render.red = static_cast<std::uint8_t>(color[0] < 0 ? 0 : color[0] > 255 ? 255 : color[0]);
-                render.green = static_cast<std::uint8_t>(color[1] < 0 ? 0 : color[1] > 255 ? 255 : color[1]);
-                render.blue = static_cast<std::uint8_t>(color[2] < 0 ? 0 : color[2] > 255 ? 255 : color[2]);
-                render.alpha = static_cast<std::uint8_t>(color[3] < 0 ? 0 : color[3] > 255 ? 255 : color[3]);
+                render.red = static_cast<std::uint8_t>(std::clamp(color[0], 0, 255));
+                render.green = static_cast<std::uint8_t>(std::clamp(color[1], 0, 255));
+                render.blue = static_cast<std::uint8_t>(std::clamp(color[2], 0, 255));
+                render.alpha = static_cast<std::uint8_t>(std::clamp(color[3], 0, 255));
             }
 
             ImGui::Separator();
@@ -310,10 +280,7 @@ void EditorApplication::DrawAssetBrowser()
     {
         ImGui::Text("Asset root: %s", m_assetRegistry.GetDirectory().GetRoot().string().c_str());
         ImGui::SameLine();
-        if (ImGui::SmallButton("Refresh"))
-        {
-            RefreshAssets();
-        }
+        if (ImGui::SmallButton("Refresh")) RefreshAssets();
         ImGui::SameLine();
         ImGui::TextDisabled("%zu indexed assets | %zu diagnostics",
             m_assetRegistry.GetAssetCount(), m_assetRegistry.GetDiagnostics().size());
@@ -328,17 +295,11 @@ void EditorApplication::DrawAssetBrowser()
         for (const auto& [assetId, metadata] : m_assetRegistry.GetAssets())
         {
             (void)assetId;
-            if (!MatchesAssetType(metadata.type, m_assetTypeFilter))
-            {
-                continue;
-            }
+            if (!MatchesAssetType(metadata.type, m_assetTypeFilter)) continue;
             const std::string source = metadata.source.generic_string();
             if (m_assetSearch[0] != '\0' &&
                 metadata.assetId.find(m_assetSearch) == std::string::npos &&
-                source.find(m_assetSearch) == std::string::npos)
-            {
-                continue;
-            }
+                source.find(m_assetSearch) == std::string::npos) continue;
             assets.push_back(&metadata);
         }
         std::sort(assets.begin(), assets.end(), [](const AssetMetadata* left, const AssetMetadata* right)
@@ -362,12 +323,11 @@ void EditorApplication::DrawAssetBrowser()
                 ImGui::TableSetColumnIndex(0);
                 const bool selected = m_selectedAssetId == metadata->assetId;
                 const std::string label = metadata->assetId + "##asset";
-                if (ImGui::Selectable(label.c_str(), selected,
-                    ImGuiSelectableFlags_SpanAllColumns))
+                if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
                 {
                     m_selectedAssetId = metadata->assetId;
+                    LoadSelectedTextureSettings();
                 }
-
                 ImGui::TableSetColumnIndex(1);
                 ImGui::TextUnformatted(AssetTypeName(metadata->type));
                 ImGui::TableSetColumnIndex(2);
@@ -381,10 +341,40 @@ void EditorApplication::DrawAssetBrowser()
         if (selected != nullptr)
         {
             ImGui::Separator();
-            ImGui::Text("Selected: %s", selected->assetId.c_str());
-            ImGui::SameLine();
-            ImGui::TextDisabled("(%s)", AssetTypeName(selected->type));
+            ImGui::Text("Selected: %s (%s)", selected->assetId.c_str(), AssetTypeName(selected->type));
             ImGui::Text("Source: %s", selected->source.generic_string().c_str());
+
+            if (selected->type == AssetType::Texture)
+            {
+                ImGui::SeparatorText("Texture Import Settings");
+                ImGui::SetNextItemWidth(150.0F);
+                ImGui::Combo("Filter", &m_textureFilter, "Nearest\0Linear\0");
+                ImGui::Checkbox("Premultiply Alpha", &m_premultiplyAlpha);
+                ImGui::SameLine();
+                if (ImGui::Button("Apply Settings"))
+                {
+                    TextureImportSettings settings;
+                    settings.filter = m_textureFilter == 1 ? TextureFilter::Linear : TextureFilter::Nearest;
+                    settings.premultiplyAlpha = m_premultiplyAlpha;
+                    std::string error;
+                    if (m_assetImportService.UpdateTextureSettings(m_selectedAssetId, settings, &error))
+                    {
+                        (void)m_assetRegistry.Scan();
+                        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                            "Saved import settings for %.180s", m_selectedAssetId.c_str());
+                    }
+                    else
+                    {
+                        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                            "Import settings failed: %.200s", error.c_str());
+                    }
+                }
+                ImGui::TextDisabled("Changes are saved to the .emberasset sidecar. Reload runtime assets to apply.");
+            }
+            else
+            {
+                ImGui::TextDisabled("Import settings are currently available for Texture assets only.");
+            }
         }
         else if (!m_selectedAssetId.empty())
         {
@@ -416,15 +406,9 @@ void EditorApplication::DrawAssetBrowser()
         ImGui::SetNextItemWidth(220.0F);
         ImGui::InputText("Path", m_scenePath, sizeof(m_scenePath));
         ImGui::SameLine();
-        if (ImGui::SmallButton("Save Scene"))
-        {
-            SaveScene();
-        }
+        if (ImGui::SmallButton("Save Scene")) SaveScene();
         ImGui::SameLine();
-        if (ImGui::SmallButton("Load Scene"))
-        {
-            LoadScene();
-        }
+        if (ImGui::SmallButton("Load Scene")) LoadScene();
     }
     ImGui::End();
 }
@@ -453,13 +437,9 @@ void EditorApplication::SaveScene()
 {
     std::string error;
     if (SceneSerializer::Save(m_scene, m_scenePath, &error))
-    {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Saved scene: %.200s", m_scenePath);
-    }
     else
-    {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Save failed: %.220s", error.c_str());
-    }
 }
 
 void EditorApplication::LoadScene()
@@ -481,12 +461,14 @@ void EditorApplication::LoadScene()
 void EditorApplication::RefreshAssets()
 {
     const bool scanSucceeded = m_assetRegistry.Scan();
+    const bool importScanSucceeded = m_assetImportService.Scan();
     if (!m_selectedAssetId.empty() && m_assetRegistry.Find(m_selectedAssetId) == nullptr)
     {
         m_selectedAssetId.clear();
+        m_importSettingsAssetId.clear();
     }
 
-    if (scanSucceeded)
+    if (scanSucceeded && importScanSucceeded)
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "Asset scan complete: %zu assets, %zu diagnostics",
@@ -498,5 +480,20 @@ void EditorApplication::RefreshAssets()
         const char* reason = diagnostics.empty() ? "Asset scan failed." : diagnostics.front().message.c_str();
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Asset scan failed: %.210s", reason);
     }
+}
+
+void EditorApplication::LoadSelectedTextureSettings()
+{
+    m_importSettingsAssetId = m_selectedAssetId;
+    const AssetMetadata* metadata = m_assetImportService.FindAsset(m_selectedAssetId);
+    if (metadata == nullptr || metadata->type != AssetType::Texture)
+    {
+        m_textureFilter = 0;
+        m_premultiplyAlpha = false;
+        return;
+    }
+
+    m_textureFilter = metadata->texture.filter == TextureFilter::Linear ? 1 : 0;
+    m_premultiplyAlpha = metadata->texture.premultiplyAlpha;
 }
 } // namespace ember

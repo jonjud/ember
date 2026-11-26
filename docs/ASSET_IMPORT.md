@@ -1,19 +1,19 @@
-# Asset Import Settings Service
+# Asset Import Settings
 
-The AssetImportService is the editor-facing API for changing persisted import metadata without coupling the editor to the runtime renderer.
+The engine stores import options in each versioned `.emberasset` sidecar. The editor exposes the texture options through the Asset Browser.
 
-## Workflow
+## Editor workflow
 
-1. Construct the service with the project's asset directory.
-2. Call Scan() to index .emberasset sidecars.
-3. Read an asset with FindAsset(stableAssetId).
-4. For texture assets, call UpdateTextureSettings(stableAssetId, settings).
-5. The service writes the updated sidecar and refreshes its own registry.
+1. Select a Texture asset in the Asset Browser.
+2. Choose **Nearest** or **Linear** filtering.
+3. Toggle **Premultiply Alpha** if the source texture requires it.
+4. Select **Apply Settings** to persist the changes to the asset's sidecar.
+5. Refresh or rescan assets before loading them into runtime systems.
 
-The registry retains the sidecar path for each unique stable asset ID. If duplicate IDs are found, the ID is removed from lookup and cannot be edited through this API.
+The editor uses `AssetImportService` to validate the stable asset ID, reject ambiguous or non-texture entries, write the sidecar, and refresh its metadata registry. The Asset Browser then rescans its display registry.
 
 ## Runtime behavior
 
-The service does not mutate AssetManager or renderer-owned texture handles. Existing runtime references keep the import settings and source path with which they were acquired. After editing settings, the application should call AssetManager::ScanAssets() before subsequent stable-ID loads; those later loads use the new metadata while outstanding references can still be released safely.
+Changing metadata does not mutate already loaded renderer-owned texture handles. Existing references retain the settings and source path with which they were acquired. The application should call `AssetManager::ScanAssets()` before subsequent stable-ID loads so new acquisitions use the updated settings; outstanding references can still be released safely.
 
-This separation allows a future editor Inspector to expose filter and alpha options without making the runtime asset lifetime dependent on editor state.
+Only texture import settings are currently exposed in the UI. Audio and scene import workflows remain future work.
