@@ -123,9 +123,9 @@ target_link_libraries(ember_editor PRIVATE ember_engine ember_imgui SDL3::SDL3)
 if(BUILD_TESTING)
     add_executable(ember_input_map_tests
         tests/InputMapTests.cpp
+        src/Engine/Platform/InputMap.cpp
     )
     target_include_directories(ember_input_map_tests PRIVATE src)
-    target_link_libraries(ember_input_map_tests PRIVATE ember_engine)
     add_test(NAME ember_input_map_tests COMMAND ember_input_map_tests)
 
     add_executable(ember_scene_tests

@@ -103,8 +103,9 @@ int main()
     Check(scene.FindEntity(playerId) == &player, "Scene finds entity by ID");
     Check(player.GetName() == "Player", "Entity reference remains stable after insertion");
 
+    const ember::EntityId duplicateId = duplicate != nullptr ? duplicate->GetId() : 0;
     const std::vector<ember::EntityId> ids = scene.GetEntityIds();
-    Check(ids.size() == 2 && ids[0] == playerId && ids[1] == enemyId,
+    Check(ids.size() == 3 && ids[0] == playerId && ids[1] == enemyId && ids[2] == duplicateId,
           "Entity IDs are returned in deterministic order");
 
     std::size_t visited = 0;
@@ -113,7 +114,7 @@ int main()
         (void)entity;
         ++visited;
     });
-    Check(visited == 2, "Mutable entity iteration visits every entity");
+    Check(visited == 3, "Mutable entity iteration visits every entity");
 
     const ember::Scene& constScene = scene;
     std::size_t constVisited = 0;
@@ -122,12 +123,12 @@ int main()
         (void)entity;
         ++constVisited;
     });
-    Check(constVisited == 2, "Const entity iteration visits every entity");
+    Check(constVisited == 3, "Const entity iteration visits every entity");
 
     enemy.SetActive(false);
     Check(!enemy.IsActive(), "Entity active state can be disabled");
 
-    Check(scene.DestroyEntity(duplicate != nullptr ? duplicate->GetId() : 0),
+    Check(scene.DestroyEntity(duplicateId),
           "Duplicate entity can be removed independently");
     Check(scene.DestroyEntity(enemyId), "DestroyEntity removes an existing entity");
     Check(!scene.DestroyEntity(enemyId), "DestroyEntity reports missing entity");

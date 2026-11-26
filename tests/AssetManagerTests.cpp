@@ -63,10 +63,20 @@ int main()
             ++loadCalls;
             Check(path.find("sprites/player.bmp") != std::string::npos,
                   "Backend receives the resolved project asset path");
-            Check(settings.filter == ember::TextureFilter::Linear,
-                  "Backend receives the texture filter from asset metadata");
-            Check(settings.premultiplyAlpha,
-                  "Backend receives the premultiplied-alpha import setting");
+            if (loadCalls == 1)
+            {
+                Check(settings.filter == ember::TextureFilter::Linear,
+                      "Stable-ID load receives the texture filter from asset metadata");
+                Check(settings.premultiplyAlpha,
+                      "Stable-ID load receives the premultiplied-alpha import setting");
+            }
+            else
+            {
+                Check(settings.filter == ember::TextureFilter::Nearest,
+                      "Path-based load uses the default nearest texture filter");
+                Check(!settings.premultiplyAlpha,
+                      "Path-based load uses the default non-premultiplied alpha setting");
+            }
             return ember::TextureHandle{nextId++};
         },
         [&destroyed](ember::TextureHandle handle)

@@ -1,7 +1,17 @@
 #include "Engine/Platform/InputMap.hpp"
+#include "Engine/Platform/Input.hpp"
 
 #include <cstdlib>
 #include <iostream>
+
+// Map data tests do not require SDL keyboard initialization.
+namespace ember
+{
+bool Input::IsKeyDown(SDL_Scancode)
+{
+    return false;
+}
+}
 
 namespace
 {
@@ -35,7 +45,8 @@ int main()
     map.ClearAction("MoveLeft");
     Check(map.GetBindings("MoveLeft").empty(), "An action can be cleared");
     Check(map.BindAction("Jump", SDL_SCANCODE_SPACE), "Custom action can be created");
-    Check(!map.RenameAction("Jump", "MoveLeft"), "Actions cannot be renamed to an existing name");
+    Check(map.CreateAction("Occupied"), "An existing destination action can be created");
+    Check(!map.RenameAction("Jump", "Occupied"), "Actions cannot be renamed to an existing name");
     Check(map.RenameAction("Jump", "Interact"), "Custom action can be renamed");
     Check(map.RenameAction("EmptyAction", "Pause"), "Unbound custom actions can be renamed");
     Check(map.GetBindings("Interact").size() == 1 &&
