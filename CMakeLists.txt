@@ -126,6 +126,9 @@ if(BUILD_TESTING)
         src/Engine/Platform/InputMap.cpp
     )
     target_include_directories(ember_input_map_tests PRIVATE src)
+    # InputMap exposes SDL_Scancode in its public API. Linking SDL3 supplies
+    # the SDL include path and definitions without initializing SDL at runtime.
+    target_link_libraries(ember_input_map_tests PRIVATE SDL3::SDL3)
     add_test(NAME ember_input_map_tests COMMAND ember_input_map_tests)
 
     add_executable(ember_scene_tests
