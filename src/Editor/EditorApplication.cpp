@@ -114,6 +114,7 @@ bool EditorApplication::Initialize()
 
     LoadInputSettings();
     RefreshAssets();
+    LoadStartupScene();
     m_isRunning = true;
     return true;
 }
@@ -1482,6 +1483,47 @@ void EditorApplication::LoadScene()
     }
 }
 
+void EditorApplication::LoadStartupScene()
+{
+    if (m_projectConfiguration.startupScene.empty())
+    {
+        return;
+    }
+
+    const auto startupScene = ProjectConfigurationStore::ResolveStartupScene(
+        m_projectFilePath, m_projectConfiguration);
+    if (!startupScene)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Startup scene path is not a safe project-relative path");
+        return;
+    }
+
+    std::error_code filesystemError;
+    if (!std::filesystem::exists(*startupScene, filesystemError) || filesystemError)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Startup scene not found: %.190s", startupScene->string().c_str());
+        return;
+    }
+
+    Scene loadedScene;
+    std::string error;
+    if (!SceneSerializer::Load(loadedScene, *startupScene, &error))
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Startup scene load failed: %.180s", error.c_str());
+        return;
+    }
+
+    m_scene = std::move(loadedScene);
+    m_selectedEntity = 0;
+    std::snprintf(m_scenePath, sizeof(m_scenePath), "%s",
+        startupScene->string().c_str());
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+        "Startup scene loaded: %.190s", startupScene->string().c_str());
+}
+
 void EditorApplication::RefreshAssets()
 {
     ClearPreviewTextures();
@@ -1537,6 +1579,19 @@ void EditorApplication::LoadInputSettings()
     std::snprintf(m_assetDirectory, sizeof(m_assetDirectory), "%s", m_projectConfiguration.assetDirectory.generic_string().c_str());
     std::snprintf(m_startupScenePath, sizeof(m_startupScenePath), "%s",
         m_projectConfiguration.startupScene.generic_string().c_str());
+
+    const auto resolvedAssetDirectory = ProjectConfigurationStore::ResolveAssetDirectory(
+        m_projectFilePath, m_projectConfiguration);
+    if (resolvedAssetDirectory)
+    {
+        m_assetRegistry = AssetRegistry(*resolvedAssetDirectory);
+        m_assetImportService = AssetImportService(*resolvedAssetDirectory);
+    }
+    else
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Asset directory is invalid; using default asset root");
+    }
     if (!m_projectConfiguration.inputBindingsConfigured)
     {
         m_inputMap = InputMap::CreateDefaultMovementMap();
@@ -1602,6 +1657,7 @@ bool EditorApplication::SaveInputSettings()
 bool EditorApplication::SaveProjectSettings()
 {
     const std::string name = m_projectName;
+    const std::filesystem::path assetDirectory = m_assetDirectory;
     const std::filesystem::path startupScene = m_startupScenePath;
     if (name.empty())
     {
@@ -1610,27 +1666,48 @@ bool EditorApplication::SaveProjectSettings()
         return false;
     }
 
+    ProjectConfiguration candidate = m_projectConfiguration;
+    candidate.name = name;
+    candidate.assetDirectory = assetDirectory;
+    candidate.startupScene = startupScene;
+
+    // Validate every project path before SaveInputSettings writes the file.
+    const auto resolvedAssetDirectory = ProjectConfigurationStore::ResolveAssetDirectory(
+        m_projectFilePath, candidate);
+    if (!resolvedAssetDirectory)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Asset directory must be a safe relative path");
+        return false;
+    }
+    if (!startupScene.empty() &&
+        !ProjectConfigurationStore::ResolveStartupScene(m_projectFilePath, candidate))
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Startup scene must be a safe relative path");
+        return false;
+    }
+
     const ProjectConfiguration previous = m_projectConfiguration;
-    m_projectConfiguration.name = name;
-    m_projectConfiguration.assetDirectory = m_assetDirectory;
-    m_projectConfiguration.startupScene = startupScene;
+    m_projectConfiguration = std::move(candidate);
     if (!SaveInputSettings())
     {
         m_projectConfiguration = previous;
         return false;
     }
 
-    const auto resolvedAssetDirectory = ProjectConfigurationStore::ResolveAssetDirectory(
-        m_projectFilePath, m_projectConfiguration);
-    if (!resolvedAssetDirectory)
-    {
-        m_projectConfiguration = previous;
-        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-            "Asset directory must be a safe relative path");
-        return false;
-    }
     m_assetRegistry = AssetRegistry(*resolvedAssetDirectory);
     m_assetImportService = AssetImportService(*resolvedAssetDirectory);
+    if (!startupScene.empty())
+    {
+        const auto resolvedStartupScene = ProjectConfigurationStore::ResolveStartupScene(
+            m_projectFilePath, m_projectConfiguration);
+        if (resolvedStartupScene)
+        {
+            std::snprintf(m_scenePath, sizeof(m_scenePath), "%s",
+                resolvedStartupScene->string().c_str());
+        }
+    }
     RefreshAssets();
     return true;
 }

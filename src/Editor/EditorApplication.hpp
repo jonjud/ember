@@ -53,6 +53,7 @@ private:
     void RefreshAssets();
     void LoadSelectedTextureSettings();
     void LoadInputSettings();
+    void LoadStartupScene();
     [[nodiscard]] bool SaveInputSettings();
     [[nodiscard]] bool SaveProjectSettings();
     [[nodiscard]] SDL_Texture* GetPreviewTexture(const AssetMetadata& metadata);

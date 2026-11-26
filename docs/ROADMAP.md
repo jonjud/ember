@@ -40,6 +40,8 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Add an asset import settings service API for editor workflows
 - [x] Add editor UI for texture filter and premultiplied-alpha settings
 - [x] Versioned `.emberproject` configuration with validated relative paths
+- [x] Project Settings for project name, asset directory, and startup scene
+- [x] Load the configured startup scene when the editor opens
 - [x] Versioned JSON scene serialization with stable entity and asset IDs
 - [ ] Collision and Box2D integration
 
