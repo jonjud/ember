@@ -43,6 +43,11 @@ int main()
     player.GetTransform().position = {12.0F, 34.0F};
     player.GetTransform().rotation = 0.5F;
     auto& visual = player.GetRenderComponent();
+    Check(!visual.texture, "Render component starts without a texture");
+    visual.texture = ember::TextureHandle{42};
+    Check(static_cast<bool>(visual.texture) && visual.texture.id == 42,
+          "Render component can reference a texture handle");
+    visual.texture = {};
     visual.size = {48.0F, 32.0F};
     visual.red = 20;
     visual.green = 40;

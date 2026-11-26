@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/Renderer/Camera2D.hpp"
+#include "Engine/Resources/TextureHandle.hpp"
 #include "Engine/Scene/Transform2D.hpp"
 
 #include <cstdint>
@@ -13,13 +14,6 @@ struct SDL_Texture;
 
 namespace ember
 {
-struct TextureHandle
-{
-    std::uint32_t id = 0;
-
-    [[nodiscard]] explicit operator bool() const { return id != 0; }
-};
-
 class Renderer2D
 {
 public:
@@ -57,7 +51,11 @@ public:
         TextureHandle texture,
         const Transform2D& transform,
         const Camera2D& camera,
-        const Vector2& size);
+        const Vector2& size,
+        std::uint8_t red = 255,
+        std::uint8_t green = 255,
+        std::uint8_t blue = 255,
+        std::uint8_t alpha = 255);
     void Present();
 
 private:

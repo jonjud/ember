@@ -199,14 +199,29 @@ void Application::Render()
             return;
         }
 
-        m_renderer.DrawFilledRect(
-            entity.GetTransform(),
-            m_camera,
-            visual.size,
-            visual.red,
-            visual.green,
-            visual.blue,
-            visual.alpha);
+        if (visual.texture)
+        {
+            m_renderer.DrawTexture(
+                visual.texture,
+                entity.GetTransform(),
+                m_camera,
+                visual.size,
+                visual.red,
+                visual.green,
+                visual.blue,
+                visual.alpha);
+        }
+        else
+        {
+            m_renderer.DrawFilledRect(
+                entity.GetTransform(),
+                m_camera,
+                visual.size,
+                visual.red,
+                visual.green,
+                visual.blue,
+                visual.alpha);
+        }
     });
     m_renderer.Present();
 }

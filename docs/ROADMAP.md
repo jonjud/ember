@@ -28,9 +28,9 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Camera-aware transformed rectangle and sprite drawing
 - [x] Scene and entity model
 - [x] Connect active Scene to the application/render loop
-- [ ] Add a basic render component for texture-backed sprites
-- [ ] Collision and Box2D integration
+- [x] Add a basic render component for texture-backed sprites
 - [ ] Resource cache and asset pipeline
+- [ ] Collision and Box2D integration
 
 ## Phase 3 — Editor
 
