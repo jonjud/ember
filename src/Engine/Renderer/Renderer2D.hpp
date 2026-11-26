@@ -53,6 +53,11 @@ public:
     [[nodiscard]] TextureHandle LoadTexture(const std::string& filePath);
     void DestroyTexture(TextureHandle texture);
     void DrawTexture(TextureHandle texture, float x, float y, float width, float height);
+    void DrawTexture(
+        TextureHandle texture,
+        const Transform2D& transform,
+        const Camera2D& camera,
+        const Vector2& size);
     void Present();
 
 private:
