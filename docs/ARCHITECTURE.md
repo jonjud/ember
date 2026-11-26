@@ -2,14 +2,16 @@
 
 EMBER is a 2D-first engine written in C++20. The architecture is intentionally small and grows only when a working use case requires another subsystem.
 
-## Current executable
+## Current executables
 
-The `ember` executable is the application entry point. It creates an `ember::Application` and delegates initialization, the main loop, and shutdown to the engine library.
+The `ember` executable is the editor entry point. It creates an `ember::EditorApplication`, which owns the editor SDL window, SDL renderer, and Dear ImGui context. The `ember_engine` library remains independent of Dear ImGui. The runtime `ember::Application` remains in the engine library and can be hosted by a future game/runtime executable.
 
 ## Current source layout
 
 ```text
 src/
+├── Editor/
+│   └── EditorApplication.hpp/.cpp
 ├── Engine/
 │   ├── Core/
 │   │   ├── Application.hpp/.cpp

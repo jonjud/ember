@@ -24,7 +24,7 @@ bool EditorApplication::Initialize()
 {
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
-        std::cerr << "EMBER Editor: SDL initialization failed: " << SDL_GetError() << '\\n';
+        std::cerr << "EMBER Editor: SDL initialization failed: " << SDL_GetError() << '\n';
         return false;
     }
 
@@ -36,7 +36,7 @@ bool EditorApplication::Initialize()
 
     if (m_window == nullptr)
     {
-        std::cerr << "EMBER Editor: Window creation failed: " << SDL_GetError() << '\\n';
+        std::cerr << "EMBER Editor: Window creation failed: " << SDL_GetError() << '\n';
         Shutdown();
         return false;
     }
@@ -44,7 +44,7 @@ bool EditorApplication::Initialize()
     m_renderer = SDL_CreateRenderer(m_window, nullptr);
     if (m_renderer == nullptr)
     {
-        std::cerr << "EMBER Editor: Renderer creation failed: " << SDL_GetError() << '\\n';
+        std::cerr << "EMBER Editor: Renderer creation failed: " << SDL_GetError() << '\n';
         Shutdown();
         return false;
     }
@@ -55,20 +55,20 @@ bool EditorApplication::Initialize()
 
     if (!ImGui_ImplSDL3_InitForSDLRenderer(m_window, m_renderer))
     {
-        std::cerr << "EMBER Editor: ImGui SDL3 platform initialization failed.\\n";
+        std::cerr << "EMBER Editor: ImGui SDL3 platform initialization failed.\n";
         Shutdown();
         return false;
     }
 
     if (!ImGui_ImplSDLRenderer3_Init(m_renderer))
     {
-        std::cerr << "EMBER Editor: ImGui SDL renderer initialization failed.\\n";
+        std::cerr << "EMBER Editor: ImGui SDL renderer initialization failed.\n";
         Shutdown();
         return false;
     }
 
     m_isRunning = true;
-    std::cout << "EMBER Editor initialized with Dear ImGui.\\n";
+    std::cout << "EMBER Editor initialized with Dear ImGui.\n";
     return true;
 }
 
