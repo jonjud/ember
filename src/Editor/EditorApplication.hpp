@@ -7,8 +7,10 @@
 
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 
 struct SDL_Renderer;
+struct SDL_Texture;
 struct SDL_Window;
 
 namespace ember
@@ -42,9 +44,12 @@ private:
     void LoadScene();
     void RefreshAssets();
     void LoadSelectedTextureSettings();
+    [[nodiscard]] SDL_Texture* GetPreviewTexture(const AssetMetadata& metadata);
+    void ClearPreviewTextures();
 
     SDL_Window* m_window = nullptr;
     SDL_Renderer* m_renderer = nullptr;
+    std::unordered_map<std::string, SDL_Texture*> m_previewTextures;
     bool m_isRunning = false;
     Scene m_scene{"Untitled Scene"};
     Scene m_playScene{"Play Scene"};

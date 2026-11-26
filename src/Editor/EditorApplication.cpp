@@ -3,6 +3,7 @@
 #include "Engine/Scene/SceneSerializer.hpp"
 
 #include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_sdlrenderer3.h>
@@ -103,6 +104,7 @@ void EditorApplication::Run()
 
 void EditorApplication::Shutdown()
 {
+    ClearPreviewTextures();
     if (ImGui::GetCurrentContext() != nullptr)
     {
         ImGui_ImplSDLRenderer3_Shutdown();
@@ -390,6 +392,7 @@ void EditorApplication::DrawAssetBrowser()
                     std::string error;
                     if (m_assetImportService.UpdateTextureSettings(m_selectedAssetId, settings, &error))
                     {
+                        ClearPreviewTextures();
                         (void)m_assetRegistry.Scan();
                         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
                             "Saved import settings for %.180s", m_selectedAssetId.c_str());
@@ -444,6 +447,108 @@ void EditorApplication::DrawAssetBrowser()
         ImGui::EndDisabled();
     }
     ImGui::End();
+}
+
+SDL_Texture* EditorApplication::GetPreviewTexture(const AssetMetadata& metadata)
+{
+    const auto cached = m_previewTextures.find(metadata.assetId);
+    if (cached != m_previewTextures.end())
+    {
+        return cached->second;
+    }
+
+    const auto resolvedPath = m_assetRegistry.GetDirectory().Resolve(metadata.source);
+    if (!resolvedPath)
+    {
+        return nullptr;
+    }
+
+    SDL_Surface* surface = IMG_Load(resolvedPath->string().c_str());
+    if (surface == nullptr)
+    {
+        return nullptr;
+    }
+
+    SDL_Surface* uploadSurface = surface;
+    if (metadata.texture.premultiplyAlpha)
+    {
+        uploadSurface = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
+        if (uploadSurface == nullptr)
+        {
+            SDL_DestroySurface(surface);
+            return nullptr;
+        }
+
+        if (SDL_MUSTLOCK(uploadSurface) && !SDL_LockSurface(uploadSurface))
+        {
+            SDL_DestroySurface(uploadSurface);
+            SDL_DestroySurface(surface);
+            return nullptr;
+        }
+
+        for (int y = 0; y < uploadSurface->h; ++y)
+        {
+            auto* row = static_cast<std::uint8_t*>(uploadSurface->pixels)
+                      + static_cast<std::ptrdiff_t>(y) * uploadSurface->pitch;
+            for (int x = 0; x < uploadSurface->w; ++x)
+            {
+                std::uint8_t* pixel = row + static_cast<std::ptrdiff_t>(x) * 4;
+                const unsigned int alpha = pixel[3];
+                pixel[0] = static_cast<std::uint8_t>((static_cast<unsigned int>(pixel[0]) * alpha + 127U) / 255U);
+                pixel[1] = static_cast<std::uint8_t>((static_cast<unsigned int>(pixel[1]) * alpha + 127U) / 255U);
+                pixel[2] = static_cast<std::uint8_t>((static_cast<unsigned int>(pixel[2]) * alpha + 127U) / 255U);
+            }
+        }
+
+        if (SDL_MUSTLOCK(uploadSurface))
+        {
+            SDL_UnlockSurface(uploadSurface);
+        }
+    }
+
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(m_renderer, uploadSurface);
+    if (uploadSurface != surface)
+    {
+        SDL_DestroySurface(uploadSurface);
+    }
+    SDL_DestroySurface(surface);
+
+    if (texture == nullptr)
+    {
+        return nullptr;
+    }
+
+    const SDL_ScaleMode scaleMode = metadata.texture.filter == TextureFilter::Linear
+        ? SDL_SCALEMODE_LINEAR
+        : SDL_SCALEMODE_NEAREST;
+    if (!SDL_SetTextureScaleMode(texture, scaleMode))
+    {
+        SDL_DestroyTexture(texture);
+        return nullptr;
+    }
+
+    if (metadata.texture.premultiplyAlpha &&
+        !SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND_PREMULTIPLIED))
+    {
+        SDL_DestroyTexture(texture);
+        return nullptr;
+    }
+
+    m_previewTextures.emplace(metadata.assetId, texture);
+    return texture;
+}
+
+void EditorApplication::ClearPreviewTextures()
+{
+    for (const auto& [assetId, texture] : m_previewTextures)
+    {
+        (void)assetId;
+        if (texture != nullptr)
+        {
+            SDL_DestroyTexture(texture);
+        }
+    }
+    m_previewTextures.clear();
 }
 
 void EditorApplication::DrawViewport()
@@ -613,14 +718,36 @@ void EditorApplication::DrawViewport()
             }
 
             const ImU32 tint = IM_COL32(render.red, render.green, render.blue, render.alpha);
-            drawList->AddConvexPolyFilled(corners, 4, tint);
-            drawList->AddPolyline(corners, 4, IM_COL32(12, 14, 20, 255), ImDrawFlags_Closed, 1.0F);
-
+            SDL_Texture* previewTexture = nullptr;
             if (!render.textureAssetId.empty())
             {
-                const ImVec2 centerPoint = toCanvas(center);
-                drawList->AddText(centerPoint, IM_COL32(20, 20, 24, 230), "Texture");
+                const AssetMetadata* metadata = m_assetRegistry.Find(render.textureAssetId);
+                if (metadata != nullptr && metadata->type == AssetType::Texture)
+                {
+                    previewTexture = GetPreviewTexture(*metadata);
+                }
             }
+
+            if (previewTexture != nullptr)
+            {
+                const ImTextureID textureId = (ImTextureID)(intptr_t)previewTexture;
+                drawList->AddImageQuad(
+                    textureId,
+                    corners[0], corners[1], corners[2], corners[3],
+                    ImVec2(0.0F, 0.0F), ImVec2(1.0F, 0.0F),
+                    ImVec2(1.0F, 1.0F), ImVec2(0.0F, 1.0F),
+                    tint);
+            }
+            else
+            {
+                drawList->AddConvexPolyFilled(corners, 4, tint);
+                if (!render.textureAssetId.empty())
+                {
+                    const ImVec2 centerPoint = toCanvas(center);
+                    drawList->AddText(centerPoint, IM_COL32(255, 190, 120, 255), "Missing Texture");
+                }
+            }
+            drawList->AddPolyline(corners, 4, IM_COL32(12, 14, 20, 255), ImDrawFlags_Closed, 1.0F);
 
             if (entity.GetId() == m_selectedEntity)
             {
@@ -631,7 +758,7 @@ void EditorApplication::DrawViewport()
         });
 
         drawList->PopClipRect();
-        ImGui::TextDisabled("%zu entities | Only active, visible render components are shown. Texture assets are placeholders in this editor preview.",
+        ImGui::TextDisabled("%zu entities | Active, visible render components are shown. Texture previews use project import settings.",
             activeScene.GetEntityCount());
     }
     ImGui::End();
@@ -699,6 +826,7 @@ void EditorApplication::LoadScene()
 
 void EditorApplication::RefreshAssets()
 {
+    ClearPreviewTextures();
     const bool scanSucceeded = m_assetRegistry.Scan();
     const bool importScanSucceeded = m_assetImportService.Scan();
     if (!m_selectedAssetId.empty() && m_assetRegistry.Find(m_selectedAssetId) == nullptr)
