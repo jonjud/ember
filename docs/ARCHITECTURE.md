@@ -22,6 +22,7 @@ src/
 │   │   ├── Camera2D.hpp/.cpp
 │   │   └── Renderer2D.hpp/.cpp
 │   ├── Resources/
+│   │   ├── TextureCache.hpp/.cpp
 │   │   └── TextureHandle.hpp
 │   └── Scene/
 │       ├── Entity.hpp
@@ -29,15 +30,20 @@ src/
 │       ├── Scene.hpp/.cpp
 │       └── Transform2D.hpp
 └── main.cpp
+
+tests/
+├── SceneTests.cpp
+└── TextureCacheTests.cpp
 ```
 
 ## Current responsibilities
 
-- **Core / Application:** owns the SDL window, active scene, and event/update/render loop.
+- **Core / Application:** owns the SDL window, active scene, texture cache, and event/update/render loop.
 - **Core / Time:** measures frame delta time using SDL's high-resolution performance counter.
 - **Platform / Input:** exposes keyboard state through an engine-facing API.
 - **Math / Vector2:** engine-owned 2D vector type, independent of SDL.
 - **Resources / TextureHandle:** small, renderer-independent identifier for a texture resource. A handle is non-owning and is valid only while its owning renderer retains the resource.
+- **Resources / TextureCache:** shares texture handles by normalized file path, counts active references, and destroys a texture when its final reference is released. It uses injected load/destroy callbacks, keeping SDL out of the resource cache and allowing deterministic unit tests.
 - **Scene / Entity:** provides a stable 64-bit entity ID, name, active state, Transform2D, and RenderComponent2D.
 - **Scene / Scene:** owns entities, creates and destroys them, looks them up by ID, and iterates without allocating a temporary list. Entity references remain stable when other entities are inserted; destroying that entity invalidates its reference.
 - **Scene / Transform2D:** stores an object's world position, scale, and rotation in radians.
@@ -57,21 +63,24 @@ src/
 - Use `ForEachEntity(callback)` to update or render entities without allocating a temporary list.
 - Entity IDs are monotonically assigned and are not reused during a scene's lifetime. ID exhaustion is reported with `std::overflow_error`.
 
-## Runtime scene rendering
+## Texture cache workflow
 
-The application owns a scene. Its sample player is an ordinary entity with a Transform2D and RenderComponent2D. Input updates the entity transform, and the render loop draws every active entity whose render component is visible. A component with a non-empty texture handle uses sprite rendering; otherwise it uses the filled-rectangle fallback. The scene does not depend on SDL; SDL-specific drawing remains inside Renderer2D.
+- Configure the cache with a loader and a destroy callback once the renderer is initialized.
+- Call `Load(path)` to load an asset or acquire another reference to an already loaded asset. Paths are lexically normalized, so equivalent relative paths share a cache entry.
+- Assign the returned handle to a component. Components borrow handles; they do not own cache references.
+- Call `Release(path)` once for every successful `Load(path)`. The underlying texture is destroyed when the reference count reaches zero.
+- Call `Clear()` before shutting down the renderer to release every remaining texture.
+- A failed load returns an empty handle and does not create a cache entry.
+
+The cache uses callbacks rather than SDL types. The Application connects those callbacks to Renderer2D and clears the cache before destroying the renderer. Do not release a path while an entity still intends to draw its handle.
 
 ## Renderer texture workflow
 
-- `LoadTexture(path)` loads a BMP image through SDL3 and returns an engine-owned `TextureHandle`.
-- Assign the returned handle to an entity's `RenderComponent2D::texture` to render it as a sprite.
-- `DrawTexture(handle, x, y, width, height)` draws the texture into a destination rectangle.
-- `DestroyTexture(handle)` releases an individual texture. Components retaining that handle must be cleared or updated before the resource is destroyed.
-- `Shutdown()` releases every remaining texture before destroying the SDL renderer.
-
-The camera-aware sprite draw applies object position, scale, rotation, camera conversion, and per-component RGBA tint. Texture tint is reset after each draw so it does not leak into later draws using the same texture. Transform and camera rotations are stored in radians; the renderer converts the relative sprite rotation to degrees for SDL3.
-
-Texture handles are lightweight, non-owning IDs; SDL texture pointers remain private to the renderer. The first loader intentionally supports BMP only, avoiding another third-party dependency while the resource API is established. PNG/JPEG support can be added later behind the same interface.
+- `Renderer2D::LoadTexture(path)` loads a BMP image through SDL3 and returns an engine-owned `TextureHandle`.
+- `Renderer2D::DestroyTexture(handle)` releases an individual texture. Prefer the TextureCache for shared assets.
+- Camera-aware sprite drawing applies object position, scale, rotation, camera conversion, and per-component RGBA tint.
+- Texture handles are lightweight, non-owning IDs; SDL texture pointers remain private to the renderer.
+- The first loader intentionally supports BMP only. PNG/JPEG support can be added behind the same interface.
 
 ## Planned layers
 
@@ -98,4 +107,4 @@ Third-party APIs should be hidden behind narrow engine-facing interfaces when do
 
 ## Next milestone
 
-Add an asset/resource cache and broaden image decoding beyond BMP while keeping resource ownership explicit.
+Add image format support beyond BMP and a small asset directory convention, then build scene serialization on top of stable resource identifiers.

@@ -50,6 +50,15 @@ bool Application::Initialize()
         return false;
     }
 
+    if (!m_textureCache.SetBackend(
+            [this](const std::string& path) { return m_renderer.LoadTexture(path); },
+            [this](TextureHandle texture) { m_renderer.DestroyTexture(texture); }))
+    {
+        std::cerr << "EMBER: Texture cache backend could not be initialized.\\n";
+        Shutdown();
+        return false;
+    }
+
     Entity& player = m_scene.CreateEntity("Player");
     m_playerEntityId = player.GetId();
     player.GetTransform().position = {
@@ -84,6 +93,7 @@ void Application::Run()
 
 void Application::Shutdown()
 {
+    m_textureCache.Clear();
     m_renderer.Shutdown();
 
     if (m_window != nullptr)

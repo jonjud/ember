@@ -3,6 +3,7 @@
 #include "Engine/Core/Time.hpp"
 #include "Engine/Renderer/Camera2D.hpp"
 #include "Engine/Renderer/Renderer2D.hpp"
+#include "Engine/Resources/TextureCache.hpp"
 #include "Engine/Scene/Scene.hpp"
 
 struct SDL_Window;
@@ -29,6 +30,7 @@ private:
 
     SDL_Window* m_window = nullptr;
     Renderer2D m_renderer;
+    TextureCache m_textureCache;
     Camera2D m_camera;
     Scene m_scene{"Main Scene"};
     EntityId m_playerEntityId = 0;

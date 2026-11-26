@@ -2,7 +2,7 @@
 
 A lightweight, 2D-first game engine written in modern C++.
 
-EMBER is being built from the ground up. The project currently has a modular desktop foundation: application lifecycle, frame timing, keyboard input, and an SDL-backed 2D renderer with BMP texture loading and sprite drawing.
+EMBER is being built from the ground up. The project currently has a modular desktop foundation: application lifecycle, frame timing, keyboard input, an SDL-backed 2D renderer, scene/entity support, and a reference-counted texture cache.
 
 ## Project status
 
@@ -24,27 +24,27 @@ See [ROADMAP.md](docs/ROADMAP.md) for planned milestones and [ARCHITECTURE.md](d
 - Normalizes diagonal movement.
 - Uses a dedicated Renderer2D module for drawing.
 - Loads BMP images into engine-managed texture handles.
-- Provides a sprite drawing API without exposing SDL texture pointers.
+- Renders texture-backed scene entities as sprites with transform and tint support.
+- Reuses loaded textures through a path-based reference-counted cache.
 - Requests VSync where supported.
 - Press Escape to quit.
 
 ## Texture API
 
-The renderer currently supports BMP files through SDL3:
+For direct renderer ownership:
 
 ```cpp
 const ember::TextureHandle sprite = renderer.LoadTexture("assets/player.bmp");
 if (sprite)
 {
     renderer.DrawTexture(sprite, 100.0F, 100.0F, 64.0F, 64.0F);
+    renderer.DestroyTexture(sprite);
 }
-
-// Release early when the texture is no longer needed.
-// Remaining textures are released automatically by Renderer2D::Shutdown().
-renderer.DestroyTexture(sprite);
 ```
 
-PNG/JPEG support and a centralized asset cache are planned follow-up work.
+For shared assets, configure a `TextureCache` with renderer-backed load and destroy callbacks. Each successful `Load(path)` must be paired with one `Release(path)`. Repeated loads of the same normalized path return the same handle; the texture is destroyed after its final reference is released. Clear the cache before shutting down its renderer.
+
+The cache deliberately does not own scene components' references. A component may borrow a handle, so release the corresponding asset only after no scene object needs to draw it.
 
 ## Build
 
@@ -56,6 +56,7 @@ Requirements:
 ```sh
 cmake -S . -B build
 cmake --build build --config Debug
+ctest --test-dir build -C Debug --output-on-failure
 ```
 
 Run the executable:
@@ -73,9 +74,13 @@ EMBER/
 ├── src/
 │   ├── Engine/
 │   │   ├── Core/
+│   │   ├── Math/
 │   │   ├── Platform/
-│   │   └── Renderer/
+│   │   ├── Renderer/
+│   │   ├── Resources/
+│   │   └── Scene/
 │   └── main.cpp
+├── tests/
 ├── .gitignore
 └── CMakeLists.txt
 ```
