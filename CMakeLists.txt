@@ -73,6 +73,7 @@ add_library(ember_engine STATIC
     src/Engine/Core/Time.cpp
     src/Engine/Resources/AssetDirectory.cpp
     src/Engine/Resources/AssetManager.cpp
+    src/Engine/Resources/AssetRegistry.cpp
     src/Engine/Resources/AssetMetadataStore.cpp
     src/Engine/Resources/TextureCache.cpp
     src/Engine/Scene/Scene.cpp
@@ -130,6 +131,16 @@ if(BUILD_TESTING)
     target_link_libraries(ember_asset_metadata_tests PRIVATE nlohmann_json::nlohmann_json)
     add_test(NAME ember_asset_metadata_tests COMMAND ember_asset_metadata_tests)
 
+    add_executable(ember_asset_registry_tests
+        tests/AssetRegistryTests.cpp
+        src/Engine/Resources/AssetRegistry.cpp
+        src/Engine/Resources/AssetMetadataStore.cpp
+        src/Engine/Resources/AssetDirectory.cpp
+    )
+    target_include_directories(ember_asset_registry_tests PRIVATE src)
+    target_link_libraries(ember_asset_registry_tests PRIVATE nlohmann_json::nlohmann_json)
+    add_test(NAME ember_asset_registry_tests COMMAND ember_asset_registry_tests)
+
     add_executable(ember_asset_manager_tests
         tests/AssetManagerTests.cpp
         src/Engine/Resources/AssetManager.cpp
@@ -148,6 +159,7 @@ if(MSVC)
         target_compile_options(ember_texture_cache_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_directory_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_manager_tests PRIVATE /W4 /permissive-)
+        target_compile_options(ember_asset_registry_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_metadata_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_scene_serializer_tests PRIVATE /W4 /permissive-)
     endif()
@@ -159,6 +171,7 @@ else()
         target_compile_options(ember_texture_cache_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_directory_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_manager_tests PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(ember_asset_registry_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_metadata_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_scene_serializer_tests PRIVATE -Wall -Wextra -Wpedantic)
     endif()

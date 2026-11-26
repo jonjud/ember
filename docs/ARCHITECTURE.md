@@ -26,6 +26,7 @@ src/
 │   │   ├── AssetManager.hpp/.cpp
 │   │   ├── AssetMetadata.hpp
 │   │   ├── AssetMetadataStore.hpp/.cpp
+│   │   ├── AssetRegistry.hpp/.cpp
 │   │   ├── TextureCache.hpp/.cpp
 │   │   └── TextureHandle.hpp
 │   └── Scene/
@@ -40,6 +41,7 @@ tests/
 ├── AssetDirectoryTests.cpp
 ├── AssetManagerTests.cpp
 ├── AssetMetadataTests.cpp
+├── AssetRegistryTests.cpp
 ├── SceneTests.cpp
 ├── SceneSerializerTests.cpp
 └── TextureCacheTests.cpp
@@ -57,6 +59,7 @@ tests/
 - **Resources / AssetManager:** project-facing façade that combines validated asset paths with the reference-counted texture cache.
 - **Resources / AssetMetadata:** stores a stable project asset ID, asset type, source path, and texture import settings. Runtime texture handles are never persisted.
 - **Resources / AssetMetadataStore:** reads and writes versioned JSON sidecar files, rejects unsupported schema versions, and validates project-relative source paths.
+- **Resources / AssetRegistry:** recursively scans `.emberasset` sidecars, indexes valid metadata by stable ID, and reports malformed metadata, missing source files, duplicate IDs, and scan errors. Ambiguous duplicate IDs are excluded from lookup.
 - **Scene / Entity:** provides a stable 64-bit entity ID, name, active state, Transform2D, and RenderComponent2D.
 - **Scene / Scene:** owns entities, creates and destroys them, looks them up by ID, and iterates without allocating a temporary list. Entity references remain stable when other entities are inserted; destroying that entity invalidates its reference.
 - **Scene / SceneSerializer:** saves and loads versioned JSON scenes, preserving entity IDs and scene data while storing stable texture asset IDs instead of transient renderer handles. Failed loads leave the destination scene unchanged.
@@ -150,6 +153,14 @@ Editor
 
 Third-party APIs should be hidden behind narrow engine-facing interfaces when doing so provides a concrete portability, testing, or maintenance benefit.
 
+## Asset registry workflow
+
+- Construct an `AssetRegistry` with the project's asset root and call `Scan()` to rebuild its index.
+- `Find(assetId)` returns metadata for a unique stable ID; IDs duplicated across sidecars are deliberately excluded.
+- `GetDiagnostics()` reports malformed sidecars, missing source files, duplicate IDs, and directory scan errors.
+- Metadata whose source file is missing remains indexed so tools can display and repair the broken asset reference.
+- The registry is independent of the renderer; it does not create runtime texture handles or silently load assets.
+
 ## Next milestone
 
-Connect stable texture asset IDs to the AssetManager, then add project scanning and editor-facing asset import settings.
+Connect stable texture asset IDs to the AssetManager and add editor-facing asset import settings.
