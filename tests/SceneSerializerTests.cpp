@@ -87,18 +87,36 @@ int main()
     const auto nextEntityId = loaded.CreateEntity("Next").GetId();
     Check(nextEntityId > second.GetId(), "New entity IDs continue after deserialization");
 
-    const auto invalidPath = root / "invalid.emberscene";
-    {
-        std::ofstream invalid(invalidPath);
-        invalid << R"({"schema_version":1,"scene_name":"Bad","entities":[{"id":1},{"id":1}]})";
-    }
-
     const auto oldName = loaded.GetName();
     const auto oldCount = loaded.GetEntityCount();
-    Check(!ember::SceneSerializer::Load(loaded, invalidPath, &error),
-          "Malformed scenes are rejected");
+    const std::string duplicateEntity =
+        R"({"id":1,"name":"Duplicate","active":true,"transform":{"position":[0,0],"scale":[1,1],"rotation":0},"render":{"size":[16,16],"tint":[255,255,255,255],"visible":true,"texture_asset_id":""}})";
+    const auto duplicatePath = root / "duplicate.emberscene";
+    {
+        std::ofstream duplicate(duplicatePath);
+        duplicate << "{\\"schema_version\\":1,\\"scene_name\\":\\"Duplicate IDs\\",\\"entities\\":[" 
+                  << duplicateEntity << "," << duplicateEntity << "]}";
+    }
+    Check(!ember::SceneSerializer::Load(loaded, duplicatePath, &error),
+          "Duplicate entity IDs are rejected");
     Check(loaded.GetName() == oldName && loaded.GetEntityCount() == oldCount,
-          "Failed load leaves the destination scene unchanged");
+          "Failed duplicate-ID load leaves the destination scene unchanged");
+
+    const auto unsupportedPath = root / "unsupported.emberscene";
+    {
+        std::ofstream unsupported(unsupportedPath);
+        unsupported << R"({"schema_version":999,"scene_name":"Future","entities":[]})";
+    }
+    Check(!ember::SceneSerializer::Load(loaded, unsupportedPath, &error),
+          "Unsupported scene schema versions are rejected");
+
+    const auto negativeSizePath = root / "negative_size.emberscene";
+    {
+        std::ofstream negativeSize(negativeSizePath);
+        negativeSize << R"({"schema_version":1,"scene_name":"Negative Size","entities":[{"id":1,"name":"Bad Size","active":true,"transform":{"position":[0,0],"scale":[1,1],"rotation":0},"render":{"size":[-1,16],"tint":[255,255,255,255],"visible":true,"texture_asset_id":""}}]})";
+    }
+    Check(!ember::SceneSerializer::Load(loaded, negativeSizePath, &error),
+          "Negative render dimensions are rejected");
 
     std::filesystem::remove_all(root, filesystemError);
 

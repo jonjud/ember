@@ -233,7 +233,8 @@ bool SceneSerializer::Load(
             if (!ReadVector2(transformJson.at("position"), transform.position) ||
                 !ReadVector2(transformJson.at("scale"), transform.scale) ||
                 !ReadFloat(transformJson.at("rotation"), transform.rotation) ||
-                !ReadVector2(renderJson.at("size"), render.size))
+                !ReadVector2(renderJson.at("size"), render.size) ||
+                render.size.x < 0.0F || render.size.y < 0.0F)
             {
                 return Fail(error, "Scene contains invalid transform or render dimensions.");
             }
