@@ -24,6 +24,8 @@ src/
 │   ├── Resources/
 │   │   ├── AssetDirectory.hpp/.cpp
 │   │   ├── AssetManager.hpp/.cpp
+│   │   ├── AssetMetadata.hpp
+│   │   ├── AssetMetadataStore.hpp/.cpp
 │   │   ├── TextureCache.hpp/.cpp
 │   │   └── TextureHandle.hpp
 │   └── Scene/
@@ -36,6 +38,7 @@ src/
 tests/
 ├── AssetDirectoryTests.cpp
 ├── AssetManagerTests.cpp
+├── AssetMetadataTests.cpp
 ├── SceneTests.cpp
 └── TextureCacheTests.cpp
 ```
@@ -50,6 +53,8 @@ tests/
 - **Resources / TextureCache:** shares texture handles by normalized file path, counts active references, and destroys a texture when its final reference is released. It uses injected load/destroy callbacks, keeping SDL out of the resource cache and allowing deterministic unit tests.
 - **Resources / AssetDirectory:** resolves project-relative asset paths and rejects empty, absolute, and lexically escaping paths.
 - **Resources / AssetManager:** project-facing façade that combines validated asset paths with the reference-counted texture cache.
+- **Resources / AssetMetadata:** stores a stable project asset ID, asset type, source path, and texture import settings. Runtime texture handles are never persisted.
+- **Resources / AssetMetadataStore:** reads and writes versioned JSON sidecar files, rejects unsupported schema versions, and validates project-relative source paths.
 - **Scene / Entity:** provides a stable 64-bit entity ID, name, active state, Transform2D, and RenderComponent2D.
 - **Scene / Scene:** owns entities, creates and destroys them, looks them up by ID, and iterates without allocating a temporary list. Entity references remain stable when other entities are inserted; destroying that entity invalidates its reference.
 - **Scene / Transform2D:** stores an object's world position, scale, and rotation in radians.
@@ -95,6 +100,13 @@ tests/
 
 The cache uses callbacks rather than SDL types. The AssetManager connects the validated project-relative path workflow to the cache. The Application clears the cache before destroying the renderer. Do not release a path while an entity still intends to draw its handle.
 
+## Asset metadata workflow
+
+- Each imported asset can have a JSON sidecar with the `.emberasset` extension.
+- Metadata stores a stable asset ID, asset type, project-relative source path, and texture import settings such as nearest/linear filtering and alpha premultiplication.
+- Metadata schema versioning allows the format to evolve without silently accepting incompatible files.
+- Runtime handles are intentionally excluded; they are transient renderer-owned values and must be reacquired when a project loads.
+
 ## Renderer texture workflow
 
 - `Renderer2D::LoadTexture(path)` decodes BMP, PNG, and JPEG images through SDL3_image and returns an engine-owned `TextureHandle`.
@@ -129,4 +141,4 @@ Third-party APIs should be hidden behind narrow engine-facing interfaces when do
 
 ## Next milestone
 
-Add a small sample asset project and asset metadata/import settings, then build scene serialization on top of stable resource identifiers.
+Connect asset metadata to project scanning and import settings, then build scene serialization on top of stable asset IDs.

@@ -13,6 +13,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(CTest)
 include(FetchContent)
 
+set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
 set(SDL_TESTS OFF CACHE BOOL "" FORCE)
 set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
@@ -64,6 +73,7 @@ add_library(ember_engine STATIC
     src/Engine/Core/Time.cpp
     src/Engine/Resources/AssetDirectory.cpp
     src/Engine/Resources/AssetManager.cpp
+    src/Engine/Resources/AssetMetadataStore.cpp
     src/Engine/Resources/TextureCache.cpp
     src/Engine/Scene/Scene.cpp
     src/Engine/Renderer/Camera2D.cpp
@@ -72,7 +82,7 @@ add_library(ember_engine STATIC
 )
 
 target_include_directories(ember_engine PUBLIC src)
-target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image)
+target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image PRIVATE nlohmann_json::nlohmann_json)
 
 add_executable(ember_editor
     src/main.cpp
@@ -102,6 +112,14 @@ if(BUILD_TESTING)
     target_include_directories(ember_asset_directory_tests PRIVATE src)
     add_test(NAME ember_asset_directory_tests COMMAND ember_asset_directory_tests)
 
+    add_executable(ember_asset_metadata_tests
+        tests/AssetMetadataTests.cpp
+        src/Engine/Resources/AssetMetadataStore.cpp
+    )
+    target_include_directories(ember_asset_metadata_tests PRIVATE src)
+    target_link_libraries(ember_asset_metadata_tests PRIVATE nlohmann_json::nlohmann_json)
+    add_test(NAME ember_asset_metadata_tests COMMAND ember_asset_metadata_tests)
+
     add_executable(ember_asset_manager_tests
         tests/AssetManagerTests.cpp
         src/Engine/Resources/AssetManager.cpp
@@ -120,6 +138,7 @@ if(MSVC)
         target_compile_options(ember_texture_cache_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_directory_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_manager_tests PRIVATE /W4 /permissive-)
+        target_compile_options(ember_asset_metadata_tests PRIVATE /W4 /permissive-)
     endif()
 else()
     target_compile_options(ember_engine PRIVATE -Wall -Wextra -Wpedantic)
@@ -129,6 +148,7 @@ else()
         target_compile_options(ember_texture_cache_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_directory_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_manager_tests PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(ember_asset_metadata_tests PRIVATE -Wall -Wextra -Wpedantic)
     endif()
 endif()
 
