@@ -1,6 +1,7 @@
 #include "Editor/EditorApplication.hpp"
 
 #include "Engine/Scene/SceneSerializer.hpp"
+#include "Engine/Platform/Input.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
@@ -100,11 +101,46 @@ bool EditorApplication::Initialize()
 
 void EditorApplication::Run()
 {
+    m_time.Reset();
     while (m_isRunning)
     {
         ProcessEvents();
+        m_time.Tick();
+        UpdatePlayMode();
         Render();
     }
+}
+
+void EditorApplication::UpdatePlayMode()
+{
+    if (!m_isPlaying)
+    {
+        return;
+    }
+
+    Entity* entity = m_playScene.FindEntity(m_selectedEntity);
+    if (entity == nullptr || !entity->IsActive())
+    {
+        return;
+    }
+
+    Vector2 direction{};
+    if (Input::IsKeyDown(SDL_SCANCODE_A) || Input::IsKeyDown(SDL_SCANCODE_LEFT)) direction.x -= 1.0F;
+    if (Input::IsKeyDown(SDL_SCANCODE_D) || Input::IsKeyDown(SDL_SCANCODE_RIGHT)) direction.x += 1.0F;
+    if (Input::IsKeyDown(SDL_SCANCODE_W) || Input::IsKeyDown(SDL_SCANCODE_UP)) direction.y -= 1.0F;
+    if (Input::IsKeyDown(SDL_SCANCODE_S) || Input::IsKeyDown(SDL_SCANCODE_DOWN)) direction.y += 1.0F;
+
+    const float lengthSquared = direction.x * direction.x + direction.y * direction.y;
+    if (lengthSquared <= 0.0F)
+    {
+        return;
+    }
+
+    const float inverseLength = 1.0F / std::sqrt(lengthSquared);
+    const float deltaSeconds = std::clamp(m_time.DeltaSeconds(), 0.0F, 0.05F);
+    auto& position = entity->GetTransform().position;
+    position.x += direction.x * inverseLength * m_playMovementSpeed * deltaSeconds;
+    position.y += direction.y * inverseLength * m_playMovementSpeed * deltaSeconds;
 }
 
 void EditorApplication::Shutdown()
@@ -1088,7 +1124,7 @@ void EditorApplication::StartPlayMode()
     m_playScene = m_scene.Clone();
     m_isPlaying = true;
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-        "Play mode started: running an isolated copy of the current scene");
+        "Play mode: WASD / arrow keys move the selected entity in an isolated scene copy");
 }
 
 void EditorApplication::StopPlayMode()

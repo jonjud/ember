@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Core/Time.hpp"
 #include "Engine/Resources/AssetImportService.hpp"
 #include "Engine/Resources/AssetRegistry.hpp"
 #include "Engine/Renderer/Camera2D.hpp"
@@ -31,6 +32,7 @@ public:
 private:
     void ProcessEvents();
     void Render();
+    void UpdatePlayMode();
     void DrawMenuBar();
     void DrawSceneHierarchy();
     void DrawInspector();
@@ -54,6 +56,8 @@ private:
     Scene m_scene{"Untitled Scene"};
     Scene m_playScene{"Play Scene"};
     bool m_isPlaying = false;
+    Time m_time;
+    float m_playMovementSpeed = 240.0F;
     Camera2D m_viewportCamera;
     AssetRegistry m_assetRegistry{"assets"};
     AssetImportService m_assetImportService{"assets"};
