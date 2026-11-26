@@ -277,6 +277,15 @@ void EditorApplication::ProcessEvents()
                 {
                     StartPlayMode();
                 }
+                else if (!m_isPlaying && event.key.key == SDLK_d &&
+                    (event.key.mod & SDL_KMOD_CTRL) != 0)
+                {
+                    DuplicateSelectedEntity();
+                }
+                else if (!m_isPlaying && event.key.key == SDLK_DELETE)
+                {
+                    DeleteSelectedEntity();
+                }
             }
         }
     }
@@ -335,6 +344,11 @@ void EditorApplication::DrawMenuBar()
     if (ImGui::BeginMenu("Entity"))
     {
         if (ImGui::MenuItem("Create Empty Entity")) CreateEntity();
+        ImGui::Separator();
+        ImGui::BeginDisabled(m_isPlaying || m_selectedEntity == 0);
+        if (ImGui::MenuItem("Duplicate Selected", "Ctrl+D")) DuplicateSelectedEntity();
+        if (ImGui::MenuItem("Delete Selected", "Delete")) DeleteSelectedEntity();
+        ImGui::EndDisabled();
         ImGui::EndMenu();
     }
 
@@ -380,6 +394,15 @@ void EditorApplication::DrawSceneHierarchy()
         });
 
         if (activeScene.IsEmpty()) ImGui::TextDisabled("No entities. Press + to create one.");
+        else if (!m_isPlaying)
+        {
+            ImGui::BeginDisabled(m_selectedEntity == 0);
+            if (ImGui::Button("Duplicate Selected")) DuplicateSelectedEntity();
+            ImGui::SameLine();
+            if (ImGui::Button("Delete Selected")) DeleteSelectedEntity();
+            ImGui::EndDisabled();
+            ImGui::TextDisabled("Shortcuts: Ctrl+D duplicate | Delete remove");
+        }
     }
     ImGui::End();
 }
@@ -1527,6 +1550,28 @@ void EditorApplication::CreateEntity()
     MarkSceneDirty();
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Created entity %llu", static_cast<unsigned long long>(m_selectedEntity));
+}
+
+void EditorApplication::DuplicateSelectedEntity()
+{
+    if (m_isPlaying || m_selectedEntity == 0) return;
+    Entity* duplicate = m_scene.DuplicateEntity(m_selectedEntity);
+    if (duplicate == nullptr) return;
+    m_selectedEntity = duplicate->GetId();
+    MarkSceneDirty();
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+        "Duplicated entity %llu", static_cast<unsigned long long>(m_selectedEntity));
+}
+
+void EditorApplication::DeleteSelectedEntity()
+{
+    if (m_isPlaying || m_selectedEntity == 0) return;
+    const EntityId deletedId = m_selectedEntity;
+    if (!m_scene.DestroyEntity(deletedId)) return;
+    m_selectedEntity = 0;
+    MarkSceneDirty();
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+        "Deleted entity %llu", static_cast<unsigned long long>(deletedId));
 }
 
 bool EditorApplication::SaveScene()

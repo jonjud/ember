@@ -35,6 +35,22 @@ bool Scene::DestroyEntity(EntityId id)
     return m_entities.erase(id) != 0;
 }
 
+Entity* Scene::DuplicateEntity(EntityId id)
+{
+    const Entity* source = FindEntity(id);
+    if (source == nullptr)
+    {
+        return nullptr;
+    }
+
+    Entity& duplicate = CreateEntity(source->GetName() + " Copy");
+    duplicate.m_transform = source->m_transform;
+    duplicate.m_renderComponent = source->m_renderComponent;
+    duplicate.m_movementComponent = source->m_movementComponent;
+    duplicate.m_active = source->m_active;
+    return &duplicate;
+}
+
 Entity* Scene::FindEntity(EntityId id)
 {
     const auto it = m_entities.find(id);

@@ -46,6 +46,8 @@ private:
     void DrawViewport();
     void DrawUnsavedChangesModal();
     void CreateEntity();
+    void DuplicateSelectedEntity();
+    void DeleteSelectedEntity();
     void RequestNewScene(const std::filesystem::path& path);
     void RequestLoadScene(const std::filesystem::path& path);
     void ApplyPendingSceneChange();

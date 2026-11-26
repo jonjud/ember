@@ -23,6 +23,8 @@ public:
     // Returns a stable reference. Other entity insertions do not invalidate it.
     Entity& CreateEntity(std::string name = "Entity");
     [[nodiscard]] bool DestroyEntity(EntityId id);
+    // Creates a full independent copy with a fresh stable ID.
+    [[nodiscard]] Entity* DuplicateEntity(EntityId id);
 
     [[nodiscard]] Entity* FindEntity(EntityId id);
     [[nodiscard]] const Entity* FindEntity(EntityId id) const;

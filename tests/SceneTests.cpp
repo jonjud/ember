@@ -73,6 +73,33 @@ int main()
     const ember::EntityId enemyId = enemy.GetId();
     Check(enemyId > playerId, "Entity IDs increase monotonically");
     Check(scene.GetEntityCount() == 2, "Scene counts created entities");
+
+    player.GetRenderComponent().textureAssetId = "asset-player";
+    player.GetRenderComponent().red = 111;
+    ember::Entity* duplicate = scene.DuplicateEntity(playerId);
+    Check(duplicate != nullptr && duplicate->GetId() > enemyId,
+          "DuplicateEntity creates a new entity with a fresh ID");
+    Check(duplicate != nullptr && duplicate->GetName() == "Player Copy",
+          "DuplicateEntity appends a copy suffix to the entity name");
+    Check(duplicate != nullptr &&
+          duplicate->GetTransform().position.x == player.GetTransform().position.x &&
+          duplicate->GetTransform().rotation == player.GetTransform().rotation &&
+          duplicate->GetRenderComponent().textureAssetId == "asset-player" &&
+          duplicate->GetRenderComponent().red == 111 &&
+          duplicate->GetMovementComponent().enabled &&
+          duplicate->GetMovementComponent().speed == 320.0F &&
+          duplicate->IsActive() == player.IsActive(),
+          "DuplicateEntity copies transform and component state");
+    if (duplicate != nullptr)
+    {
+        duplicate->GetTransform().position.x += 100.0F;
+        duplicate->SetName("Independent Copy");
+    }
+    Check(player.GetTransform().position.x == 12.0F && player.GetName() == "Player",
+          "DuplicateEntity data is independent from its source");
+    Check(scene.DuplicateEntity(999999) == nullptr,
+          "DuplicateEntity returns null for a missing source ID");
+    Check(scene.GetEntityCount() == 3, "DuplicateEntity updates scene entity count");
     Check(scene.FindEntity(playerId) == &player, "Scene finds entity by ID");
     Check(player.GetName() == "Player", "Entity reference remains stable after insertion");
 
@@ -100,6 +127,8 @@ int main()
     enemy.SetActive(false);
     Check(!enemy.IsActive(), "Entity active state can be disabled");
 
+    Check(scene.DestroyEntity(duplicate != nullptr ? duplicate->GetId() : 0),
+          "Duplicate entity can be removed independently");
     Check(scene.DestroyEntity(enemyId), "DestroyEntity removes an existing entity");
     Check(!scene.DestroyEntity(enemyId), "DestroyEntity reports missing entity");
     Check(scene.FindEntity(enemyId) == nullptr, "Destroyed entity cannot be found");

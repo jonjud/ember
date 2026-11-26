@@ -53,6 +53,7 @@ EMBER is developed as a 2D-first engine. Each milestone should produce a runnabl
 - [x] Dear ImGui integration (editor-only SDL3 platform and renderer backends)
 - [x] Main editor layout (menu bar, hierarchy, inspector, asset browser, viewport placeholders)
 - [x] Scene hierarchy (create/select entities)
+- [x] Duplicate and delete entities from hierarchy, menu, and keyboard shortcuts
 - [x] Inspector (edit entity name, active state, transform, and render properties)
 - [x] Asset browser (registry-backed list, type filter, search, selection, refresh, diagnostics)
 - [x] 2D viewport preview (scene rectangles, grid, camera pan/zoom, entity picking)
