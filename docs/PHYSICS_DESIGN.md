@@ -10,7 +10,7 @@
 - Complete: engine-owned Begin/End contact event API in PhysicsWorld and Scene, with EntityId pairs; Windows CI run 45939999840 passed.
 - Complete: engine-owned closest raycast and AABB overlap queries, including category/mask query filters and Scene EntityId mapping; Windows CI run 45941862568 passed.
 - Complete: automated category/mask filter coverage, sensor inclusion in raycast/AABB overlap queries, and Scene filter-forwarding tests; PhysicsWorld query coverage passed Windows CI #126.
-- Active milestone: multiple colliders per entity. CI #133 passed for the design docs; the first code slice adds ColliderSet2D, stable ColliderId generation/validation and clone tests, with runtime/serialization integration deferred.
+- Active milestone: multiple colliders per entity. ColliderSet2D model and stable IDs passed CI #135. Canonical ColliderSet2D serialization and migration of legacy single Box/Circle components during Scene loading are implemented; runtime multi-shape integration is pending CI.
 - Deferred: joints.
 
 ## Dependency boundary
@@ -39,10 +39,10 @@
 - `PhysicsBody2D`: body type (static, kinematic, dynamic), gravity scale, linear/angular damping and enabled flag.
 - `BoxCollider2D`: half extents, local offset/rotation, density, friction, restitution and sensor flag.
 - `CircleCollider2D`: radius, local offset, density, friction, restitution and sensor flag.
-- `ColliderSet2D` (in progress): ordered Box/Circle entries with stable IDs, independent material/sensor/query-filter values; no runtime backend handles.
+- `ColliderSet2D`: canonical ordered Box/Circle entries with stable IDs, independent material/sensor/query-filter values; serialized without runtime backend handles. Legacy BoxCollider2D/CircleCollider2D Scene data migrates to one-entry sets on load.
 - `PhysicsWorld`: gravity, body create/destroy, box/circle collider creation, transform read/write, stepping, consuming Begin/End contact events, closest raycasts, AABB overlap queries and body count.
 - Components store configuration only; runtime handles are owned by Scene.
-- Legacy configuration currently supports one BoxCollider2D or CircleCollider2D per entity. The multi-collider extension will introduce a collider-set component and a compatibility migration; see [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md).
+- Scene loading migrates one legacy BoxCollider2D or CircleCollider2D into a canonical ColliderSet2D while preserving geometry/material settings. Entities with both legacy shapes, or a legacy shape plus a set, fail loading with a diagnostic rather than silently dropping data. See [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md).
 
 ## Implemented runtime behavior
 - Create a body for an enabled PhysicsBody2D and attach its configured collider.
