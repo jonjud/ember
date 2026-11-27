@@ -238,6 +238,12 @@ void EditorApplication::UpdatePlayMode()
 
 void EditorApplication::Shutdown()
 {
+    if (m_isPlaying)
+    {
+        m_playScene.Stop();
+        m_playScene.Clear();
+        m_isPlaying = false;
+    }
     m_audio.Shutdown();
     ClearPreviewTextures();
     if (ImGui::GetCurrentContext() != nullptr)
@@ -1941,7 +1947,7 @@ void EditorApplication::StartPlayMode()
 {
     if (m_isPlaying) return;
     m_playScene = m_scene.Clone();
-    m_playScene.Start();
+    m_playScene.Start(&m_audio, &m_assetRegistry);
     m_isPlaying = true;
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Play mode: WASD / arrow keys move the selected entity in an isolated scene copy");

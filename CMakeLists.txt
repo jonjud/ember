@@ -162,6 +162,20 @@ if(BUILD_TESTING)
     target_link_libraries(ember_audio_engine_tests PRIVATE ember_miniaudio)
     add_test(NAME ember_audio_engine_tests COMMAND ember_audio_engine_tests)
 
+    add_executable(ember_audio_scene_tests
+        tests/AudioSceneTests.cpp
+        src/Engine/Audio/AudioEngine.cpp
+        src/Engine/Resources/AssetDirectory.cpp
+        src/Engine/Resources/AssetMetadataStore.cpp
+        src/Engine/Resources/AssetRegistry.cpp
+        src/Engine/Scene/Scene.cpp
+        src/Engine/Physics/PhysicsWorld.cpp
+    )
+    target_include_directories(ember_audio_scene_tests PRIVATE src ${miniaudio_SOURCE_DIR})
+    target_link_libraries(ember_audio_scene_tests PRIVATE
+        box2d::box2d ember_miniaudio nlohmann_json::nlohmann_json)
+    add_test(NAME ember_audio_scene_tests COMMAND ember_audio_scene_tests)
+
     add_executable(ember_physics_components_tests
         tests/PhysicsComponentsTests.cpp
     )

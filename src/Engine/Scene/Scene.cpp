@@ -1,5 +1,7 @@
 #include "Engine/Scene/Scene.hpp"
 #include "Engine/Physics/PhysicsComponents2D.hpp"
+#include "Engine/Resources/AssetRegistry.hpp"
+#include "Engine/Scene/AudioComponents2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -33,11 +35,16 @@ void Scene::MoveFrom(Scene&& other) noexcept
     m_entities = std::move(other.m_entities);
     m_started = other.m_started;
     m_physicsWorld = std::move(other.m_physicsWorld);
+    m_audioEngine = other.m_audioEngine;
+    m_audioSources = std::move(other.m_audioSources);
+    m_audioDiagnostics = std::move(other.m_audioDiagnostics);
     m_physicsBodies = std::move(other.m_physicsBodies);
     m_physicsDiagnostics = std::move(other.m_physicsDiagnostics);
     m_physicsContactEvents = std::move(other.m_physicsContactEvents);
     m_activeContactCounts = std::move(other.m_activeContactCounts);
     m_physicsAccumulator = other.m_physicsAccumulator;
+    other.m_audioEngine = nullptr;
+    other.m_audioSources.clear();
     other.m_nextEntityId = 1;
     other.m_started = false;
     other.m_physicsAccumulator = 0.0F;
@@ -393,16 +400,103 @@ std::vector<EntityId> Scene::OverlapAABB(
     return entities;
 }
 
-void Scene::Start() noexcept
+void Scene::Start(AudioEngine* audioEngine, const AssetRegistry* assets) noexcept
 {
     if (m_started) return;
     m_started = true;
+    m_audioEngine = audioEngine;
     for (auto& [id, entity] : m_entities)
     {
         (void)id;
         entity->StartComponents();
     }
     BuildPhysicsWorld();
+    BuildAudioSources(assets);
+}
+
+void Scene::BuildAudioSources(const AssetRegistry* assets) noexcept
+{
+    m_audioDiagnostics.clear();
+    if (m_audioEngine == nullptr) return;
+
+    for (const auto& [entityId, entity] : m_entities)
+    {
+        const auto* source = entity->GetComponent<AudioSource2D>();
+        if (source == nullptr || !source->enabled || !entity->IsActive()) continue;
+        if (!source->IsConfigurationValid() || source->audioAssetId.empty())
+        {
+            m_audioDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                " has an invalid AudioSource2D configuration.");
+            continue;
+        }
+        if (!m_audioEngine->IsInitialized())
+        {
+            m_audioDiagnostics.push_back("AudioEngine is unavailable; Entity " +
+                std::to_string(entityId) + " audio was skipped.");
+            continue;
+        }
+        if (assets == nullptr)
+        {
+            m_audioDiagnostics.push_back("No AssetRegistry was supplied; Entity " +
+                std::to_string(entityId) + " audio was skipped.");
+            continue;
+        }
+
+        const AssetMetadata* metadata = assets->Find(source->audioAssetId);
+        if (metadata == nullptr || metadata->type != AssetType::Audio)
+        {
+            m_audioDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                " references a missing or non-Audio asset: " + source->audioAssetId);
+            continue;
+        }
+        const auto resolvedPath = assets->GetDirectory().Resolve(metadata->source);
+        if (!resolvedPath)
+        {
+            m_audioDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                " references an unsafe Audio asset path.");
+            continue;
+        }
+
+        const AudioSoundHandle sound = m_audioEngine->LoadSound(*resolvedPath, source->streaming);
+        if (!sound)
+        {
+            m_audioDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                " could not load Audio asset: " + source->audioAssetId);
+            continue;
+        }
+        if (!m_audioEngine->SetVolume(sound, source->volume) ||
+            !m_audioEngine->SetLooping(sound, source->loop) ||
+            (source->playOnStart && !m_audioEngine->Play(sound)))
+        {
+            (void)m_audioEngine->UnloadSound(sound);
+            m_audioDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                " could not configure or start its AudioSource2D.");
+            continue;
+        }
+        m_audioSources.emplace(entityId, sound);
+    }
+}
+
+void Scene::DestroyAudioSources() noexcept
+{
+    if (m_audioEngine != nullptr)
+    {
+        for (const auto& [entityId, sound] : m_audioSources)
+        {
+            (void)entityId;
+            (void)m_audioEngine->Stop(sound);
+            (void)m_audioEngine->UnloadSound(sound);
+        }
+    }
+    m_audioSources.clear();
+    m_audioEngine = nullptr;
+}
+
+bool Scene::IsAudioSourcePlaying(EntityId entity) const noexcept
+{
+    const auto it = m_audioSources.find(entity);
+    return it != m_audioSources.end() && m_audioEngine != nullptr &&
+        m_audioEngine->IsPlaying(it->second);
 }
 
 void Scene::Update(float deltaSeconds) noexcept
@@ -421,6 +515,7 @@ void Scene::Update(float deltaSeconds) noexcept
 void Scene::Stop() noexcept
 {
     if (!m_started) return;
+    DestroyAudioSources();
     DestroyPhysicsWorld();
     for (auto it = m_entities.rbegin(); it != m_entities.rend(); ++it)
         it->second->DestroyComponents();

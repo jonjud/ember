@@ -2,6 +2,7 @@
 
 #include "Engine/Scene/Entity.hpp"
 #include "Engine/Physics/PhysicsWorld.hpp"
+#include "Engine/Audio/AudioEngine.hpp"
 
 #include <cstddef>
 #include <map>
@@ -12,6 +13,7 @@
 
 namespace ember
 {
+class AssetRegistry;
 enum class SceneContactEventType2D
 {
     Begin,
@@ -48,11 +50,14 @@ public:
     [[nodiscard]] const std::string& GetName() const { return m_name; }
     void SetName(std::string name);
 
-    void Start() noexcept;
+    void Start(AudioEngine* audioEngine = nullptr, const AssetRegistry* assets = nullptr) noexcept;
     void Update(float deltaSeconds) noexcept;
     void Stop() noexcept;
     [[nodiscard]] bool IsStarted() const { return m_started; }
     [[nodiscard]] std::size_t GetPhysicsBodyCount() const { return m_physicsBodies.size(); }
+    [[nodiscard]] std::size_t GetAudioSourceCount() const { return m_audioSources.size(); }
+    [[nodiscard]] bool IsAudioSourcePlaying(EntityId entity) const noexcept;
+    [[nodiscard]] const std::vector<std::string>& GetAudioDiagnostics() const { return m_audioDiagnostics; }
     [[nodiscard]] std::size_t GetPhysicsJointCount() const { return m_physicsWorld ? m_physicsWorld->GetJointCount() : 0; }
     [[nodiscard]] const std::vector<std::string>& GetPhysicsDiagnostics() const { return m_physicsDiagnostics; }
     // Events are collected during the most recent Update and remain available until the next Update.
@@ -102,6 +107,8 @@ private:
     friend class SceneSerializer;
     void MoveFrom(Scene&& other) noexcept;
     void BuildPhysicsWorld() noexcept;
+    void BuildAudioSources(const AssetRegistry* assets) noexcept;
+    void DestroyAudioSources() noexcept;
     void DestroyPhysicsWorld() noexcept;
     void StepPhysics(float deltaSeconds) noexcept;
 
@@ -110,6 +117,9 @@ private:
     std::map<EntityId, std::unique_ptr<Entity>> m_entities;
     bool m_started = false;
     std::unique_ptr<PhysicsWorld> m_physicsWorld;
+    AudioEngine* m_audioEngine = nullptr;
+    std::map<EntityId, AudioSoundHandle> m_audioSources;
+    std::vector<std::string> m_audioDiagnostics;
     std::map<EntityId, PhysicsBodyHandle> m_physicsBodies;
     std::vector<std::string> m_physicsDiagnostics;
     std::vector<SceneContactEvent2D> m_physicsContactEvents;
