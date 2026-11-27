@@ -62,14 +62,14 @@ int main()
     Check(std::abs(ball.GetTransform().position.y - beforePause) < 0.001F,
         "Scene ignores non-finite frame delta safely");
 
-    ember::Scene playClone = scene.Clone();
-    Check(playClone.GetPhysicsBodyCount() == 0,
-        "Cloning a stopped Scene copies configuration but no runtime physics handles");
-
     scene.Stop();
     Check(!scene.IsStarted(), "Scene exits its running state");
     Check(scene.GetPhysicsBodyCount() == 0,
         "Scene destroys all runtime physics bodies on Stop");
+
+    ember::Scene playClone = scene.Clone();
+    Check(playClone.GetPhysicsBodyCount() == 0,
+        "Cloning a stopped Scene copies configuration but no runtime physics handles");
 
     ember::Scene invalidScene("Invalid Physics Test");
     auto& orphan = invalidScene.CreateEntity("Orphan Collider");
