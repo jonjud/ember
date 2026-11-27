@@ -327,9 +327,24 @@ void Renderer2D::DrawTexture(
         screenSize.y
     };
 
+    const bool hasSourceRegion = sourcePosition.x != 0.0F || sourcePosition.y != 0.0F ||
+        sourceSize.x != 0.0F || sourceSize.y != 0.0F;
     SDL_FRect sourceRect{sourcePosition.x, sourcePosition.y, sourceSize.x, sourceSize.y};
-    const SDL_FRect* source = sourceSize.x > 0.0F && sourceSize.y > 0.0F
-        ? &sourceRect : nullptr;
+    const SDL_FRect* source = nullptr;
+    if (hasSourceRegion)
+    {
+        float textureWidth = 0.0F;
+        float textureHeight = 0.0F;
+        if (!std::isfinite(sourcePosition.x) || !std::isfinite(sourcePosition.y) ||
+            !std::isfinite(sourceSize.x) || !std::isfinite(sourceSize.y) ||
+            sourcePosition.x < 0.0F || sourcePosition.y < 0.0F ||
+            sourceSize.x <= 0.0F || sourceSize.y <= 0.0F ||
+            !SDL_GetTextureSize(iterator->second, &textureWidth, &textureHeight) ||
+            sourcePosition.x + sourceSize.x > textureWidth ||
+            sourcePosition.y + sourceSize.y > textureHeight)
+            return;
+        source = &sourceRect;
+    }
 
     constexpr double kRadiansToDegrees = 180.0 / 3.14159265358979323846;
     const double screenRotation =
