@@ -18,8 +18,8 @@ Provide a small runtime-facing 2D audio foundation while keeping miniaudio types
 - Unload every sound before shutting down the mixer.
 
 ## Lifetime rules
-- Handles are valid only for the AudioEngine instance that created them and until UnloadSound or Shutdown.
-- AudioEngine is non-copyable and movable.
+- Handles are valid only for the AudioEngine instance that created them and until UnloadSound or Shutdown. IDs remain monotonic across shutdown/reinitialize cycles so stale handles cannot alias newly loaded sounds.
+- AudioEngine is non-copyable and non-movable so backend ownership cannot be accidentally abandoned.
 - Destroying or shutting down an engine releases all loaded sounds before releasing miniaudio's engine.
 - Scene serialization never stores runtime audio handles. Serializable audio authoring components and Editor controls are later slices.
 

@@ -77,12 +77,19 @@ int main()
     assert(!audio.Play(sound));
     assert(!audio.UnloadSound(sound));
 
+    const auto streamedSound = audio.LoadSound(path, true);
+    assert(streamedSound);
+    assert(audio.SetLooping(streamedSound, true));
+    assert(audio.Play(streamedSound));
+    assert(audio.UnloadSound(streamedSound));
+
     std::error_code error;
     std::filesystem::remove(path, error);
     audio.Shutdown();
     assert(!audio.IsInitialized());
     assert(!audio.Play(sound));
     assert(audio.Initialize({true, 2, 48000}));
+    assert(!audio.Play(sound)); // Handles from before Shutdown must never become valid again.
     audio.Shutdown();
     return 0;
 }

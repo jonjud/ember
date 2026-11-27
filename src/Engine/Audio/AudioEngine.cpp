@@ -25,9 +25,6 @@ struct AudioEngine::Impl
 
 AudioEngine::AudioEngine() : m_impl(std::make_unique<Impl>()) {}
 AudioEngine::~AudioEngine() { Shutdown(); }
-AudioEngine::AudioEngine(AudioEngine&&) noexcept = default;
-AudioEngine& AudioEngine::operator=(AudioEngine&&) noexcept = default;
-
 bool AudioEngine::Initialize(const AudioEngineConfig& config)
 {
     if (!m_impl) m_impl = std::make_unique<Impl>();
@@ -62,7 +59,6 @@ void AudioEngine::Shutdown() noexcept
     m_impl->sounds.clear();
     ma_engine_uninit(&m_impl->engine);
     m_impl->initialized = false;
-    m_impl->nextSoundId = 1;
 }
 
 bool AudioEngine::IsInitialized() const noexcept

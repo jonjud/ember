@@ -29,8 +29,8 @@ public:
 
     AudioEngine(const AudioEngine&) = delete;
     AudioEngine& operator=(const AudioEngine&) = delete;
-    AudioEngine(AudioEngine&&) noexcept;
-    AudioEngine& operator=(AudioEngine&&) noexcept;
+    AudioEngine(AudioEngine&&) = delete;
+    AudioEngine& operator=(AudioEngine&&) = delete;
 
     [[nodiscard]] bool Initialize(const AudioEngineConfig& config = {});
     void Shutdown() noexcept;
