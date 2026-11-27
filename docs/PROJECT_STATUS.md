@@ -10,8 +10,8 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`7d70f28`](https://github.com/jonjud/ember/commit/7d70f28d31a2c0481c27a95fb25a30978fa4926c) — Test collider scene serialization and legacy migration |
-| Last verified CI | [Windows CI #135](https://github.com/jonjud/ember/actions/runs/45948659696) — **Success** (Configure, Build, Run engine tests); collider serialization/migration CI pending |
+| Last code commit | [`f6d7e16`](https://github.com/jonjud/ember/commit/f6d7e16a7b39214b11bc1513d8474d1ee2b67c83) — Restore collider entries without generating replacement IDs |
+| Last verified CI | [Windows CI #135](https://github.com/jonjud/ember/actions/runs/45948659696) — **Success** (Configure, Build, Run engine tests); collider serialization/migration CI #? pending |
 | Last completed milestone | ColliderSet2D value model and stable ID tests passed CI #135 |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
