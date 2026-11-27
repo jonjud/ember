@@ -36,6 +36,7 @@ void Scene::MoveFrom(Scene&& other) noexcept
     m_physicsBodies = std::move(other.m_physicsBodies);
     m_physicsDiagnostics = std::move(other.m_physicsDiagnostics);
     m_physicsContactEvents = std::move(other.m_physicsContactEvents);
+    m_activeContactCounts = std::move(other.m_activeContactCounts);
     m_physicsAccumulator = other.m_physicsAccumulator;
     other.m_nextEntityId = 1;
     other.m_started = false;
@@ -204,6 +205,7 @@ void Scene::DestroyPhysicsWorld() noexcept
 {
     m_physicsBodies.clear();
     m_physicsContactEvents.clear();
+    m_activeContactCounts.clear();
     m_physicsWorld.reset();
     m_physicsAccumulator = 0.0F;
 }
@@ -251,11 +253,28 @@ void Scene::StepPhysics(float deltaSeconds) noexcept
             const EntityId entityA = findEntityId(event.bodyA);
             const EntityId entityB = findEntityId(event.bodyB);
             if (entityA == 0 || entityB == 0) continue;
-            m_physicsContactEvents.push_back({
-                event.type == PhysicsContactEventType2D::Begin
-                    ? SceneContactEventType2D::Begin : SceneContactEventType2D::End,
-                entityA, entityB
-            });
+            const std::pair<EntityId, EntityId> entityPair{
+                std::min(entityA, entityB), std::max(entityA, entityB)};
+            if (event.type == PhysicsContactEventType2D::Begin)
+            {
+                std::size_t& activeCount = m_activeContactCounts[entityPair];
+                if (activeCount == 0)
+                    m_physicsContactEvents.push_back({SceneContactEventType2D::Begin,
+                        entityPair.first, entityPair.second});
+                ++activeCount;
+            }
+            else
+            {
+                const auto active = m_activeContactCounts.find(entityPair);
+                if (active == m_activeContactCounts.end()) continue;
+                if (active->second > 0) --active->second;
+                if (active->second == 0)
+                {
+                    m_physicsContactEvents.push_back({SceneContactEventType2D::End,
+                        entityPair.first, entityPair.second});
+                    m_activeContactCounts.erase(active);
+                }
+            }
         }
         m_physicsAccumulator -= fixedTimeStep;
         ++steps;
