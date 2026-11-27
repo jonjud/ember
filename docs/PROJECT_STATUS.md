@@ -10,9 +10,9 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`1cb253a`](https://github.com/jonjud/ember/commit/1cb253abd8fe507921a3be721284e1c62c03a69f) — animation milestone and source-region rendering API |
+| Last code commit | [`d6ea5f8`](https://github.com/jonjud/ember/commit/d6ea5f887f32ff922ba1080bc0b9d45911b44fea) — miniaudio runtime facade, application lifecycle and handle-lifetime fixes |
 | Last verified CI | [Windows CI #199](https://github.com/jonjud/ember/actions/runs/45975547417) — **Success** (animation and full Windows build/test workflow) |
-| Latest documentation CI | [Windows CI #199](https://github.com/jonjud/ember/actions/runs/45975547417) — **Success** |
+| Latest documentation CI | [Windows CI #206](https://github.com/jonjud/ember/actions/runs/45977073343) — **In progress** |
 | Last completed milestone | Sprite Animation — user-confirmed all checks passed; Windows CI #199 Success (2026-11-27) |
 | Active milestone | Audio — next vertical slice using miniaudio. SpriteAnimation2D implementation, serialization, Inspector settings, sprite-sheet preview, Renderer2D source-region API and multi-row tests are complete; user-confirmed all checks passed and Windows CI #199 is green. Physics Joints implementation and automated tests passed CI #191; manual joint Editor verification remains deferred to the final Editor test session. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
@@ -87,7 +87,7 @@
 
 **Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user confirmed the Windows Editor checklist passed on 2026-11-27, including Editor launch/layout, Entity and Transform editing, duplicate/delete, PhysicsBody2D Inspector add/edit/remove, ColliderSet2D editing, Physics Debug Overlay, save/reopen persistence, and Play/Stop behavior.
 
-**Active milestone: Audio.** Sprite Animation is complete: playback, Scene lifecycle, serialization, Inspector settings, sprite-sheet preview, Renderer2D source-region rendering and multi-row tests passed Windows CI #199; the user confirmed all checks passed. Physics Joints implementation and automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Next implement a miniaudio-backed runtime audio vertical slice while keeping third-party types private.
+**Active milestone: Audio.** The first runtime slice is implemented on `develop`: miniaudio 0.11.26 is isolated behind an engine-owned PImpl facade; sound handles support loading (decoded or streamed), play/stop, volume, looping, state query and unload. Application and Editor own the audio device lifecycle and continue opening if no device is available. Device-less tests generate their own WAV fixture. Windows CI #206 is still in progress; this implementation is not yet CI-verified. Remaining work: connect project Audio assets to runtime loading, add serializable audio source authoring/Scene lifecycle, and expose the controls in the Editor Inspector. Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; manual Editor verification remains deferred.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -119,4 +119,4 @@
 
 ---
 
-**Handoff:** Sprite Animation is complete and all user-run checks passed; Windows CI #199 is green. Current HEAD is `1cb253a` on `develop`. Next milestone: miniaudio-backed Audio vertical slice. Physics Joints implementation and automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Work on `develop` only; do not merge to `main`.
+**Handoff:** Current HEAD is `d6ea5f8` on `develop`. Audio runtime foundation is implemented; Windows CI #206 is pending. Next: verify CI, then connect Audio assets, Scene components and Editor Inspector. Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Work on `develop` only; do not merge to `main`.
