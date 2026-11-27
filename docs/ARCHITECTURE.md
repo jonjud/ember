@@ -55,7 +55,7 @@ The Editor runs Play Mode on an isolated Scene clone. The authoring Scene remain
 - Positive Y points downward; default gravity is positive Y.
 - Entity Transform2D position maps to body origin; rotation is radians.
 - Collider geometry is explicit and independent of RenderComponent2D.
-- One collider per entity in the first vertical slice. Both Box and Circle collider components on one entity are rejected with a diagnostic.
+- The initial physics slice supported one collider per entity. Multiple colliders are the active extension milestone; see [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md).
 - A collider without PhysicsBody2D is skipped with a diagnostic.
 - Dynamic bodies are physics-authoritative after stepping; static and kinematic bodies are transform-authoritative before stepping.
 - Physics body handles are transient runtime state, never part of serialization or Component::Clone.
@@ -75,7 +75,7 @@ The Editor runs Play Mode on an isolated Scene clone. The authoring Scene remain
 - miniaudio: planned audio backend.
 
 ## Known gaps
-- Physics runtime integration is covered by automated Scene tests, but interactive Editor/Play Mode behavior still requires manual verification on Windows.
+- Interactive Editor/Play Mode physics verification has been completed manually on Windows; see [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md). Multiple colliders per entity remain the active physics extension.
 - Numeric body/collider configuration validation and disabled/static/kinematic transform-authority tests are implemented.
 - Scene exposes closest raycast and AABB overlap queries with engine-owned results and EntityId mapping. Query category/mask filters are forwarded to PhysicsWorld. Automated tests cover excluded masks/categories, allowed query categories, and sensor inclusion in raycast and AABB overlap results.
 - Runtime Play Mode input actions are not yet wired to persistent InputMap settings.

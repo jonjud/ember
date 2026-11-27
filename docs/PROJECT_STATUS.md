@@ -10,9 +10,9 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`7523cea`](https://github.com/jonjud/ember/commit/7523cea63cc28dec0a821653434e4f2c15cc1b2b) — Test Scene query filter forwarding |
-| Last verified CI | [Windows CI run 45945132511](https://github.com/jonjud/ember/actions/runs/45945132511) — **Success** (Configure, Build, Run engine tests; query-filter and sensor query coverage) |
-| Last completed milestone | Raycast/Overlap Query Filter and Sensor Coverage |
+| Last code commit | [`862f774`](https://github.com/jonjud/ember/commit/862f7747f251e6148f8472fec0495e0119a369ab) — Add Windows physics runtime verification checklist |
+| Last verified CI | [Windows CI #132](https://github.com/jonjud/ember/actions/runs/45946247259) — **Success** (Configure, Build, Run engine tests) |
+| Last completed milestone | Interactive Physics Runtime Verification |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests ไม่ได้ยืนยันการทดสอบ Editor/Runtime แบบ interactive บนเครื่องจริง
@@ -51,6 +51,7 @@
 - [x] Test query category/mask filtering for raycasts and AABB overlaps
 - [x] Verify raycasts and AABB overlaps include sensor shapes
 - [x] Verify Scene forwards query filters to PhysicsWorld
+- [x] Verify Physics Debug Overlay and Play Mode interactively on Windows (user-confirmed checklist pass; CI #132 also passed)
 - [x] Collect contact events after each fixed simulation step; Scene exposes the latest Update's events until next Update
 - [x] Wake touching dynamic bodies when a transform-driven static/kinematic body moves so contact separation can be processed
 
@@ -69,11 +70,9 @@
 
 ## 4. Current limitations / next milestone
 
-The Scene-owned 2D physics slice now includes the Editor collider debug overlay, engine-owned Begin/End contact events, and closest raycast/AABB overlap queries. Query tests cover nearest-hit selection, hit normal/fraction, invalid zero-length rays, invalid bounds, category/mask filtering, and sensor inclusion in both raycast and overlap queries. Scene tests also verify that query filters are forwarded correctly and results map to EntityIds. Windows CI #126 passed Configure, Build and engine tests for the PhysicsWorld query-filter/sensor cases; the final Scene filter-forwarding test is included in the current HEAD and will be validated by its CI run.
+The Scene-owned 2D physics slice includes the Editor collider debug overlay, Begin/End contact events, closest raycast/AABB overlap queries, query filters and sensor inclusion. Interactive Windows verification of the overlay and Play Mode has now been user-confirmed as passed using [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md). Windows CI #132 also passed Configure, Build and engine tests.
 
-Next focused task: execute the step-by-step interactive Windows checklist in [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md). Record pass/fail for each item before considering multiple colliders or joints. Those features remain deferred.
-
-Interactive Editor/Play Mode verification on a Windows machine is still outstanding; CI success does not replace that manual check.
+**Active milestone: Multiple Colliders per Entity.** The design must preserve legacy scene compatibility, stable collider identity, transient runtime handles, and the private Box2D boundary. Joints remain deferred until the multi-collider slice is stable.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -99,4 +98,4 @@ Interactive Editor/Play Mode verification on a Windows machine is still outstand
 
 ---
 
-**Handoff:** Start by checking latest `develop` HEAD and CI. Next focused task: execute [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md) on Windows and report each check as pass/fail; keep Box2D types private.
+**Handoff:** Start by checking latest `develop` HEAD and CI. Active milestone: Multiple Colliders per Entity. Read [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md) before implementation; preserve legacy scene compatibility and keep Box2D types private.

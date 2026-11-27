@@ -12,7 +12,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Keyboard input adapter
 - [x] Frame-rate-independent movement proof of concept
 - [x] Windows CI build
-- [ ] Verify interactive runtime behavior on Windows
+- [x] Verify interactive runtime behavior on Windows (manual checklist passed)
 - [ ] Add logging and diagnostics
 
 ## Phase 2 — 2D Core and Project Assets
@@ -45,7 +45,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Physics debug overlay (box/circle collider outlines; Windows CI #113)
 - [ ] Undo / Redo
 - [ ] Multi-selection and hierarchy organization
-- [ ] Interactive Editor/runtime verification
+- [x] Interactive Editor/runtime verification (Windows manual checklist passed; CI #132)
 
 ## Phase 4 — Game Systems
 - [x] General component lifecycle and cloning API
@@ -60,7 +60,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Collision/contact begin/end event API (engine-owned EntityId results; Windows CI run 45939999840)
 - [x] Closest raycast and AABB overlap query API (engine-owned results, query filters and Scene EntityId mapping; Windows CI #121)
 - [x] Query-filter category/mask and sensor inclusion tests (Windows CI #126)
-- [ ] Multiple colliders per entity
+- [ ] Multiple colliders per entity (active milestone)
 - [ ] Joints
 - [ ] Animation
 - [ ] Audio (planned miniaudio backend)
@@ -83,4 +83,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Complete the interactive Windows checklist in [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md); CI does not replace this check. Do not start multiple-collider/joint work until the checklist is recorded.
+- Implement multiple colliders per entity using a serializable collider-set component with stable per-collider IDs, preserving legacy BoxCollider2D/CircleCollider2D scene loading. Keep runtime handles transient and Box2D private. Defer joints until this slice is complete.

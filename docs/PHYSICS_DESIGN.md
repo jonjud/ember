@@ -10,7 +10,8 @@
 - Complete: engine-owned Begin/End contact event API in PhysicsWorld and Scene, with EntityId pairs; Windows CI run 45939999840 passed.
 - Complete: engine-owned closest raycast and AABB overlap queries, including category/mask query filters and Scene EntityId mapping; Windows CI run 45941862568 passed.
 - Complete: automated category/mask filter coverage, sensor inclusion in raycast/AABB overlap queries, and Scene filter-forwarding tests; PhysicsWorld query coverage passed Windows CI #126.
-- Not implemented: joints and multiple colliders per entity.
+- Active milestone: multiple colliders per entity (design in [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md)).
+- Deferred: joints.
 
 ## Dependency boundary
 - Box2D headers and IDs must not appear in public EMBER Scene, Entity, Component or Editor headers.
@@ -40,12 +41,12 @@
 - `CircleCollider2D`: radius, local offset, density, friction, restitution and sensor flag.
 - `PhysicsWorld`: gravity, body create/destroy, box/circle collider creation, transform read/write, stepping, consuming Begin/End contact events, closest raycasts, AABB overlap queries and body count.
 - Components store configuration only; runtime handles are owned by Scene.
-- Initial scope is one collider per entity. An entity with both BoxCollider2D and CircleCollider2D is invalid and receives a diagnostic.
+- Legacy configuration currently supports one BoxCollider2D or CircleCollider2D per entity. The multi-collider extension will introduce a collider-set component and a compatibility migration; see [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md).
 
 ## Implemented runtime behavior
 - Create a body for an enabled PhysicsBody2D and attach its configured collider.
 - A collider without PhysicsBody2D is skipped with a diagnostic.
-- Both collider types on one entity are skipped with a diagnostic.
+- Until the multi-collider migration lands, entities with both legacy collider components are skipped with a diagnostic.
 - Failed body/collider creation is caught per entity; partial body state is destroyed and a diagnostic is recorded.
 - Fixed timestep: 1/60 second. Render delta is clamped to 0.25 seconds; at most 8 catch-up substeps are processed per frame.
 - Dynamic bodies are physics-authoritative: after stepping, write body position/rotation to Entity Transform2D (pixels/radians).
@@ -56,7 +57,8 @@
 - Non-finite frame delta is ignored safely.
 
 ## Remaining validation work
-- Interactive Editor/Play Mode verification on Windows remains outstanding. Use the reproducible checklist in [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md); record any failure before changing implementation.
+- Interactive Editor/Play Mode verification on Windows passed the user-run checklist; automated Windows CI #132 also passed.
+- Multiple colliders per entity are the active extension milestone. See [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md).
 
 ## Milestone order
 1. Pin Box2D and establish private dependency boundary. (Complete)
@@ -68,11 +70,12 @@
 7. Add collision/contact begin/end event API. (Complete; Windows CI run 45939999840)
 8. Add raycast and overlap query APIs. (Complete; PhysicsWorld and Scene query tests; Windows CI #121)
 9. Expand query-filter and sensor-specific automated test coverage. (Complete; Windows CI #126)
-10. Verify Editor/Play Mode physics behavior interactively on Windows. (Next)
-11. Consider multiple colliders and joints after the first 2D runtime slice is stable.
+10. Verify Editor/Play Mode physics behavior interactively on Windows. (Complete; user-confirmed checklist pass, CI #132)
+11. Implement multiple colliders per entity. (Active)
+12. Consider joints after the multi-collider slice is stable.
 
 ## Explicit non-goals for first runtime slice
 - 3D physics, joints, ragdolls, character controllers, networking/rollback and multithreaded jobs.
 - Exposing Box2D handles to gameplay code.
 - Automatically converting RenderComponent2D into collision geometry.
-- Multiple colliders per entity.
+- Joints.
