@@ -1,5 +1,6 @@
 #include "Engine/Scene/SceneSerializer.hpp"
 #include "Engine/Physics/PhysicsComponentRegistration.hpp"
+#include "Engine/Scene/AnimationComponentRegistration.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -65,6 +66,9 @@ int main()
     Check(ember::RegisterPhysicsComponents(registry),
           "Physics component serializers are registered");
 
+    Check(ember::RegisterAnimationComponents(registry),
+          "Animation component serializer is registered");
+
     ember::Scene source("Forest Level");
     auto& player = source.CreateEntity("Player");
     player.GetTransform().position = {12.5F, -8.0F};
@@ -98,6 +102,14 @@ int main()
     decorationRope.connectedEntity = player.GetId();
     decorationRope.localAnchorB = {4.0F, 5.0F};
     decorationRope.length = 180.0F;
+
+    auto& spriteAnimation = player.AddComponent<ember::SpriteAnimation2D>();
+    spriteAnimation.frameWidth = 24;
+    spriteAnimation.frameHeight = 32;
+    spriteAnimation.columns = 6;
+    spriteAnimation.frameCount = 10;
+    spriteAnimation.framesPerSecond = 12.0F;
+    spriteAnimation.loop = false;
 
     auto& compound = source.CreateEntity("Compound");
     auto& colliderSet = compound.AddComponent<ember::ColliderSet2D>();
@@ -138,6 +150,14 @@ int main()
           "Saved scene can be loaded");
     Check(loaded.GetName() == "Forest Level", "Scene name survives round-trip");
     Check(loaded.GetEntityCount() == 3, "All entities survive round-trip");
+    const auto* loadedAnimationOwner = loaded.FindEntity(player.GetId());
+    const auto* loadedAnimation = loadedAnimationOwner
+        ? loadedAnimationOwner->GetComponent<ember::SpriteAnimation2D>() : nullptr;
+    Check(loadedAnimation && loadedAnimation->frameWidth == 24 &&
+        loadedAnimation->frameHeight == 32 && loadedAnimation->columns == 6 &&
+        loadedAnimation->frameCount == 10 && loadedAnimation->framesPerSecond == 12.0F &&
+        !loadedAnimation->loop,
+        "SpriteAnimation2D authoring settings survive full Scene serialization");
     const auto* loadedHingeOwner = loaded.FindEntity(player.GetId());
     const auto* loadedRopeOwner = loaded.FindEntity(second.GetId());
     const auto* loadedHinge = loadedHingeOwner

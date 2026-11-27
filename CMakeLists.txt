@@ -162,6 +162,15 @@ if(BUILD_TESTING)
     target_link_libraries(ember_scene_physics_tests PRIVATE box2d::box2d)
     add_test(NAME ember_scene_physics_tests COMMAND ember_scene_physics_tests)
 
+    add_executable(ember_sprite_animation_tests
+        tests/SpriteAnimationTests.cpp
+        src/Engine/Scene/Scene.cpp
+        src/Engine/Physics/PhysicsWorld.cpp
+    )
+    target_include_directories(ember_sprite_animation_tests PRIVATE src)
+    target_link_libraries(ember_sprite_animation_tests PRIVATE box2d::box2d)
+    add_test(NAME ember_sprite_animation_tests COMMAND ember_sprite_animation_tests)
+
     add_executable(ember_input_map_tests
         tests/InputMapTests.cpp
         src/Engine/Platform/InputMap.cpp

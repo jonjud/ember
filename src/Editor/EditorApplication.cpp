@@ -3,6 +3,8 @@
 #include "Engine/Scene/SceneSerializer.hpp"
 #include "Engine/Physics/PhysicsComponentRegistration.hpp"
 #include "Engine/Physics/PhysicsComponents2D.hpp"
+#include "Engine/Scene/AnimationComponents2D.hpp"
+#include "Engine/Scene/AnimationComponentRegistration.hpp"
 #include "Engine/Platform/Input.hpp"
 #include "Engine/Project/ProjectConfigurationStore.hpp"
 
@@ -156,6 +158,12 @@ bool EditorApplication::Initialize()
     if (!RegisterPhysicsComponents(m_componentRegistry))
     {
         std::cerr << "EMBER Editor: Physics component registration failed.\\n";
+        return false;
+    }
+
+    if (!RegisterAnimationComponents(m_componentRegistry))
+    {
+        std::cerr << "EMBER Editor: Animation component registration failed.\\n";
         return false;
     }
 
@@ -1725,11 +1733,39 @@ void EditorApplication::DrawViewport()
             if (previewTexture != nullptr)
             {
                 const ImTextureID textureId = (ImTextureID)(intptr_t)previewTexture;
+                ImVec2 uvTopLeft(0.0F, 0.0F);
+                ImVec2 uvTopRight(1.0F, 0.0F);
+                ImVec2 uvBottomRight(1.0F, 1.0F);
+                ImVec2 uvBottomLeft(0.0F, 1.0F);
+                if (const auto* animation = entity.GetComponent<SpriteAnimation2D>();
+                    animation != nullptr && animation->IsConfigurationValid())
+                {
+                    float textureWidth = 0.0F;
+                    float textureHeight = 0.0F;
+                    if (SDL_GetTextureSize(previewTexture, &textureWidth, &textureHeight))
+                    {
+                        const int frameColumn = animation->GetCurrentFrame() % animation->columns;
+                        const int frameRow = animation->GetCurrentFrame() / animation->columns;
+                        const float sourceX = static_cast<float>(frameColumn * animation->frameWidth);
+                        const float sourceY = static_cast<float>(frameRow * animation->frameHeight);
+                        if (sourceX + animation->frameWidth <= textureWidth &&
+                            sourceY + animation->frameHeight <= textureHeight)
+                        {
+                            const float u0 = sourceX / textureWidth;
+                            const float v0 = sourceY / textureHeight;
+                            const float u1 = (sourceX + animation->frameWidth) / textureWidth;
+                            const float v1 = (sourceY + animation->frameHeight) / textureHeight;
+                            uvTopLeft = ImVec2(u0, v0);
+                            uvTopRight = ImVec2(u1, v0);
+                            uvBottomRight = ImVec2(u1, v1);
+                            uvBottomLeft = ImVec2(u0, v1);
+                        }
+                    }
+                }
                 drawList->AddImageQuad(
                     textureId,
                     corners[0], corners[1], corners[2], corners[3],
-                    ImVec2(0.0F, 0.0F), ImVec2(1.0F, 0.0F),
-                    ImVec2(1.0F, 1.0F), ImVec2(0.0F, 1.0F),
+                    uvTopLeft, uvTopRight, uvBottomRight, uvBottomLeft,
                     tint);
             }
             else
