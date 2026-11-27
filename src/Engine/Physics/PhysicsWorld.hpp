@@ -1,0 +1,178 @@
+#pragma once
+
+#include "Engine/Math/Vector2.hpp"
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <vector>
+
+namespace ember
+{
+enum class PhysicsBodyType2D
+{
+    Static,
+    Kinematic,
+    Dynamic
+};
+
+struct PhysicsWorldDefinition
+{
+    Vector2 gravity{0.0F, 9.8F};
+};
+
+struct PhysicsBodyDefinition2D
+{
+    PhysicsBodyType2D type = PhysicsBodyType2D::Static;
+    Vector2 position{}; // meters
+    float rotation = 0.0F; // radians
+    Vector2 linearVelocity{}; // meters per second
+    float angularVelocity = 0.0F; // radians per second
+    float gravityScale = 1.0F;
+    float linearDamping = 0.0F;
+    float angularDamping = 0.0F;
+};
+
+struct PhysicsBoxColliderDefinition2D
+{
+    Vector2 halfExtents{0.5F, 0.5F}; // meters
+    Vector2 offset{}; // meters, in body-local space
+    float rotation = 0.0F; // radians, in body-local space
+    float density = 1.0F;
+    float friction = 0.3F;
+    float restitution = 0.0F;
+    bool isSensor = false;
+    std::uint64_t categoryBits = 0x0001;
+    std::uint64_t maskBits = 0xFFFF;
+};
+
+struct PhysicsCircleColliderDefinition2D
+{
+    float radius = 0.5F; // meters
+    Vector2 offset{}; // meters, in body-local space
+    float density = 1.0F;
+    float friction = 0.3F;
+    float restitution = 0.0F;
+    bool isSensor = false;
+    std::uint64_t categoryBits = 0x0001;
+    std::uint64_t maskBits = 0xFFFF;
+};
+
+struct PhysicsBodyHandle
+{
+    std::uint64_t value = 0;
+
+    [[nodiscard]] explicit operator bool() const { return value != 0; }
+    friend bool operator==(PhysicsBodyHandle, PhysicsBodyHandle) = default;
+};
+
+struct PhysicsJointHandle
+{
+    std::uint64_t value = 0;
+
+    [[nodiscard]] explicit operator bool() const { return value != 0; }
+    friend bool operator==(PhysicsJointHandle, PhysicsJointHandle) = default;
+};
+
+struct PhysicsRevoluteJointDefinition2D
+{
+    PhysicsBodyHandle bodyA{};
+    PhysicsBodyHandle bodyB{};
+    Vector2 localAnchorA{}; // meters, body-local space
+    Vector2 localAnchorB{}; // meters, body-local space
+    bool enableLimit = false;
+    float lowerAngle = 0.0F; // radians
+    float upperAngle = 0.0F; // radians
+    bool enableMotor = false;
+    float motorSpeed = 0.0F; // radians per second
+    float maxMotorTorque = 0.0F;
+    bool collideConnected = false;
+};
+
+struct PhysicsDistanceJointDefinition2D
+{
+    PhysicsBodyHandle bodyA{};
+    PhysicsBodyHandle bodyB{};
+    Vector2 localAnchorA{}; // meters, body-local space
+    Vector2 localAnchorB{}; // meters, body-local space
+    float length = 1.0F; // meters
+    bool collideConnected = false;
+};
+
+enum class PhysicsContactEventType2D
+{
+    Begin,
+    End
+};
+
+struct PhysicsContactEvent2D
+{
+    PhysicsContactEventType2D type = PhysicsContactEventType2D::Begin;
+    PhysicsBodyHandle bodyA{};
+    PhysicsBodyHandle bodyB{};
+};
+
+struct PhysicsQueryFilter2D
+{
+    std::uint64_t categoryBits = 1;
+    std::uint64_t maskBits = ~std::uint64_t{0};
+};
+
+struct PhysicsRaycastHit2D
+{
+    PhysicsBodyHandle body{};
+    Vector2 point{}; // meters
+    Vector2 normal{};
+    float fraction = 0.0F;
+};
+
+struct PhysicsTransform2D
+{
+    Vector2 position{}; // meters
+    float rotation = 0.0F; // radians
+};
+
+// Engine-owned facade. Box2D types and handles are intentionally hidden in the
+// implementation so Scene, Entity, Components, and Editor stay backend-agnostic.
+class PhysicsWorld
+{
+public:
+    explicit PhysicsWorld(const PhysicsWorldDefinition& definition = {});
+    ~PhysicsWorld();
+
+    PhysicsWorld(const PhysicsWorld&) = delete;
+    PhysicsWorld& operator=(const PhysicsWorld&) = delete;
+    PhysicsWorld(PhysicsWorld&&) noexcept;
+    PhysicsWorld& operator=(PhysicsWorld&&) noexcept;
+
+    [[nodiscard]] bool IsValid() const;
+    [[nodiscard]] bool SetGravity(Vector2 gravity);
+    [[nodiscard]] PhysicsBodyHandle CreateBody(const PhysicsBodyDefinition2D& definition);
+    [[nodiscard]] bool DestroyBody(PhysicsBodyHandle handle);
+    [[nodiscard]] PhysicsJointHandle CreateRevoluteJoint(
+        const PhysicsRevoluteJointDefinition2D& definition);
+    [[nodiscard]] PhysicsJointHandle CreateDistanceJoint(
+        const PhysicsDistanceJointDefinition2D& definition);
+    [[nodiscard]] bool DestroyJoint(PhysicsJointHandle handle);
+    [[nodiscard]] std::size_t GetJointCount() const;
+    [[nodiscard]] bool AddBoxCollider(
+        PhysicsBodyHandle handle, const PhysicsBoxColliderDefinition2D& definition = {});
+    [[nodiscard]] bool AddCircleCollider(
+        PhysicsBodyHandle handle, const PhysicsCircleColliderDefinition2D& definition = {});
+    [[nodiscard]] std::optional<PhysicsTransform2D> GetBodyTransform(PhysicsBodyHandle handle) const;
+    [[nodiscard]] bool SetBodyTransform(PhysicsBodyHandle handle, const PhysicsTransform2D& transform);
+    [[nodiscard]] bool Step(float timeStep, int subStepCount = 4);
+    // Returns and clears contact events generated by completed simulation steps.
+    [[nodiscard]] std::vector<PhysicsContactEvent2D> ConsumeContactEvents();
+    [[nodiscard]] std::optional<PhysicsRaycastHit2D> RaycastClosest(
+        Vector2 origin, Vector2 translation, const PhysicsQueryFilter2D& filter = {}) const;
+    [[nodiscard]] std::vector<PhysicsBodyHandle> OverlapAABB(
+        Vector2 lowerBound, Vector2 upperBound, const PhysicsQueryFilter2D& filter = {}) const;
+    [[nodiscard]] std::size_t GetBodyCount() const;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> m_impl;
+};
+} // namespace ember
