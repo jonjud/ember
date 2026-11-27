@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.24)
 project(EMBER
     VERSION 0.1.0
     DESCRIPTION "A lightweight, 2D-first game engine"
-    LANGUAGES CXX
+    LANGUAGES C CXX
 )
 
 set(CMAKE_CXX_STANDARD 20)
@@ -21,6 +21,22 @@ FetchContent_Declare(
     GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(nlohmann_json)
+
+# Box2D is the physics backend. Keep its own samples and tests disabled;
+# EMBER owns the integration and its test coverage.
+set(BOX2D_SAMPLES OFF CACHE BOOL "" FORCE)
+set(BOX2D_BENCHMARKS OFF CACHE BOOL "" FORCE)
+set(BOX2D_DOCS OFF CACHE BOOL "" FORCE)
+set(BOX2D_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(BOX2D_PROFILE OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+    box2d
+    GIT_REPOSITORY https://github.com/erincatto/box2d.git
+    GIT_TAG v3.2.0
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(box2d)
 
 set(SDL_TESTS OFF CACHE BOOL "" FORCE)
 set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -97,7 +113,7 @@ add_library(ember_engine STATIC
 )
 
 target_include_directories(ember_engine PUBLIC src)
-target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image nlohmann_json::nlohmann_json)
+target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image nlohmann_json::nlohmann_json PRIVATE box2d::box2d)
 
 add_library(ember_imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp

@@ -2,7 +2,7 @@
 
 > **Current status:** See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the live development state, current HEAD, latest CI result, active/next milestone, and handoff notes. This file tracks the high-level feature checklist.
 
-EMBER is a 2D-first engine. Each milestone should produce a buildable, testable result before the next layer is added.
+EMBER is a 2D-first engine. Each milestone should produce a buildable, testable result before the next layer is added. Physics backend and integration decisions are tracked in [PHYSICS_DESIGN.md](PHYSICS_DESIGN.md).
 
 ## Phase 1 — Engine Foundation
 

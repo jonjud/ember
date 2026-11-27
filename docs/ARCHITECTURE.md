@@ -55,6 +55,7 @@ tests/
 - **Scene / Entity:** stable 64-bit ID, name, active state, Transform2D, RenderComponent2D, MovementComponent2D, and typed runtime components.
 - **Scene / Scene:** owns entities; supports create, duplicate, destroy, lookup, iteration, independent cloning, and explicit Start / Update / Stop lifecycle dispatch.
 - **Scene / SceneSerializer:** versioned JSON persistence of entity IDs and scene data. Renderer-owned texture handles are not serialized; stable asset IDs are.
+- **Physics (planned):** Box2D is a private implementation dependency behind EMBER-owned APIs. See [PHYSICS_DESIGN.md](PHYSICS_DESIGN.md) for units, ownership, lifecycle, and component boundaries.
 - **Resources / TextureCache:** reference-counted texture sharing keyed by normalized path and import settings. Uses injected load/destroy callbacks.
 - **Resources / AssetDirectory:** resolves project-relative paths and rejects lexical traversal outside the asset root.
 - **Resources / AssetMetadataStore:** versioned .emberasset sidecars with stable IDs, asset type, source path, and texture import settings.
@@ -84,7 +85,7 @@ The current Play Mode movement proof of concept moves the selected active entity
 - SDL3_image: BMP, PNG, and JPEG decoding.
 - Dear ImGui: editor-only UI dependency.
 - nlohmann/json: project, asset metadata, and scene serialization.
-- Box2D: planned physics backend.
+- Box2D v3.2.0: pinned FetchContent dependency; C API is private to the future Physics adapter. No simulation integration is implemented yet.
 - miniaudio: planned audio backend.
 
 ## Known gaps

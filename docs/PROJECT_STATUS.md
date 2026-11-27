@@ -16,7 +16,8 @@
 | Last verified CI | [Windows Build #92](https://github.com/jonjud/ember/actions/runs/45921944622) |
 | CI result | **Success** — Build และ CTest ผ่าน |
 | Last completed milestone | Versioned Component Schema Migration |
-| Current active milestone | ไม่มีงานที่กำลังแก้ไข — รอเริ่ม milestone ถัดไป |
+| Current active milestone | Collision Detection & Physics — Stage 1: backend dependency and architecture |
+| Physics backend | Box2D v3.2.0 pinned via FetchContent; integration wrapper not implemented yet |
 | Next planned milestone | Collision Detection and Physics Integration (Box2D evaluation/integration) |
 
 > CI Success หมายถึงการ Compile และ Automated Tests ผ่านใน Windows workflow เท่านั้น ไม่ได้ยืนยันพฤติกรรม Editor/Runtime แบบ interactive บนเครื่องจริง
@@ -54,17 +55,20 @@
 
 ## 4. งานถัดไปที่ตกลงไว้
 
-### Next milestone: Collision Detection and Physics Integration
+### Active milestone: Collision Detection and Physics Integration
+
+**Stage 1 — backend and architecture:** เลือก Box2D v3.2.0, เพิ่ม dependency แบบ pin version และกำหนดขอบเขต interface แล้ว; ยังไม่ถือว่ามี physics simulation ใช้งานได้จนกว่าจะมี wrapper และ tests
 
 **เป้าหมาย:** วางระบบ Collision/Physics ให้ใช้งานร่วมกับ Entity/Component/Scene และ Play Mode ได้ โดยไม่ผูก physics dependency เข้ากับ Editor UI
 
 ลำดับงานที่เสนอ:
-1. ตรวจ dependency และกำหนดขอบเขต backend (Box2D) กับ engine-facing interface
-2. ออกแบบ PhysicsWorld และ component ที่จำเป็น เช่น body/collider
-3. เชื่อม lifecycle กับ Scene Start/Update/Stop
-4. เพิ่ม serialization และ Inspector properties
-5. เพิ่ม automated tests สำหรับ collision, body lifecycle และ scene round-trip
-6. เชื่อม debug visualization ใน Editor เมื่อ core ทำงานเสถียรแล้ว
+1. [x] ตรวจ dependency และ pin Box2D v3.2.0; แยก Box2D ไว้หลัง engine-facing interface
+2. [x] กำหนดแนวทาง PhysicsWorld/Scene ownership, coordinate conversion และ body/collider components ใน [PHYSICS_DESIGN.md](PHYSICS_DESIGN.md)
+3. [ ] สร้าง PhysicsWorld wrapper และทดสอบ body/shape lifecycle
+4. [ ] เชื่อม PhysicsWorld กับ Scene Start/Update/Stop และ fixed timestep
+5. [ ] เพิ่ม PhysicsBody2D/Collider2D serialization และ Inspector properties
+6. [ ] เพิ่ม automated tests สำหรับ collision, body lifecycle และ scene round-trip
+7. [ ] เชื่อม debug visualization ใน Editor เมื่อ core ทำงานเสถียรแล้ว
 
 **ยังไม่เริ่ม milestone นี้** จนกว่าจะมี commit แรกที่ลงมือทำจริง และจะไม่ติ๊กว่างานเสร็จจากการวางแผนเพียงอย่างเดียว
 
@@ -88,6 +92,7 @@
 | วันที่ | Commit | รายละเอียด | CI |
 |---|---|---|---|
 | 2026-11-27 | [`60e05ca`](https://github.com/jonjud/ember/commit/60e05ca08af44ec305988ff9dd88ccfee1d5589e) | Versioned component schema migrations; legacy v1 compatibility; migration tests | [Build #92 — Success](https://github.com/jonjud/ember/actions/runs/45921944622) |
+| 2026-11-27 | pending | Pin Box2D v3.2.0 and document Physics integration boundary | CI pending |
 
 ---
 
