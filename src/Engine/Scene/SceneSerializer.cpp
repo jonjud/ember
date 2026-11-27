@@ -156,7 +156,7 @@ bool SceneSerializer::Save(
     try
     {
         Json entities = Json::array();
-        scene.ForEachEntity([&entities](const Entity& entity)
+        scene.ForEachEntity([&entities, componentRegistry](const Entity& entity)
         {
             entities.push_back(ToJson(entity, componentRegistry));
         });
