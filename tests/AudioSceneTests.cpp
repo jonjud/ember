@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <utility>
 
 namespace
@@ -105,6 +106,8 @@ int main()
     assert(!scene.PlayAudioSource(0));
     assert(!scene.StopAudioSource(0));
     assert(!scene.IsAudioSourcePlaying(disabledEntity.GetId()));
+    assert(!scene.HasAudioSource(disabledEntity.GetId()));
+    assert(scene.HasAudioSource(ambienceEntity.GetId()));
     assert(scene.GetAudioDiagnostics().empty());
 
     scene.Stop();
@@ -144,6 +147,53 @@ int main()
     assert(missingRegistryScene.GetAudioDiagnostics().size() == 1);
     missingRegistryScene.Stop();
 
+    ember::AudioEngine unavailableAudio;
+    ember::Scene unavailableEngineScene("Unavailable Audio Engine");
+    auto& unavailableEntity = unavailableEngineScene.CreateEntity("Unavailable Engine");
+    auto& unavailableSource = unavailableEntity.AddComponent<ember::AudioSource2D>();
+    unavailableSource.audioAssetId = "audio-ambience";
+    unavailableEngineScene.Start(&unavailableAudio, &assets);
+    assert(unavailableEngineScene.GetAudioSourceCount() == 0);
+    assert(unavailableEngineScene.GetAudioDiagnostics().size() == 1);
+    unavailableEngineScene.Stop();
+
+    // Wrong-type and traversal paths are rejected before any sound is loaded.
+    ember::AssetMetadata textureMetadata;
+    textureMetadata.assetId = "texture-not-audio";
+    textureMetadata.type = ember::AssetType::Texture;
+    textureMetadata.source = "audio/ambience.wav";
+    assert(ember::AssetMetadataStore::Save(root / "audio" / "texture.emberasset", textureMetadata));
+    const auto outsideWave = root.parent_path() / "ember_audio_scene_outside.wav";
+    WriteTinyWave(outsideWave);
+    ember::AssetMetadata traversalMetadata;
+    traversalMetadata.assetId = "audio-traversal";
+    traversalMetadata.type = ember::AssetType::Audio;
+    traversalMetadata.source = "../ember_audio_scene_outside.wav";
+    assert(ember::AssetMetadataStore::Save(root / "audio" / "traversal.emberasset", traversalMetadata));
+    assert(assets.Scan());
+
+    ember::Scene invalidReferencesScene("Invalid Audio References");
+    auto& wrongTypeEntity = invalidReferencesScene.CreateEntity("Wrong Type");
+    auto& wrongTypeSource = wrongTypeEntity.AddComponent<ember::AudioSource2D>();
+    wrongTypeSource.audioAssetId = "texture-not-audio";
+    auto& traversalEntity = invalidReferencesScene.CreateEntity("Traversal Path");
+    auto& traversalSource = traversalEntity.AddComponent<ember::AudioSource2D>();
+    traversalSource.audioAssetId = "audio-traversal";
+    invalidReferencesScene.Start(&audio, &assets);
+    assert(invalidReferencesScene.GetAudioSourceCount() == 0);
+    assert(invalidReferencesScene.GetAudioDiagnostics().size() == 2);
+    invalidReferencesScene.Stop();
+
+    ember::Scene invalidConfigurationScene("Invalid Audio Configuration");
+    auto& invalidConfigEntity = invalidConfigurationScene.CreateEntity("Invalid Volume");
+    auto& invalidConfigSource = invalidConfigEntity.AddComponent<ember::AudioSource2D>();
+    invalidConfigSource.audioAssetId = "audio-ambience";
+    invalidConfigSource.volume = std::numeric_limits<float>::quiet_NaN();
+    invalidConfigurationScene.Start(&audio, &assets);
+    assert(invalidConfigurationScene.GetAudioSourceCount() == 0);
+    assert(invalidConfigurationScene.GetAudioDiagnostics().size() == 1);
+    invalidConfigurationScene.Stop();
+
     // Moving a running Scene transfers ownership of its runtime sound handles.
     ember::Scene moveSource("Move Source");
     auto& movingEntity = moveSource.CreateEntity("Moving Audio");
@@ -171,5 +221,6 @@ int main()
 
     audio.Shutdown();
     std::filesystem::remove_all(root, error);
+    std::filesystem::remove(outsideWave, error);
     return 0;
 }

@@ -32,3 +32,6 @@ Provide a small runtime-facing 2D audio foundation while keeping miniaudio types
 ## Editor authoring and diagnostics
 - The AudioSource2D Inspector presents a project Audio-asset picker backed by AssetRegistry instead of requiring users to type stable asset IDs. Only Audio assets with safely resolved, existing source files are offered.
 - Scene startup reports a diagnostic when an enabled, active AudioSource2D has no AudioEngine or AssetRegistry. Disabled and inactive sources are intentionally skipped without loading sounds.
+
+- During Editor Play Mode, the Scene Hierarchy exposes Play/Stop controls for the selected entity's loaded AudioSource2D and displays Scene audio diagnostics.
+- Scene edge-case tests cover missing/uninitialized engine, missing registry, inactive/disabled sources, invalid configuration, wrong asset types and traversal paths.

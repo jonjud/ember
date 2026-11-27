@@ -466,6 +466,53 @@ void EditorApplication::DrawSceneHierarchy()
             ImGui::EndDisabled();
             ImGui::TextDisabled("Shortcuts: Ctrl+D duplicate | Delete remove");
         }
+        else
+        {
+            Entity* selectedEntity = activeScene.FindEntity(m_selectedEntity);
+            const auto* audioSource = selectedEntity != nullptr
+                ? selectedEntity->GetComponent<AudioSource2D>() : nullptr;
+            if (audioSource != nullptr)
+            {
+                ImGui::SeparatorText("Audio Runtime");
+                const bool hasRuntimeAudio = activeScene.HasAudioSource(m_selectedEntity);
+                const bool isPlaying = activeScene.IsAudioSourcePlaying(m_selectedEntity);
+                ImGui::TextDisabled("Asset: %s", audioSource->audioAssetId.empty()
+                    ? "None" : audioSource->audioAssetId.c_str());
+                ImGui::BeginDisabled(!hasRuntimeAudio);
+                if (isPlaying)
+                {
+                    if (ImGui::Button("Stop Audio"))
+                    {
+                        if (activeScene.StopAudioSource(m_selectedEntity))
+                            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                                "Stopped AudioSource2D on Entity %llu",
+                                static_cast<unsigned long long>(m_selectedEntity));
+                    }
+                }
+                else if (ImGui::Button("Play Audio"))
+                {
+                    if (activeScene.PlayAudioSource(m_selectedEntity))
+                        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                            "Played AudioSource2D on Entity %llu",
+                            static_cast<unsigned long long>(m_selectedEntity));
+                    else
+                        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                            "Could not play AudioSource2D on Entity %llu",
+                            static_cast<unsigned long long>(m_selectedEntity));
+                }
+                ImGui::EndDisabled();
+                if (!hasRuntimeAudio)
+                    ImGui::TextDisabled("No runtime sound loaded; check AudioSource2D settings and diagnostics.");
+            }
+
+            const auto& audioDiagnostics = m_playScene.GetAudioDiagnostics();
+            if (!audioDiagnostics.empty() && ImGui::TreeNode("Audio Diagnostics"))
+            {
+                for (const std::string& diagnostic : audioDiagnostics)
+                    ImGui::BulletText("%s", diagnostic.c_str());
+                ImGui::TreePop();
+            }
+        }
     }
     ImGui::End();
 }
