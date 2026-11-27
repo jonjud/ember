@@ -106,7 +106,7 @@ if(NOT miniaudio_POPULATED)
     FetchContent_Populate(miniaudio)
 endif()
 
-add_library(ember_miniaudio STATIC src/Engine/Audio/MiniaudioImplementation.cpp)
+add_library(ember_miniaudio STATIC ${miniaudio_SOURCE_DIR}/miniaudio.c)
 target_include_directories(ember_miniaudio PRIVATE ${miniaudio_SOURCE_DIR})
 
 add_library(ember_engine STATIC

@@ -5,7 +5,7 @@ Provide a small runtime-facing 2D audio foundation while keeping miniaudio types
 
 ## Dependency and boundary
 - Pin miniaudio 0.11.26 through CMake FetchContent.
-- Compile the miniaudio implementation once in `ember_miniaudio`.
+- Compile miniaudio's upstream `miniaudio.c` implementation once in `ember_miniaudio`.
 - `AudioEngine` is the only public runtime boundary; its header exposes no miniaudio types.
 - The Editor remains independent of audio backend objects.
 
