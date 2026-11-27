@@ -76,8 +76,7 @@ inline bool RegisterPhysicsComponents(ComponentRegistry& registry)
                 const auto id = item.at("id").get<ColliderId>();
                 const int shape = item.at("shape").get<int>();
                 if (id == 0 || (shape != 0 && shape != 1) || !ReserveColliderId(id)) return false;
-                Collider2D c(static_cast<ColliderShape2D>(shape));
-                c.id = id;
+                Collider2D c(static_cast<ColliderShape2D>(shape), id);
                 if (!detail::ReadPhysicsVector2(item, "offset", c.offset) ||
                     !detail::ReadPhysicsVector2(item, "half_extents", c.halfExtents) ||
                     !detail::ReadPhysicsFloat(item, "radius", c.radius) ||
