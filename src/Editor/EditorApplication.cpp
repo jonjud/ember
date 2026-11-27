@@ -6,6 +6,7 @@
 #include "Engine/Scene/AnimationComponents2D.hpp"
 #include "Engine/Scene/AnimationComponentRegistration.hpp"
 #include "Engine/Scene/AudioComponentRegistration.hpp"
+#include "Engine/UI/UIComponentRegistration.hpp"
 #include "Engine/Platform/Input.hpp"
 #include "Engine/Project/ProjectConfigurationStore.hpp"
 
@@ -174,6 +175,12 @@ bool EditorApplication::Initialize()
     if (!RegisterAudioComponents(m_componentRegistry))
     {
         std::cerr << "EMBER Editor: Audio component registration failed.\n";
+        return false;
+    }
+
+    if (!RegisterUIComponents(m_componentRegistry))
+    {
+        std::cerr << "EMBER Editor: UI component registration failed.\n";
         return false;
     }
 

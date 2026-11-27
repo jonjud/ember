@@ -176,6 +176,13 @@ if(BUILD_TESTING)
         box2d::box2d ember_miniaudio nlohmann_json::nlohmann_json)
     add_test(NAME ember_audio_scene_tests COMMAND ember_audio_scene_tests)
 
+    add_executable(ember_ui_components_tests
+        tests/UIComponentsTests.cpp
+    )
+    target_include_directories(ember_ui_components_tests PRIVATE src)
+    target_link_libraries(ember_ui_components_tests PRIVATE nlohmann_json::nlohmann_json)
+    add_test(NAME ember_ui_components_tests COMMAND ember_ui_components_tests)
+
     add_executable(ember_physics_components_tests
         tests/PhysicsComponentsTests.cpp
     )
@@ -345,6 +352,7 @@ if(MSVC)
     target_compile_options(ember_editor PRIVATE /W4 /permissive-)
     target_compile_options(ember_imgui PRIVATE /W4 /permissive-)
     if(BUILD_TESTING)
+        target_compile_options(ember_ui_components_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_audio_engine_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_physics_world_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_scene_physics_tests PRIVATE /W4 /permissive-)
@@ -367,6 +375,7 @@ else()
     target_compile_options(ember_editor PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(ember_imgui PRIVATE -Wall -Wextra -Wpedantic)
     if(BUILD_TESTING)
+        target_compile_options(ember_ui_components_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_audio_engine_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_physics_world_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_physics_components_tests PRIVATE -Wall -Wextra -Wpedantic)
