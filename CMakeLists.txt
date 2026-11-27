@@ -329,9 +329,14 @@ if(BUILD_TESTING)
         ember_component_tests
         ember_scene_serializer_tests
     )
-        target_sources(${scene_target} PRIVATE src/Engine/Audio/AudioEngine.cpp)
+        target_sources(${scene_target} PRIVATE
+            src/Engine/Audio/AudioEngine.cpp
+            src/Engine/Resources/AssetDirectory.cpp
+            src/Engine/Resources/AssetMetadataStore.cpp
+            src/Engine/Resources/AssetRegistry.cpp
+        )
         target_include_directories(${scene_target} PRIVATE ${miniaudio_SOURCE_DIR})
-        target_link_libraries(${scene_target} PRIVATE ember_miniaudio)
+        target_link_libraries(${scene_target} PRIVATE ember_miniaudio nlohmann_json::nlohmann_json)
     endforeach()
 endif()
 
