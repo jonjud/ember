@@ -38,6 +38,10 @@ int main()
     Check(animation.GetCurrentFrame() == 0, "Animation accumulates partial frame time");
     scene.Update(0.06F);
     Check(animation.GetCurrentFrame() == 1, "Animation advances after one frame duration");
+    Check(animation.GetSourcePosition().x == 16.0F &&
+        animation.GetSourcePosition().y == 0.0F &&
+        animation.GetSourceSize().x == 16.0F && animation.GetSourceSize().y == 24.0F,
+        "Animation exposes the current sprite-sheet source rectangle for rendering");
     scene.Update(0.25F);
     Check(animation.GetCurrentFrame() == 3, "Animation advances multiple frames for a larger delta");
     scene.Update(0.1F);

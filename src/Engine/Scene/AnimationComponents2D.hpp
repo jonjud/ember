@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/Scene/Component.hpp"
+#include "Engine/Math/Vector2.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -30,6 +31,16 @@ public:
     }
 
     [[nodiscard]] int GetCurrentFrame() const noexcept { return m_currentFrame; }
+    [[nodiscard]] Vector2 GetSourcePosition() const noexcept
+    {
+        if (columns <= 0 || frameWidth <= 0 || frameHeight <= 0) return {};
+        return {static_cast<float>((m_currentFrame % columns) * frameWidth),
+            static_cast<float>((m_currentFrame / columns) * frameHeight)};
+    }
+    [[nodiscard]] Vector2 GetSourceSize() const noexcept
+    {
+        return {static_cast<float>(frameWidth), static_cast<float>(frameHeight)};
+    }
 
     void Play() noexcept
     {

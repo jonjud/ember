@@ -53,6 +53,17 @@ public:
         const Transform2D& transform,
         const Camera2D& camera,
         const Vector2& size,
+        const Vector2& sourcePosition,
+        const Vector2& sourceSize,
+        std::uint8_t red = 255,
+        std::uint8_t green = 255,
+        std::uint8_t blue = 255,
+        std::uint8_t alpha = 255);
+    void DrawTexture(
+        TextureHandle texture,
+        const Transform2D& transform,
+        const Camera2D& camera,
+        const Vector2& size,
         std::uint8_t red = 255,
         std::uint8_t green = 255,
         std::uint8_t blue = 255,

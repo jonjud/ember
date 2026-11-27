@@ -291,16 +291,24 @@ void Renderer2D::DrawTexture(
     std::uint8_t blue,
     std::uint8_t alpha)
 {
-    if (m_renderer == nullptr)
-    {
-        return;
-    }
+    DrawTexture(texture, transform, camera, size, {}, {}, red, green, blue, alpha);
+}
 
+void Renderer2D::DrawTexture(
+    TextureHandle texture,
+    const Transform2D& transform,
+    const Camera2D& camera,
+    const Vector2& size,
+    const Vector2& sourcePosition,
+    const Vector2& sourceSize,
+    std::uint8_t red,
+    std::uint8_t green,
+    std::uint8_t blue,
+    std::uint8_t alpha)
+{
+    if (m_renderer == nullptr) return;
     const auto iterator = m_textures.find(texture.id);
-    if (iterator == m_textures.end())
-    {
-        return;
-    }
+    if (iterator == m_textures.end()) return;
 
     const Vector2 scaledSize{
         size.x * transform.scale.x,
@@ -319,6 +327,10 @@ void Renderer2D::DrawTexture(
         screenSize.y
     };
 
+    SDL_FRect sourceRect{sourcePosition.x, sourcePosition.y, sourceSize.x, sourceSize.y};
+    const SDL_FRect* source = sourceSize.x > 0.0F && sourceSize.y > 0.0F
+        ? &sourceRect : nullptr;
+
     constexpr double kRadiansToDegrees = 180.0 / 3.14159265358979323846;
     const double screenRotation =
         static_cast<double>(transform.rotation - camera.GetRotation()) * kRadiansToDegrees;
@@ -328,13 +340,12 @@ void Renderer2D::DrawTexture(
     SDL_RenderTextureRotated(
         m_renderer,
         iterator->second,
-        nullptr,
+        source,
         &destination,
         screenRotation,
         nullptr,
         SDL_FLIP_NONE);
 
-    // Texture tint is mutable SDL state; restore the neutral tint for later draws.
     SDL_SetTextureColorMod(iterator->second, 255, 255, 255);
     SDL_SetTextureAlphaMod(iterator->second, 255);
 }
