@@ -49,7 +49,7 @@ The existing `BoxCollider2D` and `CircleCollider2D` remain supported as legacy a
 4. [x] Build multiple shapes per body in Scene; create each ColliderSet2D entry as a shape on one body.
 5. [x] Keep raycast/overlap mapping Entity-level and deduplicate multi-shape results.
 6. [x] Aggregate shape-pair contact transitions into one Entity-pair Begin/End (CI #164).
-7. [ ] Add Inspector list editing (Add Box/Circle, duplicate, remove, edit geometry/material/filter fields; committed as `c4abb18`, CI #165 running) and draw all shapes in the debug overlay.
+7. [x] Add Inspector list editing (Add Box/Circle, duplicate, remove, edit geometry/material/filter fields; CI #169). Extend the debug overlay to draw all shapes.
 8. [ ] Run Windows CI and the interactive multi-collider runtime checklist.
 
 ## Non-goals
