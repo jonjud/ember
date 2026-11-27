@@ -248,9 +248,11 @@ if(BUILD_TESTING)
         tests/ComponentTests.cpp
         src/Engine/Scene/Scene.cpp
         src/Engine/Physics/PhysicsWorld.cpp
+        src/Engine/Platform/Input.cpp
+        src/Engine/Platform/InputMap.cpp
     )
     target_include_directories(ember_component_tests PRIVATE src)
-    target_link_libraries(ember_component_tests PRIVATE box2d::box2d)
+    target_link_libraries(ember_component_tests PRIVATE box2d::box2d SDL3::SDL3)
     add_test(NAME ember_component_tests COMMAND ember_component_tests)
 
     add_executable(ember_component_registry_tests
