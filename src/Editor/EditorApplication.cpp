@@ -1723,17 +1723,15 @@ void EditorApplication::DrawViewport()
             }
         });
 
-        // Draw configured physics shapes in the editor viewport without exposing
-        // backend handles or Box2D types to Editor code.
+        // Draw every configured physics shape without exposing backend handles
+        // or Box2D types to Editor code. ColliderSet2D is canonical; legacy
+        // single-collider components remain visible for unmigrated authoring data.
         if (m_showPhysicsDebugOverlay)
         {
             activeScene.ForEachEntity([&](const Entity& entity)
             {
                 const auto* body = entity.GetComponent<PhysicsBody2D>();
                 if (body == nullptr || !body->enabled) return;
-                const auto* box = entity.GetComponent<BoxCollider2D>();
-                const auto* circle = entity.GetComponent<CircleCollider2D>();
-                if ((box == nullptr) == (circle == nullptr)) return;
 
                 const Transform2D& transform = entity.GetTransform();
                 const float bodyCosine = std::cos(transform.rotation);
@@ -1745,37 +1743,61 @@ void EditorApplication::DrawViewport()
                         transform.position.y + local.x * bodySine + local.y * bodyCosine
                     };
                 };
-                const ImU32 color = (box != nullptr ? box->isSensor : circle->isSensor)
-                    ? IM_COL32(80, 220, 255, 255)
-                    : IM_COL32(255, 155, 65, 255);
-
-                if (box != nullptr)
+                const auto drawCollider = [&](ColliderShape2D shape, const Vector2& offset,
+                    const Vector2& halfExtents, float radius, float localRotation, bool isSensor)
                 {
-                    const float angle = transform.rotation + box->rotation;
-                    const float cosine = std::cos(angle);
-                    const float sine = std::sin(angle);
-                    const Vector2 center = localToWorld(box->offset);
-                    const Vector2 cornersLocal[4]{
-                        {-box->halfExtents.x, -box->halfExtents.y},
-                        { box->halfExtents.x, -box->halfExtents.y},
-                        { box->halfExtents.x,  box->halfExtents.y},
-                        {-box->halfExtents.x,  box->halfExtents.y}
-                    };
-                    ImVec2 corners[4]{};
-                    for (int corner = 0; corner < 4; ++corner)
+                    const ImU32 color = isSensor
+                        ? IM_COL32(80, 220, 255, 255)
+                        : IM_COL32(255, 155, 65, 255);
+                    if (shape == ColliderShape2D::Box)
                     {
-                        const Vector2& point = cornersLocal[corner];
-                        corners[corner] = toCanvas({
-                            center.x + point.x * cosine - point.y * sine,
-                            center.y + point.x * sine + point.y * cosine
-                        });
+                        const float angle = transform.rotation + localRotation;
+                        const float cosine = std::cos(angle);
+                        const float sine = std::sin(angle);
+                        const Vector2 center = localToWorld(offset);
+                        const Vector2 cornersLocal[4]{
+                            {-halfExtents.x, -halfExtents.y},
+                            { halfExtents.x, -halfExtents.y},
+                            { halfExtents.x,  halfExtents.y},
+                            {-halfExtents.x,  halfExtents.y}
+                        };
+                        ImVec2 corners[4]{};
+                        for (int corner = 0; corner < 4; ++corner)
+                        {
+                            const Vector2& point = cornersLocal[corner];
+                            corners[corner] = toCanvas({
+                                center.x + point.x * cosine - point.y * sine,
+                                center.y + point.x * sine + point.y * cosine
+                            });
+                        }
+                        drawList->AddPolyline(corners, 4, color, ImDrawFlags_Closed, 2.0F);
                     }
-                    drawList->AddPolyline(corners, 4, color, ImDrawFlags_Closed, 2.0F);
-                }
-                else
+                    else
+                    {
+                        const ImVec2 center = toCanvas(localToWorld(offset));
+                        drawList->AddCircle(center, radius * zoom, color, 48, 2.0F);
+                    }
+                };
+
+                if (const auto* colliderSet = entity.GetComponent<ColliderSet2D>())
                 {
-                    const ImVec2 center = toCanvas(localToWorld(circle->offset));
-                    drawList->AddCircle(center, circle->radius * zoom, color, 48, 2.0F);
+                    for (const Collider2D& collider : colliderSet->colliders)
+                    {
+                        drawCollider(collider.shape, collider.offset, collider.halfExtents,
+                            collider.radius, collider.rotation, collider.isSensor);
+                    }
+                    return;
+                }
+
+                if (const auto* box = entity.GetComponent<BoxCollider2D>())
+                {
+                    drawCollider(ColliderShape2D::Box, box->offset, box->halfExtents,
+                        0.0F, box->rotation, box->isSensor);
+                }
+                if (const auto* circle = entity.GetComponent<CircleCollider2D>())
+                {
+                    drawCollider(ColliderShape2D::Circle, circle->offset, {},
+                        circle->radius, 0.0F, circle->isSensor);
                 }
             });
         }
