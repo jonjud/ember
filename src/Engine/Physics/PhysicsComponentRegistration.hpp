@@ -53,6 +53,53 @@ inline bool ValidMaterial(float density, float friction, float restitution)
 inline bool RegisterPhysicsComponents(ComponentRegistry& registry)
 {
     bool ok = true;
+    ok = registry.Register<ColliderSet2D>("ember.collider_set_2d", "Collider Set 2D",
+        [](const Component& base) {
+            const auto& set = static_cast<const ColliderSet2D&>(base);
+            nlohmann::json entries = nlohmann::json::array();
+            for (const auto& c : set.colliders) {
+                entries.push_back({{"id", c.id}, {"shape", static_cast<int>(c.shape)},
+                    {"offset", {c.offset.x, c.offset.y}}, {"half_extents", {c.halfExtents.x, c.halfExtents.y}},
+                    {"radius", c.radius}, {"rotation", c.rotation}, {"density", c.density},
+                    {"friction", c.friction}, {"restitution", c.restitution}, {"sensor", c.isSensor},
+                    {"category_bits", c.categoryBits}, {"mask_bits", c.maskBits}});
+            }
+            return nlohmann::json{{"colliders", std::move(entries)}};
+        },
+        [](Component& base, const nlohmann::json& data) {
+            if (!data.is_object() || !data.contains("colliders") || !data.at("colliders").is_array()) return false;
+            auto& set = static_cast<ColliderSet2D&>(base);
+            set.colliders.clear();
+            for (const auto& item : data.at("colliders")) {
+                if (!item.is_object() || !item.contains("id") || !item.at("id").is_number_unsigned() ||
+                    !item.contains("shape") || !item.at("shape").is_number_integer()) return false;
+                const auto id = item.at("id").get<ColliderId>();
+                const int shape = item.at("shape").get<int>();
+                if (id == 0 || (shape != 0 && shape != 1)) return false;
+                Collider2D c(static_cast<ColliderShape2D>(shape));
+                c.id = id;
+                if (!detail::ReadPhysicsVector2(item, "offset", c.offset) ||
+                    !detail::ReadPhysicsVector2(item, "half_extents", c.halfExtents) ||
+                    !detail::ReadPhysicsFloat(item, "radius", c.radius) ||
+                    !detail::ReadPhysicsFloat(item, "rotation", c.rotation) ||
+                    !detail::ReadPhysicsFloat(item, "density", c.density) ||
+                    !detail::ReadPhysicsFloat(item, "friction", c.friction) ||
+                    !detail::ReadPhysicsFloat(item, "restitution", c.restitution) ||
+                    !detail::ReadPhysicsBool(item, "sensor", c.isSensor) ||
+                    !item.contains("category_bits") || !item.at("category_bits").is_number_unsigned() ||
+                    !item.contains("mask_bits") || !item.at("mask_bits").is_number_unsigned()) return false;
+                const auto category = item.at("category_bits").get<std::uint64_t>();
+                const auto mask = item.at("mask_bits").get<std::uint64_t>();
+                if (category > 65535 || mask > 65535 ||
+                    (c.shape == ColliderShape2D::Box && (c.halfExtents.x <= 0 || c.halfExtents.y <= 0)) ||
+                    (c.shape == ColliderShape2D::Circle && c.radius <= 0) ||
+                    !detail::ValidMaterial(c.density, c.friction, c.restitution)) return false;
+                c.categoryBits = static_cast<std::uint16_t>(category);
+                c.maskBits = static_cast<std::uint16_t>(mask);
+                set.colliders.push_back(std::move(c));
+            }
+            return set.HasValidColliderIds();
+        }) && ok;
     ok = registry.Register<PhysicsBody2D>("ember.physics_body_2d", "Physics Body 2D",
         [](const Component& base) {
             const auto& c = static_cast<const PhysicsBody2D&>(base);
