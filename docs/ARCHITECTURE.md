@@ -33,7 +33,8 @@ tests/
 ```
 
 ## Responsibilities and ownership
-- **Core / Application:** runtime window, active Scene, AssetManager, and application event/update/render lifecycle.
+- **Core / Application:** runtime window, active Scene, AssetManager, AudioEngine, and application event/update/render lifecycle.
+- **Audio / AudioEngine:** engine-owned PImpl facade around miniaudio. AudioSoundHandle values identify loaded sounds without exposing backend objects; the engine owns sound lifetime and shuts sounds down before the mixer. Device-less initialization supports deterministic automated tests and offline tools.
 - **Editor / EditorApplication:** editor panels, viewport, gizmos, scene workflow and Play Mode; editor UI does not own physics backend objects. The viewport Physics toggle draws configured box/circle collider outlines using engine component data only.
 - **Math / Vector2:** engine-owned 2D vector type.
 - **Scene / Component:** polymorphic runtime behavior with Clone, OnCreate, OnUpdate and OnDestroy hooks. Components are owned by entities; structural changes are locked while a Scene is running.
@@ -72,7 +73,7 @@ The Editor runs Play Mode on an isolated Scene clone. The authoring Scene remain
 - Dear ImGui: editor-only UI.
 - nlohmann/json: project, asset metadata and scene serialization.
 - Box2D v3.2.0: private physics backend behind PhysicsWorld.
-- miniaudio: planned audio backend.
+- miniaudio 0.11.22: private audio backend behind AudioEngine.
 
 ## Known gaps
 - Interactive Editor/Play Mode physics verification has been completed manually on Windows; see [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md). Multiple colliders per entity remain the active physics extension.

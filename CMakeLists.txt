@@ -101,7 +101,10 @@ FetchContent_Declare(
     GIT_TAG 0.11.22
     GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(miniaudio)
+FetchContent_GetProperties(miniaudio)
+if(NOT miniaudio_POPULATED)
+    FetchContent_Populate(miniaudio)
+endif()
 
 add_library(ember_miniaudio STATIC src/Engine/Audio/MiniaudioImplementation.cpp)
 target_include_directories(ember_miniaudio PRIVATE ${miniaudio_SOURCE_DIR})
