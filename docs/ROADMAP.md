@@ -89,4 +89,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Complete one Windows Editor UI verification session using [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md); after that, UI System v1 is ready for use. Keyboard/controller focus navigation can be a later UI enhancement. Audio implementation and CI #219 are complete; the one-time Windows Audio Editor checklist remains documented in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md). Keep miniaudio types private and editor-only code out of `ember_engine`.
+- Run one combined Windows Editor verification session using [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md), [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md), and the deferred Physics Joints checks. UI System v1 implementation is complete; keyboard/controller focus navigation can be a later enhancement. Keep miniaudio types private and editor-only code out of `ember_engine`.

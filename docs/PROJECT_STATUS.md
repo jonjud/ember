@@ -11,9 +11,9 @@
 | Active branch | `develop` |
 | Stable branch | `main` |
 | Last code commit | `663d9df` — Scene validates UI Button state before dispatching callbacks |
-| Last verified CI | [Windows CI #227](https://github.com/jonjud/ember/actions/runs/46014213385) — **Success** (viewport-aware UI input and full Windows engine tests) |
-| Latest CI | [Windows CI #230](https://github.com/jonjud/ember/actions/runs/46015090528) — **In progress** (`663d9df`; guarded runtime click dispatch) |
-| Latest documentation CI | [Windows CI #228](https://github.com/jonjud/ember/actions/runs/46014412490) — **Success** (docs/status update) |
+| Last verified code CI | [Windows CI #230](https://github.com/jonjud/ember/actions/runs/46015090528) — **Success** (`663d9df`; guarded runtime click dispatch) |
+| Latest CI | [Windows CI #231](https://github.com/jonjud/ember/actions/runs/46015340975) — **Success** (latest develop HEAD) |
+| Latest documentation CI | [Windows CI #231](https://github.com/jonjud/ember/actions/runs/46015340975) — **Success** (roadmap/status refresh) |
 | Last completed milestone | Audio implementation — Windows CI #219 Success; final interactive Editor checklist remains outstanding |
 | Active milestone | UI System — Canvas/Panel/Text/Button authoring, serialization, Inspector, reference-resolution layout, viewport preview, pointer routing, runtime Component click dispatch and viewport-aware input capture are implemented. CI #226–#228 passed; click-dispatch hardening is in CI #229/#230. Final Windows Editor verification remains. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
@@ -32,7 +32,7 @@
 - [x] Add/remove registered Components through Editor UI
 - [x] Typed Inspector property descriptors and widgets: bool, int, float, string, Vector2, Enumeration, EntityReference
 
-### UI System — in progress
+### UI System — implementation complete; Windows Editor verification pending
 - [x] Add serializable UICanvas2D and UIPanel2D components with validation and Clone support
 - [x] Register UI components and expose reference resolution, geometry, color and enabled properties in Inspector
 - [x] Add reference-resolution layout with aspect-preserving scale and letterboxing
@@ -98,7 +98,7 @@
 
 ## 4. Current limitations / next milestone
 
-**UI System is active.** UI Canvas/Panel/Text/Button authoring, serialization, Inspector properties, aspect-preserving layout, Editor viewport preview, Canvas-aware pointer routing and runtime Component click dispatch are implemented. Windows CI #226–#228 passed; click-dispatch hardening is committed in `79c6ab9` and `663d9df` with CI #229/#230 running. Final interactive Windows Editor verification remains in [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md).
+**UI System implementation is complete.** UI Canvas/Panel/Text/Button authoring, serialization, Inspector properties, aspect-preserving layout, Editor viewport preview, viewport-aware pointer routing, pointer capture, click generation and guarded runtime Component callback dispatch are implemented. Windows CI #225–#231 passed, including end-to-end callback coverage and rejection of invalid click targets. Only the one-time interactive Windows Editor verification remains in [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md).
 
 **Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user confirmed the Windows Editor checklist passed on 2026-11-27, including Editor launch/layout, Entity and Transform editing, duplicate/delete, PhysicsBody2D Inspector add/edit/remove, ColliderSet2D editing, Physics Debug Overlay, save/reopen persistence, and Play/Stop behavior.
 
@@ -136,4 +136,4 @@
 
 ---
 
-**Handoff:** UI System implementation is on `develop` through `663d9df`. Windows CI #226–#228 passed; runtime click dispatch now validates that the target is an enabled, interactable, valid UIButton2D before invoking callbacks. CI #229/#230 are verifying this hardening. The remaining UI gate is the one-time Windows Editor checklist in [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md). Audio runtime implementation is on `develop` with Windows CI #219 green; its final interactive checklist remains in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md). Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Work on `develop` only; do not merge to `main`.
+**Handoff:** UI System implementation is complete on `develop` through code commit `663d9df`; CI #225–#230 passed, and docs refresh CI #231 passed. The only remaining UI gate is the Windows Editor checklist in [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md). Bundle it with the pending Audio checklist in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md) and deferred Physics Joints Editor checks into one final Windows test session. Work on `develop` only; do not merge to `main`.
