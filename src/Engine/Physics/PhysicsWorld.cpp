@@ -51,7 +51,14 @@ struct PhysicsWorld::Impl
     }
 
     b2WorldId worldId = b2_nullWorldId;
+    struct BodyMetadata
+    {
+        PhysicsBodyHandle handle{};
+    };
+
     std::unordered_map<std::uint64_t, b2BodyId> bodies;
+    std::unordered_map<std::uint64_t, std::unique_ptr<BodyMetadata>> bodyMetadata;
+    std::vector<PhysicsContactEvent2D> contactEvents;
     std::uint64_t nextHandle = 1;
 };
 
@@ -107,15 +114,20 @@ PhysicsBodyHandle PhysicsWorld::CreateBody(const PhysicsBodyDefinition2D& defini
     if (!b2Body_IsValid(bodyId)) return {};
 
     const std::uint64_t handle = m_impl->nextHandle++;
+    auto metadata = std::make_unique<Impl::BodyMetadata>();
+    metadata->handle = {handle};
+    auto metadataIt = m_impl->bodyMetadata.emplace(handle, std::move(metadata)).first;
     try
     {
         m_impl->bodies.emplace(handle, bodyId);
     }
     catch (...)
     {
+        m_impl->bodyMetadata.erase(metadataIt);
         b2DestroyBody(bodyId);
         throw;
     }
+    b2Body_SetUserData(bodyId, metadataIt->second.get());
     return {handle};
 }
 
@@ -126,6 +138,7 @@ bool PhysicsWorld::DestroyBody(PhysicsBodyHandle handle)
     if (it == m_impl->bodies.end() || !b2Body_IsValid(it->second)) return false;
     b2DestroyBody(it->second);
     m_impl->bodies.erase(it);
+    m_impl->bodyMetadata.erase(handle.value);
     return true;
 }
 
@@ -146,6 +159,7 @@ bool PhysicsWorld::AddBoxCollider(
     shapeDefinition.material.friction = definition.friction;
     shapeDefinition.material.restitution = definition.restitution;
     shapeDefinition.isSensor = definition.isSensor;
+    shapeDefinition.enableContactEvents = !definition.isSensor;
 
     const b2Polygon polygon = b2MakeOffsetBox(
         definition.halfExtents.x, definition.halfExtents.y,
@@ -208,7 +222,37 @@ bool PhysicsWorld::Step(float timeStep, int subStepCount)
     if (!IsValid() || !std::isfinite(timeStep) || timeStep <= 0.0F || subStepCount < 1)
         return false;
     b2World_Step(m_impl->worldId, timeStep, subStepCount);
+    const b2ContactEvents events = b2World_GetContactEvents(m_impl->worldId);
+    const auto appendEvent = [this](b2ShapeId shapeA, b2ShapeId shapeB,
+                                    PhysicsContactEventType2D type)
+    {
+        // End events may refer to destroyed shapes. Runtime Scene structure is locked,
+        // but still validate IDs before following Box2D handles.
+        if (!b2Shape_IsValid(shapeA) || !b2Shape_IsValid(shapeB)) return;
+        const b2BodyId bodyA = b2Shape_GetBody(shapeA);
+        const b2BodyId bodyB = b2Shape_GetBody(shapeB);
+        if (!b2Body_IsValid(bodyA) || !b2Body_IsValid(bodyB)) return;
+        const auto* metadataA = static_cast<const Impl::BodyMetadata*>(b2Body_GetUserData(bodyA));
+        const auto* metadataB = static_cast<const Impl::BodyMetadata*>(b2Body_GetUserData(bodyB));
+        if (metadataA == nullptr || metadataB == nullptr) return;
+        m_impl->contactEvents.push_back({type, metadataA->handle, metadataB->handle});
+    };
+
+    for (int index = 0; index < events.beginCount; ++index)
+        appendEvent(events.beginEvents[index].shapeIdA, events.beginEvents[index].shapeIdB,
+            PhysicsContactEventType2D::Begin);
+    for (int index = 0; index < events.endCount; ++index)
+        appendEvent(events.endEvents[index].shapeIdA, events.endEvents[index].shapeIdB,
+            PhysicsContactEventType2D::End);
     return true;
+}
+
+std::vector<PhysicsContactEvent2D> PhysicsWorld::ConsumeContactEvents()
+{
+    if (!m_impl) return {};
+    std::vector<PhysicsContactEvent2D> events = std::move(m_impl->contactEvents);
+    m_impl->contactEvents.clear();
+    return events;
 }
 
 std::size_t PhysicsWorld::GetBodyCount() const

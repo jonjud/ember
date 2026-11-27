@@ -12,6 +12,19 @@
 
 namespace ember
 {
+enum class SceneContactEventType2D
+{
+    Begin,
+    End
+};
+
+struct SceneContactEvent2D
+{
+    SceneContactEventType2D type = SceneContactEventType2D::Begin;
+    EntityId entityA = 0;
+    EntityId entityB = 0;
+};
+
 class SceneSerializer;
 
 class Scene
@@ -33,6 +46,11 @@ public:
     [[nodiscard]] bool IsStarted() const { return m_started; }
     [[nodiscard]] std::size_t GetPhysicsBodyCount() const { return m_physicsBodies.size(); }
     [[nodiscard]] const std::vector<std::string>& GetPhysicsDiagnostics() const { return m_physicsDiagnostics; }
+    // Events are collected during the most recent Update and remain available until the next Update.
+    [[nodiscard]] const std::vector<SceneContactEvent2D>& GetPhysicsContactEvents() const
+    {
+        return m_physicsContactEvents;
+    }
 
     Entity& CreateEntity(std::string name = "Entity");
     [[nodiscard]] bool DestroyEntity(EntityId id);
@@ -80,6 +98,7 @@ private:
     std::unique_ptr<PhysicsWorld> m_physicsWorld;
     std::map<EntityId, PhysicsBodyHandle> m_physicsBodies;
     std::vector<std::string> m_physicsDiagnostics;
+    std::vector<SceneContactEvent2D> m_physicsContactEvents;
     float m_physicsAccumulator = 0.0F;
 };
 } // namespace ember

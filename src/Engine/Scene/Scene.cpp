@@ -35,6 +35,7 @@ void Scene::MoveFrom(Scene&& other) noexcept
     m_physicsWorld = std::move(other.m_physicsWorld);
     m_physicsBodies = std::move(other.m_physicsBodies);
     m_physicsDiagnostics = std::move(other.m_physicsDiagnostics);
+    m_physicsContactEvents = std::move(other.m_physicsContactEvents);
     m_physicsAccumulator = other.m_physicsAccumulator;
     other.m_nextEntityId = 1;
     other.m_started = false;
@@ -147,6 +148,7 @@ void Scene::BuildPhysicsWorld() noexcept
 void Scene::DestroyPhysicsWorld() noexcept
 {
     m_physicsBodies.clear();
+    m_physicsContactEvents.clear();
     m_physicsWorld.reset();
     m_physicsAccumulator = 0.0F;
 }
@@ -182,6 +184,23 @@ void Scene::StepPhysics(float deltaSeconds) noexcept
         {
             m_physicsDiagnostics.push_back("PhysicsWorld failed to advance a simulation step.");
             break;
+        }
+        for (const PhysicsContactEvent2D& event : m_physicsWorld->ConsumeContactEvents())
+        {
+            const auto findEntityId = [this](PhysicsBodyHandle handle) -> EntityId
+            {
+                const auto it = std::find_if(m_physicsBodies.begin(), m_physicsBodies.end(),
+                    [handle](const auto& entry) { return entry.second == handle; });
+                return it != m_physicsBodies.end() ? it->first : 0;
+            };
+            const EntityId entityA = findEntityId(event.bodyA);
+            const EntityId entityB = findEntityId(event.bodyB);
+            if (entityA == 0 || entityB == 0) continue;
+            m_physicsContactEvents.push_back({
+                event.type == PhysicsContactEventType2D::Begin
+                    ? SceneContactEventType2D::Begin : SceneContactEventType2D::End,
+                entityA, entityB
+            });
         }
         m_physicsAccumulator -= fixedTimeStep;
         ++steps;
@@ -222,6 +241,7 @@ void Scene::Update(float deltaSeconds) noexcept
         (void)id;
         if (entity->IsActive()) entity->UpdateComponents(safeDeltaSeconds);
     }
+    m_physicsContactEvents.clear();
     StepPhysics(safeDeltaSeconds);
 }
 

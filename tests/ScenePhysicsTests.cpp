@@ -50,12 +50,35 @@ int main()
     Check(scene.GetPhysicsDiagnostics().empty(),
         "Valid body and collider configuration produces no diagnostics");
 
+    bool sawBeginContact = false;
     for (int frame = 0; frame < 180; ++frame)
+    {
         scene.Update(1.0F / 60.0F);
+        for (const auto& event : scene.GetPhysicsContactEvents())
+        {
+            if (event.type == ember::SceneContactEventType2D::Begin &&
+                ((event.entityA == ground.GetId() && event.entityB == ball.GetId()) ||
+                 (event.entityA == ball.GetId() && event.entityB == ground.GetId())))
+                sawBeginContact = true;
+        }
+    }
+    Check(sawBeginContact, "Scene reports a begin-contact event with the correct Entity IDs");
 
     const float settledY = ball.GetTransform().position.y;
     Check(settledY > 390.0F && settledY < 450.0F,
         "Fixed-step physics moves the dynamic entity and resolves its ground collision");
+
+    ground.GetTransform().position.x = 2000.0F;
+    scene.Update(1.0F / 60.0F);
+    bool sawEndContact = false;
+    for (const auto& event : scene.GetPhysicsContactEvents())
+    {
+        if (event.type == ember::SceneContactEventType2D::End &&
+            ((event.entityA == ground.GetId() && event.entityB == ball.GetId()) ||
+             (event.entityA == ball.GetId() && event.entityB == ground.GetId())))
+            sawEndContact = true;
+    }
+    Check(sawEndContact, "Moving a collider apart reports an end-contact event");
 
     const float beforePause = ball.GetTransform().position.y;
     scene.Update(std::numeric_limits<float>::quiet_NaN());
