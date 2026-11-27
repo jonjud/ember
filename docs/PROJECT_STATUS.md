@@ -10,11 +10,11 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`6848a79`](https://github.com/jonjud/ember/commit/6848a79a487bac41a143e48887a824633cb7ea3b) — sprite-sheet source region rendering API |
-| Last verified CI | [Windows CI #191](https://github.com/jonjud/ember/actions/runs/45972968881) — **Success** (joint authoring, Scene lifecycle, Inspector, serialization and edge-case tests) |
-| Latest documentation CI | [Windows CI #191](https://github.com/jonjud/ember/actions/runs/45972968881) — **Success** |
-| Last completed milestone | Editor + Multi-Collider Physics verification — user-confirmed Windows interactive checklist passed (2026-11-27) |
-| Active milestone | Animation — SpriteAnimation2D playback component, serialization, Inspector settings, Editor sprite-sheet preview and Renderer2D source-region API implemented; CI #193 pending. Physics Joints implementation passed CI #191; manual Editor verification remains deferred. |
+| Last code commit | [`1cb253a`](https://github.com/jonjud/ember/commit/1cb253abd8fe507921a3be721284e1c62c03a69f) — animation milestone and source-region rendering API |
+| Last verified CI | [Windows CI #199](https://github.com/jonjud/ember/actions/runs/45975547417) — **Success** (animation and full Windows build/test workflow) |
+| Latest documentation CI | [Windows CI #199](https://github.com/jonjud/ember/actions/runs/45975547417) — **Success** |
+| Last completed milestone | Sprite Animation — user-confirmed all checks passed; Windows CI #199 Success (2026-11-27) |
+| Active milestone | Audio — next vertical slice using miniaudio. SpriteAnimation2D implementation, serialization, Inspector settings, sprite-sheet preview, Renderer2D source-region API and multi-row tests are complete; user-confirmed all checks passed and Windows CI #199 is green. Physics Joints implementation and automated tests passed CI #191; manual joint Editor verification remains deferred to the final Editor test session. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -64,7 +64,7 @@
 - [x] Add engine-owned PhysicsJointHandle and Revolute/Distance joint descriptors with create/destroy/count API; keep Box2D joint handles private
 - [x] Add joint validation and lifetime tests: invalid same-body/length/limits, explicit destruction, and automatic cleanup when a body is destroyed
 - [x] Physics Joints: serializable Revolute/Distance components, Entity references, Scene lifecycle, Inspector picker, serialization and edge-case tests (Windows CI #191; manual Editor test deferred)
-- [ ] SpriteAnimation2D: frame playback, Scene component updates, serialization, Inspector controls, sprite-sheet viewport preview and source-region rendering API (CI #193 pending)
+- [x] SpriteAnimation2D: frame playback, Scene component updates, serialization, Inspector controls, sprite-sheet viewport preview, source-region rendering API and multi-row frame tests (Windows CI #199 Success; user-confirmed all checks passed)
 - [x] Add serializable RevoluteJoint2D and DistanceJoint2D authoring components with EntityId references and cloned configuration
 - [x] Create Scene joints after all eligible bodies; validate self/missing/disabled/invalid references and convert pixel anchors/length to physics meters
 - [x] Expose Connected Entity selection and joint settings in the Editor Inspector
@@ -87,7 +87,7 @@
 
 **Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user confirmed the Windows Editor checklist passed on 2026-11-27, including Editor launch/layout, Entity and Transform editing, duplicate/delete, PhysicsBody2D Inspector add/edit/remove, ColliderSet2D editing, Physics Debug Overlay, save/reopen persistence, and Play/Stop behavior.
 
-**Active milestone: Animation.** Physics Joints implementation is complete and automated Windows CI #191 passed, including invalid/self/disabled references, Scene restart lifecycle, Inspector compilation and Scene serialization. Keep Box2D joint IDs private/transient; manual Editor verification is deferred to the final test session. The active milestone is now Sprite Animation; joint motors, prismatic, weld and scripting-facing controls remain deferred.
+**Active milestone: Audio.** Sprite Animation is complete: playback, Scene lifecycle, serialization, Inspector settings, sprite-sheet preview, Renderer2D source-region rendering and multi-row tests passed Windows CI #199; the user confirmed all checks passed. Physics Joints implementation and automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Next implement a miniaudio-backed runtime audio vertical slice while keeping third-party types private.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -119,4 +119,4 @@
 
 ---
 
-**Handoff:** Windows Editor manual verification for the current Editor + Physics workflow is user-confirmed PASS. Physics Joints now has serializable authoring components, Entity-reference Inspector controls, Scene runtime lifecycle integration, and automated serialization/runtime coverage. Windows CI #191 is green. Physics Joints implementation and automated tests passed CI #191; its manual Editor checklist is deferred to the final test session. Animation is the active implementation milestone. Work on `develop` only; do not merge to `main`.
+**Handoff:** Sprite Animation is complete and all user-run checks passed; Windows CI #199 is green. Current HEAD is `1cb253a` on `develop`. Next milestone: miniaudio-backed Audio vertical slice. Physics Joints implementation and automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Work on `develop` only; do not merge to `main`.

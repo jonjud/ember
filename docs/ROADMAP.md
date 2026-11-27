@@ -65,7 +65,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Query-filter category/mask and sensor inclusion tests (Windows CI #126)
 - [x] Multiple colliders per entity (model #135; serialization/migration #151; runtime/query #155; contact aggregation #164; Inspector #169; overlay #170; Windows interactive checklist user-confirmed passed)
 - [x] Physics Joints (PhysicsWorld API, serializable Revolute/Distance components, Entity-reference Inspector controls, Scene lifecycle integration, and automated tests passed Windows CI #191; final Windows manual checklist is intentionally deferred)
-- [ ] Animation (SpriteAnimation2D frame playback, serialization, Inspector controls, sprite-sheet viewport preview and Renderer2D source-region API; CI #193 pending)
+- [x] Animation (SpriteAnimation2D frame playback, Scene lifecycle, serialization, Inspector controls, sprite-sheet viewport preview, Renderer2D source-region API and multi-row frame tests; Windows CI #199 Success; user-confirmed all checks passed)
 - [ ] Audio (planned miniaudio backend)
 - [ ] UI system
 - [ ] Runtime input action mapping integration
@@ -86,4 +86,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Complete the Physics Joints vertical slice: add serialized Entity-to-Entity Revolute/Distance components, validate references/body availability, integrate joint creation and teardown with Scene Play/Stop, expose safe Inspector controls, then add CI and Windows interactive verification. The PhysicsWorld API, serialized components, Scene lifecycle, Inspector reference picker, and automated runtime/serialization tests are implemented. Keep Box2D IDs private; defer other joint families. Windows CI #191 passed the implementation and automated tests. Per the agreed workflow, defer manual Windows Editor verification until the planned final test session.
+- Audio vertical slice using miniaudio: add an engine-owned audio device/engine facade, load and play a sound asset, expose safe play/stop/volume/loop controls through runtime-facing APIs, define deterministic ownership and shutdown behavior, then add automated tests and Windows CI. Keep miniaudio types private and keep editor-only code out of `ember_engine`.
