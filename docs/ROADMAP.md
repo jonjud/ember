@@ -1,5 +1,7 @@
 # EMBER Engine Roadmap
 
+> **Current status:** See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the live development state, current HEAD, latest CI result, active/next milestone, and handoff notes. This file tracks the high-level feature checklist.
+
 EMBER is a 2D-first engine. Each milestone should produce a buildable, testable result before the next layer is added.
 
 ## Phase 1 — Engine Foundation
@@ -83,3 +85,4 @@ EMBER is a 2D-first engine. Each milestone should produce a buildable, testable 
 3. Keep editor code separate from runtime code.
 4. Prefer small, buildable milestones.
 5. Distinguish CI compilation/tests from interactive runtime verification.
+6. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD, or CI status changes.
