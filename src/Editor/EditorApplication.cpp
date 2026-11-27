@@ -1679,7 +1679,7 @@ void EditorApplication::DrawViewport()
                 }
                 else
                 {
-                    const Vector2 center = toCanvas(localToWorld(circle->offset));
+                    const ImVec2 center = toCanvas(localToWorld(circle->offset));
                     drawList->AddCircle(center, circle->radius * zoom, color, 48, 2.0F);
                 }
             });
