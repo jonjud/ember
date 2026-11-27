@@ -518,6 +518,17 @@ bool Scene::IsAudioSourcePlaying(EntityId entity) const noexcept
         m_audioEngine->IsPlaying(it->second);
 }
 
+bool Scene::DispatchUIButtonClicked(EntityId entityId) noexcept
+{
+    if (!m_started) return false;
+    Entity* entity = FindEntity(entityId);
+    if (entity == nullptr || !entity->IsActive()) return false;
+
+    for (const auto& component : entity->GetComponents())
+        component->OnUIButtonClicked(*entity);
+    return true;
+}
+
 void Scene::Update(float deltaSeconds) noexcept
 {
     if (!m_started || !std::isfinite(deltaSeconds)) return;

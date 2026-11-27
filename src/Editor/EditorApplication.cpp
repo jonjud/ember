@@ -2002,6 +2002,7 @@ void EditorApplication::DrawViewport()
                 ImGui::IsMouseReleased(ImGuiMouseButton_Left));
             for (const UIButtonClickedEvent2D& event : m_uiInputRouter.GetEvents())
             {
+                (void)activeScene.DispatchUIButtonClicked(event.entity);
                 std::snprintf(m_statusMessage, sizeof(m_statusMessage),
                     "UI Button clicked: Entity %llu",
                     static_cast<unsigned long long>(event.entity));

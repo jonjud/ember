@@ -21,5 +21,7 @@ public:
         (void)deltaSeconds;
     }
     virtual void OnDestroy(Entity& entity) noexcept { (void)entity; }
+    // Called on components attached to the Entity whose UI Button was clicked.
+    virtual void OnUIButtonClicked(Entity& entity) noexcept { (void)entity; }
 };
 } // namespace ember

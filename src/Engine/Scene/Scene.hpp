@@ -52,6 +52,8 @@ public:
 
     void Start(AudioEngine* audioEngine = nullptr, const AssetRegistry* assets = nullptr) noexcept;
     void Update(float deltaSeconds) noexcept;
+    // Dispatches a UI Button click to components on the target Entity while running.
+    [[nodiscard]] bool DispatchUIButtonClicked(EntityId entity) noexcept;
     void Stop() noexcept;
     [[nodiscard]] bool IsStarted() const { return m_started; }
     [[nodiscard]] std::size_t GetPhysicsBodyCount() const { return m_physicsBodies.size(); }

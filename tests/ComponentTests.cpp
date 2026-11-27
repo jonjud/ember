@@ -24,6 +24,7 @@ public:
     int creates = 0;
     int updates = 0;
     int destroys = 0;
+    int uiClicks = 0;
     float lastDelta = 0.0F;
 
     [[nodiscard]] std::unique_ptr<ember::Component> Clone() const override
@@ -37,6 +38,7 @@ public:
         lastDelta = deltaSeconds;
     }
     void OnDestroy(ember::Entity&) noexcept override { ++destroys; }
+    void OnUIButtonClicked(ember::Entity&) noexcept override { ++uiClicks; }
 };
 }
 
@@ -59,12 +61,21 @@ int main()
     Check(!active.HasComponent<CounterComponent>(), "Removed component is no longer present");
     CounterComponent& counter = active.AddComponent<CounterComponent>();
 
+    Check(!scene.DispatchUIButtonClicked(active.GetId()),
+        "UI click events are rejected before the Scene starts");
     scene.Start();
     scene.Start();
     Check(scene.IsStarted(), "Scene enters the started state");
     Check(counter.creates == 1, "OnCreate runs once when the scene starts");
     Check(inactive.GetComponent<CounterComponent>()->creates == 1,
         "OnCreate runs for components on inactive entities");
+    Check(scene.DispatchUIButtonClicked(active.GetId()) && counter.uiClicks == 1,
+        "Scene dispatches a UI click to components on the target Entity");
+    Check(!scene.DispatchUIButtonClicked(inactive.GetId()) &&
+        inactive.GetComponent<CounterComponent>()->uiClicks == 0,
+        "UI clicks are not dispatched to inactive Entities");
+    Check(!scene.DispatchUIButtonClicked(999999),
+        "UI click dispatch rejects an unknown Entity ID");
 
     bool addRejected = false;
     bool removeRejected = false;
@@ -88,6 +99,8 @@ int main()
 
     scene.Stop();
     scene.Stop();
+    Check(!scene.DispatchUIButtonClicked(active.GetId()),
+        "UI click events are rejected after the Scene stops");
     Check(counter.destroys == 1, "OnDestroy runs once when the scene stops");
     Check(inactive.GetComponent<CounterComponent>()->destroys == 1,
         "OnDestroy runs for inactive entities too");
@@ -97,7 +110,8 @@ int main()
     Check(clonedCounter != nullptr && clonedCounter != &counter,
         "Scene clone creates independent component instances");
     Check(clonedCounter != nullptr && clonedCounter->creates == 1 &&
-          clonedCounter->updates == 2 && clonedCounter->destroys == 1,
+          clonedCounter->updates == 2 && clonedCounter->destroys == 1 &&
+          clonedCounter->uiClicks == 1,
         "Scene clone preserves component state");
 
     scene.Start();
