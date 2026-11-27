@@ -43,6 +43,8 @@ struct PhysicsBoxColliderDefinition2D
     float friction = 0.3F;
     float restitution = 0.0F;
     bool isSensor = false;
+    std::uint64_t categoryBits = 0x0001;
+    std::uint64_t maskBits = 0xFFFF;
 };
 
 struct PhysicsCircleColliderDefinition2D
@@ -53,6 +55,8 @@ struct PhysicsCircleColliderDefinition2D
     float friction = 0.3F;
     float restitution = 0.0F;
     bool isSensor = false;
+    std::uint64_t categoryBits = 0x0001;
+    std::uint64_t maskBits = 0xFFFF;
 };
 
 struct PhysicsBodyHandle
