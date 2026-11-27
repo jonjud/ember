@@ -62,6 +62,7 @@ public:
 
 int main()
 {
+    std::cerr << "[TRACE] main entered\n" << std::flush;
     ember::Scene scene("Lifecycle Test");
     ember::Entity& active = scene.CreateEntity("Active");
     Check(!active.HasComponent<CounterComponent>(), "New entity has no counter component");
@@ -85,7 +86,9 @@ int main()
 
     Check(!scene.DispatchUIButtonClicked(active.GetId()),
         "UI click events are rejected before the Scene starts");
+    std::cerr << "[TRACE] before lifecycle Scene::Start\n" << std::flush;
     scene.Start();
+    std::cerr << "[TRACE] after first lifecycle Scene::Start\n" << std::flush;
     scene.Start();
     Check(scene.IsStarted(), "Scene enters the started state");
     Check(counter.creates == 1, "OnCreate runs once when the scene starts");
@@ -121,7 +124,9 @@ int main()
     Check(addRejected && removeRejected && destroyRejected,
         "Scene and component structure is locked while running");
 
+    std::cerr << "[TRACE] before lifecycle Scene::Update\n" << std::flush;
     scene.Update(0.25F);
+    std::cerr << "[TRACE] after first lifecycle Scene::Update\n" << std::flush;
     scene.Update(-1.0F);
     Check(counter.updates == 2, "OnUpdate runs for active entities only");
     Check(std::fabs(counter.lastDelta) < 0.0001F,
@@ -129,7 +134,9 @@ int main()
     Check(inactive.GetComponent<CounterComponent>()->updates == 0,
         "Inactive entities do not receive OnUpdate");
 
+    std::cerr << "[TRACE] before lifecycle Scene::Stop\n" << std::flush;
     scene.Stop();
+    std::cerr << "[TRACE] after first lifecycle Scene::Stop\n" << std::flush;
     scene.Stop();
     Check(!scene.DispatchUIButtonClicked(active.GetId()),
         "UI click events are rejected after the Scene stops");
@@ -137,7 +144,9 @@ int main()
     Check(inactive.GetComponent<CounterComponent>()->destroys == 1,
         "OnDestroy runs for inactive entities too");
 
+    std::cerr << "[TRACE] before Scene::Clone\n" << std::flush;
     ember::Scene clone = scene.Clone();
+    std::cerr << "[TRACE] after Scene::Clone\n" << std::flush;
     const auto* clonedCounter = clone.FindEntity(active.GetId())->GetComponent<CounterComponent>();
     Check(clonedCounter != nullptr && clonedCounter != &counter,
         "Scene clone creates independent component instances");
@@ -146,7 +155,9 @@ int main()
           clonedCounter->uiClicks == 1,
         "Scene clone preserves component state");
 
+    std::cerr << "[TRACE] before restarted Scene::Start\n" << std::flush;
     scene.Start();
+    std::cerr << "[TRACE] after restarted Scene::Start\n" << std::flush;
     Check(counter.creates == 2, "A stopped scene can be started again");
     scene.Stop();
     Check(counter.destroys == 2, "OnDestroy runs when a restarted scene stops");
