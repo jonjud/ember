@@ -106,6 +106,7 @@ private:
     bool m_gizmoLocalSpace = false;
     int m_dragGizmoAxisIndex = 0;
     bool m_snapTransforms = false;
+    bool m_showPhysicsDebugOverlay = false;
     float m_positionSnap = 16.0F;
     float m_rotationSnapDegrees = 15.0F;
     float m_scaleSnap = 0.1F;

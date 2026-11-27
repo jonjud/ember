@@ -2,6 +2,7 @@
 
 #include "Engine/Scene/SceneSerializer.hpp"
 #include "Engine/Physics/PhysicsComponentRegistration.hpp"
+#include "Engine/Physics/PhysicsComponents2D.hpp"
 #include "Engine/Platform/Input.hpp"
 #include "Engine/Project/ProjectConfigurationStore.hpp"
 
@@ -1203,6 +1204,8 @@ void EditorApplication::DrawViewport()
             m_viewportCamera.SetRotation(0.0F);
         }
         ImGui::SameLine();
+        ImGui::Checkbox("Physics", &m_showPhysicsDebugOverlay);
+        ImGui::SameLine();
         ImGui::Text("Zoom: %.0f%%", m_viewportCamera.GetZoom() * 100.0F);
 
         ImVec2 canvasSize = ImGui::GetContentRegionAvail();
@@ -1624,6 +1627,63 @@ void EditorApplication::DrawViewport()
                 drawList->AddText(labelPosition, IM_COL32(255, 225, 140, 255), entity.GetName().c_str());
             }
         });
+
+        // Draw configured physics shapes in the editor viewport without exposing
+        // backend handles or Box2D types to Editor code.
+        if (m_showPhysicsDebugOverlay)
+        {
+            activeScene.ForEachEntity([&](const Entity& entity)
+            {
+                const auto* body = entity.GetComponent<PhysicsBody2D>();
+                if (body == nullptr || !body->enabled) return;
+                const auto* box = entity.GetComponent<BoxCollider2D>();
+                const auto* circle = entity.GetComponent<CircleCollider2D>();
+                if ((box == nullptr) == (circle == nullptr)) return;
+
+                const Transform2D& transform = entity.GetTransform();
+                const float bodyCosine = std::cos(transform.rotation);
+                const float bodySine = std::sin(transform.rotation);
+                const auto localToWorld = [&](const Vector2& local)
+                {
+                    return Vector2{
+                        transform.position.x + local.x * bodyCosine - local.y * bodySine,
+                        transform.position.y + local.x * bodySine + local.y * bodyCosine
+                    };
+                };
+                const ImU32 color = (box != nullptr ? box->isSensor : circle->isSensor)
+                    ? IM_COL32(80, 220, 255, 255)
+                    : IM_COL32(255, 155, 65, 255);
+
+                if (box != nullptr)
+                {
+                    const float angle = transform.rotation + box->rotation;
+                    const float cosine = std::cos(angle);
+                    const float sine = std::sin(angle);
+                    const Vector2 center = localToWorld(box->offset);
+                    const Vector2 cornersLocal[4]{
+                        {-box->halfExtents.x, -box->halfExtents.y},
+                        { box->halfExtents.x, -box->halfExtents.y},
+                        { box->halfExtents.x,  box->halfExtents.y},
+                        {-box->halfExtents.x,  box->halfExtents.y}
+                    };
+                    ImVec2 corners[4]{};
+                    for (int corner = 0; corner < 4; ++corner)
+                    {
+                        const Vector2& point = cornersLocal[corner];
+                        corners[corner] = toCanvas({
+                            center.x + point.x * cosine - point.y * sine,
+                            center.y + point.x * sine + point.y * cosine
+                        });
+                    }
+                    drawList->AddPolyline(corners, 4, color, ImDrawFlags_Closed, 2.0F);
+                }
+                else
+                {
+                    const Vector2 center = toCanvas(localToWorld(circle->offset));
+                    drawList->AddCircle(center, circle->radius * zoom, color, 48, 2.0F);
+                }
+            });
+        }
 
         if (!m_isPlaying)
         {
