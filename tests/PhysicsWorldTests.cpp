@@ -65,19 +65,12 @@ int main()
     Check(world.SetBodyTransform(fallingBody, {{2.0F, 1.0F}, 0.25F}),
           "PhysicsWorld updates a body transform");
     const auto moved = world.GetBodyTransform(fallingBody);
-    if (moved)
-    {
-        std::cout << "[INFO] Updated transform: position=("
-                  << moved->position.x << ", " << moved->position.y
-                  << "), rotation=" << moved->rotation << '\\n';
-    }
-    else
-    {
-        std::cout << "[INFO] Updated transform: unavailable\\n";
-    }
+    // Box2D 3.2.0 uses an approximate atan2 for rotation extraction. Allow
+    // enough angular error for that approximation while still checking the update.
+    constexpr float rotationTolerance = 0.003F;
     Check(moved.has_value() && std::abs(moved->position.x - 2.0F) < 0.001F &&
           std::abs(moved->position.y - 1.0F) < 0.001F &&
-          std::abs(moved->rotation - 0.25F) < 0.001F,
+          std::abs(moved->rotation - 0.25F) < rotationTolerance,
           "PhysicsWorld returns the updated body transform");
 
     Check(world.GetBodyCount() == 2, "PhysicsWorld tracks its live body count");
