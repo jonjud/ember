@@ -91,4 +91,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- UI System v1, Audio Runtime, and Physics Joints implementation plus Windows Editor verification are complete. Next focused milestone: Runtime Input Action Mapping integration. Keyboard/controller UI focus navigation can be a later enhancement. Keep miniaudio types private and editor-only code out of `ember_engine`.
+- UI System v1, Audio Runtime, and Physics Joints implementation plus Windows Editor verification are complete. Runtime Input Action Mapping implementation is complete; finish its final Windows Editor checklist, then begin the Scripting interface milestone. Keyboard/controller UI focus navigation can be a later enhancement. Keep miniaudio types private and editor-only code out of `ember_engine`.

@@ -154,4 +154,4 @@
 
 ---
 
-**Handoff:** UI System v1, Audio Runtime, and Physics Joints are complete and Windows Editor-verified. Runtime Input Action Mapping implementation is complete and Windows CI run 46081947029 passed; only the final Editor checklist remains. Continue on `develop`; do not merge to `main`.
+**Handoff:** UI System v1, Audio Runtime, and Physics Joints are complete and Windows Editor-verified. Runtime Input Action Mapping implementation is complete and Windows CI run 46081947029 passed; only the final Editor checklist remains. After that, the next roadmap milestone is the Scripting interface. Continue on `develop`; do not merge to `main`.
