@@ -596,6 +596,98 @@ void EditorApplication::DrawInspector()
                 ImGui::PopID();
             }
 
+            if (auto* colliderSet = entity->GetComponent<ColliderSet2D>())
+            {
+                ImGui::SeparatorText("Collider Set 2D");
+                if (ImGui::SmallButton("Add Box Collider"))
+                {
+                    (void)colliderSet->AddBoxCollider();
+                    MarkSceneDirty();
+                }
+                ImGui::SameLine();
+                if (ImGui::SmallButton("Add Circle Collider"))
+                {
+                    (void)colliderSet->AddCircleCollider();
+                    MarkSceneDirty();
+                }
+
+                std::optional<Collider2D> pendingDuplicate;
+                ColliderId pendingRemoval = 0;
+                for (std::size_t index = 0; index < colliderSet->colliders.size(); ++index)
+                {
+                    Collider2D& collider = colliderSet->colliders[index];
+                    ImGui::PushID(static_cast<int>(index));
+                    const char* shapeName = collider.shape == ColliderShape2D::Box ? "Box" : "Circle";
+                    if (ImGui::TreeNode("Collider %zu (%s)", index + 1, shapeName))
+                    {
+                        ImGui::Text("Stable ID: %llu",
+                            static_cast<unsigned long long>(collider.id));
+                        if (collider.shape == ColliderShape2D::Box)
+                        {
+                            if (ImGui::DragFloat2("Half Extents", &collider.halfExtents.x,
+                                0.1F, 0.001F, 100000.0F)) MarkSceneDirty();
+                            if (ImGui::DragFloat("Rotation (rad)", &collider.rotation,
+                                0.01F)) MarkSceneDirty();
+                        }
+                        else
+                        {
+                            if (ImGui::DragFloat("Radius", &collider.radius,
+                                0.1F, 0.001F, 100000.0F)) MarkSceneDirty();
+                        }
+                        if (ImGui::DragFloat2("Offset", &collider.offset.x, 0.1F))
+                            MarkSceneDirty();
+                        if (ImGui::DragFloat("Density", &collider.density, 0.01F,
+                            0.0F, 100000.0F)) MarkSceneDirty();
+                        if (ImGui::DragFloat("Friction", &collider.friction, 0.01F,
+                            0.0F, 100000.0F)) MarkSceneDirty();
+                        if (ImGui::DragFloat("Restitution", &collider.restitution, 0.01F,
+                            0.0F, 100000.0F)) MarkSceneDirty();
+                        if (ImGui::Checkbox("Is Sensor", &collider.isSensor))
+                            MarkSceneDirty();
+
+                        int categoryBits = static_cast<int>(collider.categoryBits);
+                        if (ImGui::InputInt("Category Bits", &categoryBits))
+                        {
+                            collider.categoryBits = static_cast<std::uint16_t>(
+                                std::clamp(categoryBits, 0, 65535));
+                            MarkSceneDirty();
+                        }
+                        int maskBits = static_cast<int>(collider.maskBits);
+                        if (ImGui::InputInt("Mask Bits", &maskBits))
+                        {
+                            collider.maskBits = static_cast<std::uint16_t>(
+                                std::clamp(maskBits, 0, 65535));
+                            MarkSceneDirty();
+                        }
+
+                        if (ImGui::SmallButton("Duplicate"))
+                        {
+                            Collider2D copy = collider;
+                            copy.id = GenerateColliderId();
+                            if (copy.id != 0) pendingDuplicate = std::move(copy);
+                            else
+                                std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                                    "Collider ID space exhausted");
+                        }
+                        ImGui::SameLine();
+                        if (ImGui::SmallButton("Remove")) pendingRemoval = collider.id;
+                        ImGui::TreePop();
+                    }
+                    ImGui::PopID();
+                    if (pendingDuplicate.has_value() || pendingRemoval != 0) break;
+                }
+
+                if (pendingDuplicate.has_value())
+                {
+                    colliderSet->colliders.push_back(std::move(*pendingDuplicate));
+                    MarkSceneDirty();
+                }
+                if (pendingRemoval != 0 && colliderSet->RemoveCollider(pendingRemoval))
+                    MarkSceneDirty();
+                if (colliderSet->colliders.empty())
+                    ImGui::TextDisabled("No colliders. Add a Box or Circle collider.");
+            }
+
             if (ImGui::Button("Add Component"))
                 ImGui::OpenPopup("Add Component Popup");
             if (ImGui::BeginPopup("Add Component Popup"))
