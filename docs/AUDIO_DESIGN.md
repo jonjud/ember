@@ -35,3 +35,9 @@ Provide a small runtime-facing 2D audio foundation while keeping miniaudio types
 
 - During Editor Play Mode, the Scene Hierarchy exposes Play/Stop controls for the selected entity's loaded AudioSource2D and displays Scene audio diagnostics.
 - Scene edge-case tests cover missing/uninitialized engine, missing registry, inactive/disabled sources, invalid configuration, wrong asset types and traversal paths.
+
+
+## Final automated verification
+- Windows CI #219 passes the complete build and all engine tests.
+- Scene tests verify that a hand-edited sidecar containing a traversal source such as `../outside.wav` is rejected by metadata loading and does not enter the AssetRegistry. The normal metadata writer independently refuses to create such a sidecar.
+- The remaining verification is interactive Editor behavior; see [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md).

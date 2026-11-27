@@ -10,11 +10,11 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | `c95b68e` — AudioSource2D Inspector picker and Scene diagnostics |
-| Last verified CI | [Windows CI #217](https://github.com/jonjud/ember/actions/runs/45993129650) — **Success** (Audio Inspector picker, full Windows build and engine tests) |
-| Latest documentation CI | [Windows CI #216](https://github.com/jonjud/ember/actions/runs/45991572798) — **Success** |
+| Last code commit | `a5b23a3` — Audio traversal metadata rejection test fix |
+| Last verified CI | [Windows CI #219](https://github.com/jonjud/ember/actions/runs/46003199338) — **Success** (Audio runtime controls, traversal metadata rejection and full Windows engine tests) |
+| Latest documentation CI | [Windows CI #219](https://github.com/jonjud/ember/actions/runs/46003199338) — **Success** |
 | Last completed milestone | Sprite Animation — user-confirmed all checks passed; Windows CI #199 Success (2026-11-27) |
-| Active milestone | Audio — next vertical slice using miniaudio. SpriteAnimation2D implementation, serialization, Inspector settings, sprite-sheet preview, Renderer2D source-region API and multi-row tests are complete; user-confirmed all checks passed and Windows CI #199 is green. Physics Joints implementation and automated tests passed CI #191; manual joint Editor verification remains deferred to the final Editor test session. |
+| Active milestone | Audio — miniaudio runtime, AudioSource2D authoring, Scene playback, Editor Asset Browser preview, Inspector asset picker, Play Mode runtime controls and edge-case tests are implemented; Windows CI #219 is green. Final Windows Editor verification is the remaining Audio milestone gate. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -87,7 +87,7 @@
 
 **Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user confirmed the Windows Editor checklist passed on 2026-11-27, including Editor launch/layout, Entity and Transform editing, duplicate/delete, PhysicsBody2D Inspector add/edit/remove, ColliderSet2D editing, Physics Debug Overlay, save/reopen persistence, and Play/Stop behavior.
 
-**Active milestone: Audio.** The miniaudio 0.11.26 runtime facade, Application/Editor audio lifecycle, device-less generated-WAV tests, serializable `AudioSource2D`, typed Inspector properties and safe Audio-asset picker, Scene asset-resolution/playback lifecycle and runtime controls, safe Scene move/Stop lifetime, and Editor Asset Browser preview are implemented. Windows CI #217 passed. Current work wires Scene Play/Stop controls into the Editor Play Mode Hierarchy and expands automated tests for unavailable devices, invalid configurations, wrong asset types and traversal paths. Final Windows Editor verification remains deferred until the Audio milestone is complete. Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; manual Editor verification remains deferred.
+**Audio implementation is complete pending final interactive verification.** The miniaudio 0.11.26 runtime facade, Application/Editor audio lifecycle, device-less generated-WAV tests, serializable `AudioSource2D`, typed Inspector properties and safe Audio-asset picker, Scene asset-resolution/playback lifecycle, runtime Play/Stop controls, safe Scene move/Stop lifetime, and Editor Asset Browser preview are implemented. Windows CI #219 passed. Automated coverage includes unavailable/uninitialized devices, missing dependencies/assets, inactive/disabled sources, invalid volume, wrong asset types and hand-edited traversal metadata. Run the final Windows Editor checklist in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md) before closing the milestone. Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; manual Editor verification remains deferred.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -97,7 +97,7 @@
 5. Never report CI passed until the workflow is completed with `conclusion: success`.
 6. Distinguish CI build/tests from interactive runtime verification.
 7. If CI fails, inspect logs, fix the root cause, and wait for a successful rerun before closing the milestone.
-8. Defer manual Windows Editor testing until the complete Physics Joints milestone is implemented; run automated CI throughout development.
+8. Defer manual Windows Editor testing until the active milestone is complete; run automated CI throughout development.
 
 ## 6. Recent milestone log
 
@@ -116,7 +116,8 @@
 | 2026-11-27 | [Multi-collider docs and verification checklist, CI #175–#178](https://github.com/jonjud/ember/actions/runs/45962148407) | Success |
 | 2026-11-27 | [Physics Joint API and lifetime tests, `d8a7061`](https://github.com/jonjud/ember/commit/d8a7061143ea6c1246dd5573713ae1ae1f7db9f5) | Committed; CI status not yet confirmed |
 | 2026-11-27 | Windows Editor manual verification | User-confirmed PASS: Editor launch/layout, Entity/Transform, duplicate/delete, PhysicsBody2D Inspector, ColliderSet2D, Debug Overlay, persistence, Play/Stop |
+| 2026-11-27 | [Audio runtime controls and edge-case tests, `a5b23a3`, CI #219](https://github.com/jonjud/ember/actions/runs/46003199338) | Success; final Editor verification checklist prepared |
 
 ---
 
-**Handoff:** Audio runtime, AudioSource2D serialization/Inspector, Scene asset resolution and playback controls, safe Scene move/Stop lifetime, Editor Asset Browser preview, and Inspector Audio-asset picker are committed on `develop`. Windows CI #217 is green. Current work exposes runtime Audio Play/Stop in the Editor Play Mode Hierarchy and broadens Scene edge-case coverage; final Editor verification remains deferred until the Audio milestone is complete. Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Work on `develop` only; do not merge to `main`.
+**Handoff:** Audio runtime, AudioSource2D serialization/Inspector, Scene asset resolution/playback, runtime Play/Stop controls, safe Scene move/Stop lifetime, Editor Asset Browser preview, and Audio-asset picker are committed on `develop`. Windows CI #219 is green. The remaining gate is the one-time Windows Editor checklist in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md). Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Work on `develop` only; do not merge to `main`.

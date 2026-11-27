@@ -66,7 +66,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Multiple colliders per entity (model #135; serialization/migration #151; runtime/query #155; contact aggregation #164; Inspector #169; overlay #170; Windows interactive checklist user-confirmed passed)
 - [x] Physics Joints (PhysicsWorld API, serializable Revolute/Distance components, Entity-reference Inspector controls, Scene lifecycle integration, and automated tests passed Windows CI #191; final Windows manual checklist is intentionally deferred)
 - [x] Animation (SpriteAnimation2D frame playback, Scene lifecycle, serialization, Inspector controls, sprite-sheet viewport preview, Renderer2D source-region API and multi-row frame tests; Windows CI #199 Success; user-confirmed all checks passed)
-- [ ] Audio (in progress: miniaudio runtime, AudioSource2D serialization/Inspector, Scene asset resolution and playback controls, safe Scene move/Stop lifetime, and Editor Asset Browser preview are implemented; AudioSource2D Inspector now offers a safe project Audio-asset picker; Scene reports missing AudioEngine/AssetRegistry dependencies; Windows CI #217 Success; Editor Play Mode runtime Audio controls and final edge-case coverage in progress)
+- [x] Audio implementation (miniaudio runtime, AudioSource2D serialization/Inspector and safe Audio-asset picker, Scene asset resolution/playback, Play Mode runtime controls, safe Scene move/Stop lifetime, Editor Asset Browser preview, and edge-case tests; Windows CI #219 Success). Final Windows Editor verification remains: [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md)
 - [ ] UI system
 - [ ] Runtime input action mapping integration
 - [ ] Scripting interface
@@ -86,4 +86,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Finish the miniaudio Audio vertical slice: expose Scene Play/Stop controls in the Editor Play Mode Hierarchy, complete automated edge-case coverage for invalid/unavailable audio references and configurations, then prepare the final Windows Editor verification checklist. Runtime, AudioSource2D authoring, Scene playback, Asset Browser preview and Inspector Audio picker are implemented. Keep miniaudio types private and editor-only code out of `ember_engine`.
+- Perform the final Windows Editor Audio verification using [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md). Then close the Audio milestone and choose the next Game Systems slice. Keep miniaudio types private and editor-only code out of `ember_engine`.
