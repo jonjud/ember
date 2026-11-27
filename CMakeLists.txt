@@ -145,6 +145,12 @@ if(BUILD_TESTING)
     target_include_directories(ember_component_tests PRIVATE src)
     add_test(NAME ember_component_tests COMMAND ember_component_tests)
 
+    add_executable(ember_component_registry_tests
+        tests/ComponentRegistryTests.cpp
+    )
+    target_include_directories(ember_component_registry_tests PRIVATE src)
+    add_test(NAME ember_component_registry_tests COMMAND ember_component_registry_tests)
+
     add_executable(ember_texture_cache_tests
         tests/TextureCacheTests.cpp
         src/Engine/Resources/TextureCache.cpp
@@ -226,6 +232,7 @@ if(MSVC)
         target_compile_options(ember_input_map_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_scene_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_component_tests PRIVATE /W4 /permissive-)
+        target_compile_options(ember_component_registry_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_texture_cache_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_directory_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_manager_tests PRIVATE /W4 /permissive-)
@@ -243,6 +250,7 @@ else()
         target_compile_options(ember_input_map_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_scene_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_component_tests PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(ember_component_registry_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_texture_cache_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_directory_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_manager_tests PRIVATE -Wall -Wextra -Wpedantic)
