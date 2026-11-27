@@ -67,6 +67,39 @@ struct PhysicsBodyHandle
     friend bool operator==(PhysicsBodyHandle, PhysicsBodyHandle) = default;
 };
 
+struct PhysicsJointHandle
+{
+    std::uint64_t value = 0;
+
+    [[nodiscard]] explicit operator bool() const { return value != 0; }
+    friend bool operator==(PhysicsJointHandle, PhysicsJointHandle) = default;
+};
+
+struct PhysicsRevoluteJointDefinition2D
+{
+    PhysicsBodyHandle bodyA{};
+    PhysicsBodyHandle bodyB{};
+    Vector2 localAnchorA{}; // meters, body-local space
+    Vector2 localAnchorB{}; // meters, body-local space
+    bool enableLimit = false;
+    float lowerAngle = 0.0F; // radians
+    float upperAngle = 0.0F; // radians
+    bool enableMotor = false;
+    float motorSpeed = 0.0F; // radians per second
+    float maxMotorTorque = 0.0F;
+    bool collideConnected = false;
+};
+
+struct PhysicsDistanceJointDefinition2D
+{
+    PhysicsBodyHandle bodyA{};
+    PhysicsBodyHandle bodyB{};
+    Vector2 localAnchorA{}; // meters, body-local space
+    Vector2 localAnchorB{}; // meters, body-local space
+    float length = 1.0F; // meters
+    bool collideConnected = false;
+};
+
 enum class PhysicsContactEventType2D
 {
     Begin,
@@ -117,6 +150,12 @@ public:
     [[nodiscard]] bool SetGravity(Vector2 gravity);
     [[nodiscard]] PhysicsBodyHandle CreateBody(const PhysicsBodyDefinition2D& definition);
     [[nodiscard]] bool DestroyBody(PhysicsBodyHandle handle);
+    [[nodiscard]] PhysicsJointHandle CreateRevoluteJoint(
+        const PhysicsRevoluteJointDefinition2D& definition);
+    [[nodiscard]] PhysicsJointHandle CreateDistanceJoint(
+        const PhysicsDistanceJointDefinition2D& definition);
+    [[nodiscard]] bool DestroyJoint(PhysicsJointHandle handle);
+    [[nodiscard]] std::size_t GetJointCount() const;
     [[nodiscard]] bool AddBoxCollider(
         PhysicsBodyHandle handle, const PhysicsBoxColliderDefinition2D& definition = {});
     [[nodiscard]] bool AddCircleCollider(
