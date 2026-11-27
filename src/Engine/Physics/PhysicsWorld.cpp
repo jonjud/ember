@@ -85,10 +85,19 @@ struct PhysicsWorld::Impl
     }
 
     b2WorldId worldId = b2_nullWorldId;
+    struct JointMetadata
+    {
+        b2JointId id = b2_nullJointId;
+        PhysicsBodyHandle bodyA{};
+        PhysicsBodyHandle bodyB{};
+    };
+
     std::unordered_map<std::uint64_t, b2BodyId> bodies;
     std::unordered_map<std::uint64_t, std::unique_ptr<PhysicsBodyMetadata>> bodyMetadata;
+    std::unordered_map<std::uint64_t, JointMetadata> joints;
     std::vector<PhysicsContactEvent2D> contactEvents;
     std::uint64_t nextHandle = 1;
+    std::uint64_t nextJointHandle = 1;
 };
 
 PhysicsWorld::PhysicsWorld(const PhysicsWorldDefinition& definition)
@@ -165,10 +174,129 @@ bool PhysicsWorld::DestroyBody(PhysicsBodyHandle handle)
     if (!IsValid() || !handle) return false;
     const auto it = m_impl->bodies.find(handle.value);
     if (it == m_impl->bodies.end() || !b2Body_IsValid(it->second)) return false;
+    for (auto joint = m_impl->joints.begin(); joint != m_impl->joints.end();)
+    {
+        if (joint->second.bodyA == handle || joint->second.bodyB == handle)
+        {
+            if (b2Joint_IsValid(joint->second.id)) b2DestroyJoint(joint->second.id);
+            joint = m_impl->joints.erase(joint);
+        }
+        else
+        {
+            ++joint;
+        }
+    }
     b2DestroyBody(it->second);
     m_impl->bodies.erase(it);
     m_impl->bodyMetadata.erase(handle.value);
     return true;
+}
+
+PhysicsJointHandle PhysicsWorld::CreateRevoluteJoint(
+    const PhysicsRevoluteJointDefinition2D& definition)
+{
+    if (!IsValid() || !definition.bodyA || !definition.bodyB ||
+        definition.bodyA == definition.bodyB ||
+        !IsFinite(definition.localAnchorA) || !IsFinite(definition.localAnchorB) ||
+        !std::isfinite(definition.lowerAngle) || !std::isfinite(definition.upperAngle) ||
+        !std::isfinite(definition.motorSpeed) || !std::isfinite(definition.maxMotorTorque) ||
+        definition.maxMotorTorque < 0.0F ||
+        (definition.enableLimit && definition.lowerAngle > definition.upperAngle))
+        return {};
+
+    const auto bodyA = m_impl->bodies.find(definition.bodyA.value);
+    const auto bodyB = m_impl->bodies.find(definition.bodyB.value);
+    if (bodyA == m_impl->bodies.end() || bodyB == m_impl->bodies.end() ||
+        !b2Body_IsValid(bodyA->second) || !b2Body_IsValid(bodyB->second) ||
+        m_impl->nextJointHandle == 0 ||
+        m_impl->nextJointHandle == std::numeric_limits<std::uint64_t>::max())
+        return {};
+
+    b2RevoluteJointDef jointDefinition = b2DefaultRevoluteJointDef();
+    jointDefinition.base.bodyIdA = bodyA->second;
+    jointDefinition.base.bodyIdB = bodyB->second;
+    jointDefinition.base.localFrameA = {
+        {definition.localAnchorA.x, definition.localAnchorA.y}, b2MakeRot(0.0F)};
+    jointDefinition.base.localFrameB = {
+        {definition.localAnchorB.x, definition.localAnchorB.y}, b2MakeRot(0.0F)};
+    jointDefinition.base.collideConnected = definition.collideConnected;
+    jointDefinition.enableLimit = definition.enableLimit;
+    jointDefinition.lowerAngle = definition.lowerAngle;
+    jointDefinition.upperAngle = definition.upperAngle;
+    jointDefinition.enableMotor = definition.enableMotor;
+    jointDefinition.motorSpeed = definition.motorSpeed;
+    jointDefinition.maxMotorTorque = definition.maxMotorTorque;
+
+    const b2JointId id = b2CreateRevoluteJoint(m_impl->worldId, &jointDefinition);
+    if (!b2Joint_IsValid(id)) return {};
+    const std::uint64_t handle = m_impl->nextJointHandle++;
+    try
+    {
+        m_impl->joints.emplace(handle, Impl::JointMetadata{id, definition.bodyA, definition.bodyB});
+    }
+    catch (...)
+    {
+        b2DestroyJoint(id);
+        throw;
+    }
+    return {handle};
+}
+
+PhysicsJointHandle PhysicsWorld::CreateDistanceJoint(
+    const PhysicsDistanceJointDefinition2D& definition)
+{
+    if (!IsValid() || !definition.bodyA || !definition.bodyB ||
+        definition.bodyA == definition.bodyB ||
+        !IsFinite(definition.localAnchorA) || !IsFinite(definition.localAnchorB) ||
+        !std::isfinite(definition.length) || definition.length <= 0.0F)
+        return {};
+
+    const auto bodyA = m_impl->bodies.find(definition.bodyA.value);
+    const auto bodyB = m_impl->bodies.find(definition.bodyB.value);
+    if (bodyA == m_impl->bodies.end() || bodyB == m_impl->bodies.end() ||
+        !b2Body_IsValid(bodyA->second) || !b2Body_IsValid(bodyB->second) ||
+        m_impl->nextJointHandle == 0 ||
+        m_impl->nextJointHandle == std::numeric_limits<std::uint64_t>::max())
+        return {};
+
+    b2DistanceJointDef jointDefinition = b2DefaultDistanceJointDef();
+    jointDefinition.base.bodyIdA = bodyA->second;
+    jointDefinition.base.bodyIdB = bodyB->second;
+    jointDefinition.base.localFrameA = {
+        {definition.localAnchorA.x, definition.localAnchorA.y}, b2MakeRot(0.0F)};
+    jointDefinition.base.localFrameB = {
+        {definition.localAnchorB.x, definition.localAnchorB.y}, b2MakeRot(0.0F)};
+    jointDefinition.base.collideConnected = definition.collideConnected;
+    jointDefinition.length = definition.length;
+
+    const b2JointId id = b2CreateDistanceJoint(m_impl->worldId, &jointDefinition);
+    if (!b2Joint_IsValid(id)) return {};
+    const std::uint64_t handle = m_impl->nextJointHandle++;
+    try
+    {
+        m_impl->joints.emplace(handle, Impl::JointMetadata{id, definition.bodyA, definition.bodyB});
+    }
+    catch (...)
+    {
+        b2DestroyJoint(id);
+        throw;
+    }
+    return {handle};
+}
+
+bool PhysicsWorld::DestroyJoint(PhysicsJointHandle handle)
+{
+    if (!IsValid() || !handle) return false;
+    const auto it = m_impl->joints.find(handle.value);
+    if (it == m_impl->joints.end()) return false;
+    if (b2Joint_IsValid(it->second.id)) b2DestroyJoint(it->second.id);
+    m_impl->joints.erase(it);
+    return true;
+}
+
+std::size_t PhysicsWorld::GetJointCount() const
+{
+    return m_impl ? m_impl->joints.size() : 0;
 }
 
 bool PhysicsWorld::AddBoxCollider(
