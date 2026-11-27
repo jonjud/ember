@@ -318,6 +318,23 @@ if(BUILD_TESTING)
     add_test(NAME ember_asset_import_service_tests COMMAND ember_asset_import_service_tests)
 endif()
 
+# Scene-based test executables compile Scene.cpp directly rather than linking
+# ember_engine. Supply the AudioEngine implementation/backend now that Scene
+# owns transient AudioSoundHandles during its runtime lifecycle.
+if(BUILD_TESTING)
+    foreach(scene_target IN ITEMS
+        ember_scene_physics_tests
+        ember_sprite_animation_tests
+        ember_scene_tests
+        ember_component_tests
+        ember_scene_serializer_tests
+    )
+        target_sources(${scene_target} PRIVATE src/Engine/Audio/AudioEngine.cpp)
+        target_include_directories(${scene_target} PRIVATE ${miniaudio_SOURCE_DIR})
+        target_link_libraries(${scene_target} PRIVATE ember_miniaudio)
+    endforeach()
+endif()
+
 if(MSVC)
     target_compile_options(ember_engine PRIVATE /W4 /permissive-)
     target_compile_options(ember_editor PRIVATE /W4 /permissive-)
