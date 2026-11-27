@@ -65,6 +65,41 @@ int main()
     Check(world.OverlapAABB({1.0F, 1.0F}, {-1.0F, -1.0F}).empty(),
         "OverlapAABB rejects inverted bounds");
 
+    ember::PhysicsQueryFilter2D rejectAllFilter;
+    rejectAllFilter.maskBits = 0;
+    Check(!world.RaycastClosest({-2.0F, 0.0F}, {4.0F, 0.0F}, rejectAllFilter).has_value(),
+        "RaycastClosest respects a query mask that excludes every shape");
+    Check(world.OverlapAABB({-0.5F, -0.5F}, {0.5F, 0.5F}, rejectAllFilter).empty(),
+        "OverlapAABB respects a query mask that excludes every shape");
+
+    ember::PhysicsQueryFilter2D wrongCategoryFilter;
+    wrongCategoryFilter.maskBits = 2;
+    Check(!world.RaycastClosest({-2.0F, 0.0F}, {4.0F, 0.0F}, wrongCategoryFilter).has_value(),
+        "RaycastClosest rejects shapes outside the query mask category");
+    Check(world.OverlapAABB({-0.5F, -0.5F}, {0.5F, 0.5F}, wrongCategoryFilter).empty(),
+        "OverlapAABB rejects shapes outside the query mask category");
+
+    ember::PhysicsQueryFilter2D alternateQueryCategory;
+    alternateQueryCategory.categoryBits = 2;
+    Check(world.RaycastClosest({-2.0F, 0.0F}, {4.0F, 0.0F}, alternateQueryCategory).has_value(),
+        "RaycastClosest accepts shapes whose mask allows the query category");
+    Check(world.OverlapAABB({-0.5F, -0.5F}, {0.5F, 0.5F}, alternateQueryCategory).size() == 1,
+        "OverlapAABB accepts shapes whose mask allows the query category");
+
+    ember::PhysicsBodyDefinition2D sensorDefinition;
+    sensorDefinition.type = ember::PhysicsBodyType2D::Static;
+    sensorDefinition.position = {10.0F, 0.0F};
+    const auto sensorBody = world.CreateBody(sensorDefinition);
+    Check(static_cast<bool>(sensorBody), "PhysicsWorld creates a sensor test body");
+    Check(world.AddCircleCollider(sensorBody, {0.5F, {}, 0.0F, 0.0F, 0.0F, true}),
+        "PhysicsWorld adds a sensor collider");
+    const auto sensorRayHit = world.RaycastClosest({8.0F, 0.0F}, {4.0F, 0.0F});
+    Check(sensorRayHit.has_value() && sensorRayHit->body == sensorBody,
+        "RaycastClosest includes sensor shapes in spatial queries");
+    const auto sensorOverlaps = world.OverlapAABB({9.4F, -0.6F}, {10.6F, 0.6F});
+    Check(sensorOverlaps.size() == 1 && sensorOverlaps.front() == sensorBody,
+        "OverlapAABB includes sensor shapes in spatial queries");
+
     for (int step = 0; step < 180; ++step)
         Check(world.Step(1.0F / 60.0F), "PhysicsWorld advances a fixed simulation step");
 
@@ -87,12 +122,13 @@ int main()
           std::abs(moved->rotation - 0.25F) < rotationTolerance,
           "PhysicsWorld returns the updated body transform");
 
-    Check(world.GetBodyCount() == 2, "PhysicsWorld tracks its live body count");
+    Check(world.GetBodyCount() == 3, "PhysicsWorld tracks its live body count");
     Check(world.DestroyBody(fallingBody), "PhysicsWorld destroys a body");
     Check(!world.DestroyBody(fallingBody), "PhysicsWorld rejects destroying the same handle twice");
     Check(!world.GetBodyTransform(fallingBody).has_value(),
           "Destroyed body handles no longer resolve");
-    Check(world.GetBodyCount() == 1, "PhysicsWorld decrements body count after destruction");
+    Check(world.GetBodyCount() == 2, "PhysicsWorld decrements body count after destruction");
+    Check(world.DestroyBody(sensorBody), "PhysicsWorld destroys the sensor body");
     Check(world.DestroyBody(ground), "PhysicsWorld destroys the remaining body");
     Check(world.GetBodyCount() == 0, "PhysicsWorld can return to an empty state");
 
