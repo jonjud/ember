@@ -1,11 +1,13 @@
 #pragma once
 
 #include "Engine/Scene/Entity.hpp"
+#include "Engine/Physics/PhysicsWorld.hpp"
 
 #include <cstddef>
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 #include <vector>
 
 namespace ember
@@ -29,6 +31,8 @@ public:
     void Update(float deltaSeconds) noexcept;
     void Stop() noexcept;
     [[nodiscard]] bool IsStarted() const { return m_started; }
+    [[nodiscard]] std::size_t GetPhysicsBodyCount() const { return m_physicsBodies.size(); }
+    [[nodiscard]] const std::vector<std::string>& GetPhysicsDiagnostics() const { return m_physicsDiagnostics; }
 
     Entity& CreateEntity(std::string name = "Entity");
     [[nodiscard]] bool DestroyEntity(EntityId id);
@@ -65,10 +69,17 @@ public:
 private:
     friend class SceneSerializer;
     void MoveFrom(Scene&& other) noexcept;
+    void BuildPhysicsWorld() noexcept;
+    void DestroyPhysicsWorld() noexcept;
+    void StepPhysics(float deltaSeconds) noexcept;
 
     std::string m_name;
     EntityId m_nextEntityId = 1;
     std::map<EntityId, std::unique_ptr<Entity>> m_entities;
     bool m_started = false;
+    std::unique_ptr<PhysicsWorld> m_physicsWorld;
+    std::map<EntityId, PhysicsBodyHandle> m_physicsBodies;
+    std::vector<std::string> m_physicsDiagnostics;
+    float m_physicsAccumulator = 0.0F;
 };
 } // namespace ember
