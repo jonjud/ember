@@ -89,6 +89,85 @@ inline bool RegisterUIComponents(ComponentRegistry& registry)
         "ember.ui_panel_2d", "alpha", "Alpha", &UIPanel2D::alpha) && ok;
     ok = registry.RegisterProperty<UIPanel2D>(
         "ember.ui_panel_2d", "enabled", "Enabled", &UIPanel2D::enabled) && ok;
+
+    ok = registry.Register<UIText2D>("ember.ui_text_2d", "UI Text 2D",
+        [](const Component& base) {
+            const auto& v = static_cast<const UIText2D&>(base);
+            return nlohmann::json{{"text",v.text},{"position",{v.position.x,v.position.y}},
+                {"font_size",v.fontSize},{"red",v.red},{"green",v.green},
+                {"blue",v.blue},{"alpha",v.alpha},{"enabled",v.enabled}};
+        },
+        [](Component& base, const nlohmann::json& d) {
+            if (!d.is_object() || !d.contains("text") || !d.at("text").is_string() ||
+                !d.contains("position") || !d.at("position").is_array() || d.at("position").size()!=2 ||
+                !d.at("position")[0].is_number() || !d.at("position")[1].is_number() ||
+                !d.contains("font_size") || !d.at("font_size").is_number() ||
+                !d.contains("red") || !d.at("red").is_number() ||
+                !d.contains("green") || !d.at("green").is_number() ||
+                !d.contains("blue") || !d.at("blue").is_number() ||
+                !d.contains("alpha") || !d.at("alpha").is_number() ||
+                !d.contains("enabled") || !d.at("enabled").is_boolean()) return false;
+            try {
+                auto& v=static_cast<UIText2D&>(base);
+                v.text=d.at("text").get<std::string>();
+                v.position={d.at("position")[0].get<float>(),d.at("position")[1].get<float>()};
+                v.fontSize=d.at("font_size").get<float>();
+                v.red=d.at("red").get<float>(); v.green=d.at("green").get<float>();
+                v.blue=d.at("blue").get<float>(); v.alpha=d.at("alpha").get<float>();
+                v.enabled=d.at("enabled").get<bool>();
+                return v.IsConfigurationValid();
+            } catch (...) { return false; }
+        });
+    ok = registry.RegisterProperty<UIText2D>("ember.ui_text_2d","text","Text",&UIText2D::text) && ok;
+    ok = registry.RegisterVector2Property<UIText2D>("ember.ui_text_2d","position","Position",&UIText2D::position) && ok;
+    ok = registry.RegisterProperty<UIText2D>("ember.ui_text_2d","font_size","Font Size",&UIText2D::fontSize) && ok;
+    ok = registry.RegisterProperty<UIText2D>("ember.ui_text_2d","red","Red",&UIText2D::red) && ok;
+    ok = registry.RegisterProperty<UIText2D>("ember.ui_text_2d","green","Green",&UIText2D::green) && ok;
+    ok = registry.RegisterProperty<UIText2D>("ember.ui_text_2d","blue","Blue",&UIText2D::blue) && ok;
+    ok = registry.RegisterProperty<UIText2D>("ember.ui_text_2d","alpha","Alpha",&UIText2D::alpha) && ok;
+    ok = registry.RegisterProperty<UIText2D>("ember.ui_text_2d","enabled","Enabled",&UIText2D::enabled) && ok;
+
+    ok = registry.Register<UIButton2D>("ember.ui_button_2d", "UI Button 2D",
+        [](const Component& base) {
+            const auto& v = static_cast<const UIButton2D&>(base);
+            return nlohmann::json{{"text",v.text},{"position",{v.position.x,v.position.y}},
+                {"size",{v.size.x,v.size.y}},{"red",v.red},{"green",v.green},
+                {"blue",v.blue},{"alpha",v.alpha},{"enabled",v.enabled},
+                {"interactable",v.interactable}};
+        },
+        [](Component& base, const nlohmann::json& d) {
+            if (!d.is_object() || !d.contains("text") || !d.at("text").is_string() ||
+                !d.contains("position") || !d.at("position").is_array() || d.at("position").size()!=2 ||
+                !d.at("position")[0].is_number() || !d.at("position")[1].is_number() ||
+                !d.contains("size") || !d.at("size").is_array() || d.at("size").size()!=2 ||
+                !d.at("size")[0].is_number() || !d.at("size")[1].is_number() ||
+                !d.contains("red") || !d.at("red").is_number() ||
+                !d.contains("green") || !d.at("green").is_number() ||
+                !d.contains("blue") || !d.at("blue").is_number() ||
+                !d.contains("alpha") || !d.at("alpha").is_number() ||
+                !d.contains("enabled") || !d.at("enabled").is_boolean() ||
+                !d.contains("interactable") || !d.at("interactable").is_boolean()) return false;
+            try {
+                auto& v=static_cast<UIButton2D&>(base);
+                v.text=d.at("text").get<std::string>();
+                v.position={d.at("position")[0].get<float>(),d.at("position")[1].get<float>()};
+                v.size={d.at("size")[0].get<float>(),d.at("size")[1].get<float>()};
+                v.red=d.at("red").get<float>(); v.green=d.at("green").get<float>();
+                v.blue=d.at("blue").get<float>(); v.alpha=d.at("alpha").get<float>();
+                v.enabled=d.at("enabled").get<bool>();
+                v.interactable=d.at("interactable").get<bool>();
+                return v.IsConfigurationValid();
+            } catch (...) { return false; }
+        });
+    ok = registry.RegisterProperty<UIButton2D>("ember.ui_button_2d","text","Text",&UIButton2D::text) && ok;
+    ok = registry.RegisterVector2Property<UIButton2D>("ember.ui_button_2d","position","Position",&UIButton2D::position) && ok;
+    ok = registry.RegisterVector2Property<UIButton2D>("ember.ui_button_2d","size","Size",&UIButton2D::size) && ok;
+    ok = registry.RegisterProperty<UIButton2D>("ember.ui_button_2d","red","Red",&UIButton2D::red) && ok;
+    ok = registry.RegisterProperty<UIButton2D>("ember.ui_button_2d","green","Green",&UIButton2D::green) && ok;
+    ok = registry.RegisterProperty<UIButton2D>("ember.ui_button_2d","blue","Blue",&UIButton2D::blue) && ok;
+    ok = registry.RegisterProperty<UIButton2D>("ember.ui_button_2d","alpha","Alpha",&UIButton2D::alpha) && ok;
+    ok = registry.RegisterProperty<UIButton2D>("ember.ui_button_2d","enabled","Enabled",&UIButton2D::enabled) && ok;
+    ok = registry.RegisterProperty<UIButton2D>("ember.ui_button_2d","interactable","Interactable",&UIButton2D::interactable) && ok;
     return ok;
 }
 } // namespace ember

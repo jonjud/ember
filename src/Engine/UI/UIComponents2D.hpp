@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <memory>
+#include <string>
 
 namespace ember
 {
@@ -53,5 +54,49 @@ public:
     {
         return std::make_unique<UIPanel2D>(*this);
     }
+};
+class UIText2D final : public Component
+{
+public:
+    std::string text = "New Text";
+    Vector2 position{0.0F, 0.0F};
+    float fontSize = 32.0F;
+    float red = 1.0F, green = 1.0F, blue = 1.0F, alpha = 1.0F;
+    bool enabled = true;
+
+    [[nodiscard]] bool IsConfigurationValid() const noexcept
+    {
+        const auto finite = [](float value) { return std::isfinite(value); };
+        return text.size() <= 4096 && finite(position.x) && finite(position.y) &&
+            finite(fontSize) && fontSize >= 1.0F && fontSize <= 256.0F &&
+            finite(red) && finite(green) && finite(blue) && finite(alpha) &&
+            red >= 0.0F && red <= 1.0F && green >= 0.0F && green <= 1.0F &&
+            blue >= 0.0F && blue <= 1.0F && alpha >= 0.0F && alpha <= 1.0F;
+    }
+    [[nodiscard]] std::unique_ptr<Component> Clone() const override
+    { return std::make_unique<UIText2D>(*this); }
+};
+
+class UIButton2D final : public Component
+{
+public:
+    std::string text = "Button";
+    Vector2 position{0.0F, 0.0F};
+    Vector2 size{180.0F, 48.0F};
+    float red = 0.18F, green = 0.38F, blue = 0.72F, alpha = 1.0F;
+    bool enabled = true;
+    bool interactable = true;
+
+    [[nodiscard]] bool IsConfigurationValid() const noexcept
+    {
+        const auto finite = [](float value) { return std::isfinite(value); };
+        return text.size() <= 1024 && finite(position.x) && finite(position.y) &&
+            finite(size.x) && finite(size.y) && size.x > 0.0F && size.y > 0.0F &&
+            finite(red) && finite(green) && finite(blue) && finite(alpha) &&
+            red >= 0.0F && red <= 1.0F && green >= 0.0F && green <= 1.0F &&
+            blue >= 0.0F && blue <= 1.0F && alpha >= 0.0F && alpha <= 1.0F;
+    }
+    [[nodiscard]] std::unique_ptr<Component> Clone() const override
+    { return std::make_unique<UIButton2D>(*this); }
 };
 } // namespace ember

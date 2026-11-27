@@ -24,7 +24,7 @@ int main()
 {
     ember::ComponentRegistry registry;
     Check(ember::RegisterUIComponents(registry), "UI Canvas and Panel register");
-    Check(registry.Size() == 2, "UI registry contains the two initial UI component types");
+    Check(registry.Size() == 4, "UI registry contains Canvas, Panel, Text and Button");
 
     ember::UICanvas2D canvas;
     canvas.referenceResolution = {1920.0F, 1080.0F};
@@ -54,6 +54,38 @@ int main()
     const auto* clonedPanel = dynamic_cast<const ember::UIPanel2D*>(cloned.get());
     Check(clonedPanel && Near(clonedPanel->position.x, panel.position.x) &&
         Near(clonedPanel->alpha, panel.alpha), "Panel clones authoring data");
+
+
+    ember::UIText2D label;
+    label.text = "Hello EMBER";
+    label.position = {24.0F, 36.0F};
+    nlohmann::json textData;
+    Check(registry.Serialize(label, textData), "Text serializes");
+    auto textCopy = registry.Create("ember.ui_text_2d", textData);
+    const auto* restoredText = dynamic_cast<const ember::UIText2D*>(textCopy.get());
+    Check(restoredText && restoredText->text == label.text &&
+        Near(restoredText->fontSize, label.fontSize), "Text content and style round-trip");
+    Check(label.Clone() != nullptr, "Text clones");
+
+    ember::UIButton2D button;
+    button.text = "Start";
+    button.position = {40.0F, 50.0F};
+    button.size = {220.0F, 56.0F};
+    nlohmann::json buttonData;
+    Check(registry.Serialize(button, buttonData), "Button serializes");
+    auto buttonCopy = registry.Create("ember.ui_button_2d", buttonData);
+    const auto* restoredButton = dynamic_cast<const ember::UIButton2D*>(buttonCopy.get());
+    Check(restoredButton && restoredButton->text == "Start" &&
+        Near(restoredButton->size.x, 220.0F) && restoredButton->interactable,
+        "Button geometry, label and interaction flag round-trip");
+    Check(button.Clone() != nullptr, "Button clones");
+    button.size.x = 0.0F;
+    Check(!button.IsConfigurationValid(), "Button rejects zero-sized geometry");
+    button.size = {10.0F,10.0F};
+    button.text.assign(1025, 'x');
+    Check(!button.IsConfigurationValid(), "Button rejects oversized label");
+    label.fontSize = 0.0F;
+    Check(!label.IsConfigurationValid(), "Text rejects invalid font size");
 
     ember::UICanvasLayout2D layout;
     Check(ember::ResolveUICanvasLayout(canvas, {1280.0F, 720.0F}, layout) &&
@@ -87,6 +119,12 @@ int main()
     const auto* panelProperties = registry.FindProperties(panel);
     Check(panelProperties && panelProperties->size() == 7,
         "Panel exposes geometry, color and enabled Inspector properties");
+
+
+    Check(registry.FindProperties(label) && registry.FindProperties(label)->size() == 8,
+        "Text exposes content, position, font size, color and enabled Inspector properties");
+    Check(registry.FindProperties(button) && registry.FindProperties(button)->size() == 9,
+        "Button exposes content, geometry, color and interaction Inspector properties");
 
     if (failures != 0) {
         std::cerr << failures << " UI test(s) failed.\n";

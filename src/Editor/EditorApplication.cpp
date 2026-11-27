@@ -2031,6 +2031,44 @@ void EditorApplication::DrawViewport()
                     drawList->AddRectFilled(minimum, maximum, fill);
                     drawList->AddRect(minimum, maximum, IM_COL32(225, 230, 245, 210));
                 });
+
+                activeScene.ForEachEntity([&](const Entity& entity)
+                {
+                    if (!entity.IsActive()) return;
+                    if (const auto* button = entity.GetComponent<UIButton2D>();
+                        button != nullptr && button->enabled && button->IsConfigurationValid())
+                    {
+                        const ImVec2 minimum{canvasMin.x + uiLayout.origin.x + button->position.x * uiLayout.scale,
+                            canvasMin.y + uiLayout.origin.y + button->position.y * uiLayout.scale};
+                        const ImVec2 maximum{minimum.x + button->size.x * uiLayout.scale,
+                            minimum.y + button->size.y * uiLayout.scale};
+                        const ImU32 fill = IM_COL32(
+                            static_cast<int>(std::lround(button->red * 255.0F)),
+                            static_cast<int>(std::lround(button->green * 255.0F)),
+                            static_cast<int>(std::lround(button->blue * 255.0F)),
+                            static_cast<int>(std::lround(button->alpha * 255.0F)));
+                        drawList->AddRectFilled(minimum, maximum, fill, 5.0F);
+                        drawList->AddRect(minimum, maximum, button->interactable
+                            ? IM_COL32(235,240,255,230) : IM_COL32(130,135,145,180), 5.0F);
+                        const ImVec2 textSize=ImGui::CalcTextSize(button->text.c_str());
+                        const ImVec2 textPos{minimum.x + (maximum.x-minimum.x-textSize.x)/2.0F,
+                            minimum.y + (maximum.y-minimum.y-textSize.y)/2.0F};
+                        drawList->AddText(textPos, IM_COL32(255,255,255,255), button->text.c_str());
+                    }
+                    if (const auto* label = entity.GetComponent<UIText2D>();
+                        label != nullptr && label->enabled && label->IsConfigurationValid())
+                    {
+                        const ImVec2 textPos{canvasMin.x + uiLayout.origin.x + label->position.x * uiLayout.scale,
+                            canvasMin.y + uiLayout.origin.y + label->position.y * uiLayout.scale};
+                        const ImU32 color=IM_COL32(
+                            static_cast<int>(std::lround(label->red*255.0F)),
+                            static_cast<int>(std::lround(label->green*255.0F)),
+                            static_cast<int>(std::lround(label->blue*255.0F)),
+                            static_cast<int>(std::lround(label->alpha*255.0F)));
+                        drawList->AddText(ImGui::GetFont(), label->fontSize*uiLayout.scale,
+                            textPos, color, label->text.c_str());
+                    }
+                });
             }
         }
 
