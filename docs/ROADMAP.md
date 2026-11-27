@@ -59,7 +59,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Numeric physics configuration validation and disabled/static/kinematic body-mode tests
 - [x] Collision/contact begin/end event API (engine-owned EntityId results; Windows CI run 45939999840)
 - [x] Closest raycast and AABB overlap query API (engine-owned results, query filters and Scene EntityId mapping; Windows CI #121)
-- [ ] Expand query-filter and sensor-specific automated test coverage
+- [x] Query-filter category/mask and sensor inclusion tests (Windows CI #126)
 - [ ] Multiple colliders per entity
 - [ ] Joints
 - [ ] Animation
@@ -83,4 +83,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Expand Raycast/Overlap tests for custom category/mask combinations and sensor behavior before adding broader physics features.
+- Verify Physics debug overlay and Play Mode interaction manually on Windows; CI does not replace this check.
