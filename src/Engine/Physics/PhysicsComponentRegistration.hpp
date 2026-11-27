@@ -75,7 +75,7 @@ inline bool RegisterPhysicsComponents(ComponentRegistry& registry)
                     !item.contains("shape") || !item.at("shape").is_number_integer()) return false;
                 const auto id = item.at("id").get<ColliderId>();
                 const int shape = item.at("shape").get<int>();
-                if (id == 0 || (shape != 0 && shape != 1)) return false;
+                if (id == 0 || (shape != 0 && shape != 1) || !ReserveColliderId(id)) return false;
                 Collider2D c(static_cast<ColliderShape2D>(shape));
                 c.id = id;
                 if (!detail::ReadPhysicsVector2(item, "offset", c.offset) ||
