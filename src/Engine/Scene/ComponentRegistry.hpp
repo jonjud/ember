@@ -2,12 +2,14 @@
 
 #include "Engine/Scene/Component.hpp"
 
+#include <cstddef>
 #include <functional>
 #include <map>
 #include <memory>
 #include <string>
 #include <typeindex>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace ember
