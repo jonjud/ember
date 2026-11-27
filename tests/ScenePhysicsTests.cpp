@@ -29,7 +29,8 @@ int main()
     auto& ground = scene.CreateEntity("Ground");
     ground.GetTransform().position = {0.0F, 500.0F};
     auto& groundBody = ground.AddComponent<ember::PhysicsBody2D>();
-    groundBody.type = ember::PhysicsBodyType2D::Static;
+    // A moving platform should be kinematic; static bodies are intended to remain fixed.
+    groundBody.type = ember::PhysicsBodyType2D::Kinematic;
     auto& groundCollider = ground.AddComponent<ember::BoxCollider2D>();
     groundCollider.halfExtents = {500.0F, 50.0F};
     groundCollider.density = 0.0F;
