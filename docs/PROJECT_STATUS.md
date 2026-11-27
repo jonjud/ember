@@ -14,8 +14,8 @@
 | Last verified code CI | [Windows CI #230](https://github.com/jonjud/ember/actions/runs/46015090528) — **Success** (`663d9df`; guarded runtime click dispatch) |
 | Latest CI | [Windows CI #231](https://github.com/jonjud/ember/actions/runs/46015340975) — **Success** (latest develop HEAD) |
 | Latest documentation CI | [Windows CI #231](https://github.com/jonjud/ember/actions/runs/46015340975) — **Success** (roadmap/status refresh) |
-| Last completed milestone | Audio implementation — Windows CI #219 Success; final interactive Editor checklist remains outstanding |
-| Active milestone | UI System — Canvas/Panel/Text/Button authoring, serialization, Inspector, reference-resolution layout, viewport preview, pointer routing, runtime Component click dispatch and viewport-aware input capture are implemented. CI #225–#230 passed, including end-to-end callback coverage and guarded click dispatch. Final Windows Editor verification remains. |
+| Last completed milestone | UI System v1 + Audio Runtime + Physics Joints — Windows CI passed and combined Windows Editor verification user-confirmed passed |
+| Active milestone | Runtime Input Action Mapping integration — UI System v1, Audio Runtime, and Physics Joints are implemented; final Windows Editor verification is user-confirmed passed. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -32,7 +32,7 @@
 - [x] Add/remove registered Components through Editor UI
 - [x] Typed Inspector property descriptors and widgets: bool, int, float, string, Vector2, Enumeration, EntityReference
 
-### UI System — implementation complete; Windows Editor verification pending
+### UI System — complete (Windows Editor verified)
 - [x] Add serializable UICanvas2D and UIPanel2D components with validation and Clone support
 - [x] Register UI components and expose reference resolution, geometry, color and enabled properties in Inspector
 - [x] Add reference-resolution layout with aspect-preserving scale and letterboxing
@@ -42,7 +42,7 @@
 - [x] Render UI Text and Button previews in the Editor viewport
 - [x] Add runtime UI pointer routing, Canvas-aware hit testing, transient hover/press/click state and Editor viewport input-capture gating
 - [x] Dispatch UI Button click events to runtime Component callbacks; end-to-end automated coverage verifies pointer release, outside-release cancellation, non-Button entities and disabled/non-interactable Buttons
-- [ ] Complete Windows Editor UI verification
+- [x] Complete Windows Editor UI verification (user-confirmed passed)
 
 ### Physics — completed slices
 - [x] Pin Box2D v3.2.0 and isolate it behind private engine implementation
@@ -76,7 +76,7 @@
 - [x] Wake touching dynamic bodies when a transform-driven static/kinematic body moves so contact separation can be processed
 - [x] Add engine-owned PhysicsJointHandle and Revolute/Distance joint descriptors with create/destroy/count API; keep Box2D joint handles private
 - [x] Add joint validation and lifetime tests: invalid same-body/length/limits, explicit destruction, and automatic cleanup when a body is destroyed
-- [x] Physics Joints: serializable Revolute/Distance components, Entity references, Scene lifecycle, Inspector picker, serialization and edge-case tests (Windows CI #191; manual Editor test deferred)
+- [x] Physics Joints: serializable Revolute/Distance components, Entity references, Scene lifecycle, Inspector picker, serialization and edge-case tests (Windows CI #191; final Windows Editor verification user-confirmed passed)
 - [x] SpriteAnimation2D: frame playback, Scene component updates, serialization, Inspector controls, sprite-sheet viewport preview, source-region rendering API and multi-row frame tests (Windows CI #199 Success; user-confirmed all checks passed)
 - [x] Add serializable RevoluteJoint2D and DistanceJoint2D authoring components with EntityId references and cloned configuration
 - [x] Create Scene joints after all eligible bodies; validate self/missing/disabled/invalid references and convert pixel anchors/length to physics meters
@@ -98,11 +98,11 @@
 
 ## 4. Current limitations / next milestone
 
-**UI System implementation is complete.** UI Canvas/Panel/Text/Button authoring, serialization, Inspector properties, aspect-preserving layout, Editor viewport preview, viewport-aware pointer routing, pointer capture, click generation and guarded runtime Component callback dispatch are implemented. Windows CI #225–#231 passed, including end-to-end callback coverage and rejection of invalid click targets. Only the one-time interactive Windows Editor verification remains in [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md).
+**UI System v1 is complete and Windows Editor-verified.** UI Canvas/Panel/Text/Button authoring, serialization, Inspector properties, aspect-preserving layout, Editor viewport preview, viewport-aware pointer routing, pointer capture, click generation and guarded runtime Component callback dispatch are implemented. Windows CI #225–#231 passed, including end-to-end callback coverage and rejection of invalid click targets. The user confirmed the final Windows Editor verification passed.
 
 **Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user confirmed the Windows Editor checklist passed on 2026-11-27, including Editor launch/layout, Entity and Transform editing, duplicate/delete, PhysicsBody2D Inspector add/edit/remove, ColliderSet2D editing, Physics Debug Overlay, save/reopen persistence, and Play/Stop behavior.
 
-**Audio implementation is complete pending final interactive verification.** The miniaudio 0.11.26 runtime facade, Application/Editor audio lifecycle, device-less generated-WAV tests, serializable `AudioSource2D`, typed Inspector properties and safe Audio-asset picker, Scene asset-resolution/playback lifecycle, runtime Play/Stop controls, safe Scene move/Stop lifetime, and Editor Asset Browser preview are implemented. Windows CI #219 passed. Automated coverage includes unavailable/uninitialized devices, missing dependencies/assets, inactive/disabled sources, invalid volume, wrong asset types and hand-edited traversal metadata. Run the final Windows Editor checklist in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md) before closing the milestone. Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; manual Editor verification remains deferred.
+**Audio Runtime is complete and Windows Editor-verified.** The miniaudio 0.11.26 runtime facade, Application/Editor audio lifecycle, device-less generated-WAV tests, serializable `AudioSource2D`, typed Inspector properties and safe Audio-asset picker, Scene asset-resolution/playback lifecycle, runtime Play/Stop controls, safe Scene move/Stop lifetime, and Editor Asset Browser preview are implemented. Windows CI #219 passed. Automated coverage includes unavailable/uninitialized devices, missing dependencies/assets, inactive/disabled sources, invalid volume, wrong asset types and hand-edited traversal metadata. The final Windows Editor checklist in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md) was user-confirmed passed. Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191 and final Windows Editor verification was user-confirmed passed.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -138,7 +138,9 @@
 | 2026-11-27 | [UI status/roadmap refresh, CI #228](https://github.com/jonjud/ember/actions/runs/46014412490) | Success |
 | 2026-11-27 | [Guard UI click dispatch, `79c6ab9`, CI #229](https://github.com/jonjud/ember/actions/runs/46015014246) | Success |
 | 2026-11-27 | [Test non-Button click rejection, `663d9df`, CI #230](https://github.com/jonjud/ember/actions/runs/46015090528) | Success |
+| 2026-11-27 | [Docs refresh, `10ab998` and `4a80448`, CI #232/#233](https://github.com/jonjud/ember/actions/runs/46018916409) | Success |
+| 2026-11-27 | Combined Windows Editor verification: UI System v1, Audio Runtime, Physics Joints | User-confirmed PASS |
 
 ---
 
-**Handoff:** UI System implementation is complete on `develop` through code commit `663d9df`; CI #225–#230 passed, and docs refresh CI #231 passed. The only remaining UI gate is the Windows Editor checklist in [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md). Bundle it with the pending Audio checklist in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md) and deferred Physics Joints Editor checks into one final Windows test session. Work on `develop` only; do not merge to `main`.
+**Handoff:** UI System v1, Audio Runtime, and Physics Joints are complete; CI and combined Windows Editor verification are user-confirmed passed. Next milestone is Runtime Input Action Mapping integration. Continue on `develop`; do not merge to `main`.

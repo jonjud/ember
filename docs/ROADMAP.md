@@ -64,14 +64,14 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Closest raycast and AABB overlap query API (engine-owned results, query filters and Scene EntityId mapping; Windows CI #121)
 - [x] Query-filter category/mask and sensor inclusion tests (Windows CI #126)
 - [x] Multiple colliders per entity (model #135; serialization/migration #151; runtime/query #155; contact aggregation #164; Inspector #169; overlay #170; Windows interactive checklist user-confirmed passed)
-- [x] Physics Joints (PhysicsWorld API, serializable Revolute/Distance components, Entity-reference Inspector controls, Scene lifecycle integration, and automated tests passed Windows CI #191; final Windows manual checklist is intentionally deferred)
+- [x] Physics Joints (PhysicsWorld API, serializable Revolute/Distance components, Entity-reference Inspector controls, Scene lifecycle integration, automated tests passed Windows CI #191, and final Windows Editor verification user-confirmed passed)
 - [x] Animation (SpriteAnimation2D frame playback, Scene lifecycle, serialization, Inspector controls, sprite-sheet viewport preview, Renderer2D source-region API and multi-row frame tests; Windows CI #199 Success; user-confirmed all checks passed)
-- [x] Audio implementation (miniaudio runtime, AudioSource2D serialization/Inspector and safe Audio-asset picker, Scene asset resolution/playback, Play Mode runtime controls, safe Scene move/Stop lifetime, Editor Asset Browser preview, and edge-case tests; Windows CI #219 Success). Final Windows Editor verification remains: [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md)
+- [x] Audio implementation and Windows Editor verification (miniaudio runtime, AudioSource2D serialization/Inspector and safe Audio-asset picker, Scene asset resolution/playback, Play Mode runtime controls, safe Scene move/Stop lifetime, Editor Asset Browser preview, edge-case tests; Windows CI #219 Success; final Editor checklist user-confirmed passed)
 - [x] UI authoring: Canvas/Panel/Text/Button components, serialization, Inspector, reference-resolution layout and Editor viewport preview (Windows CI #223 Success)
 - [x] UI runtime pointer routing: Canvas-aware hit testing, topmost-button selection, pointer capture, hover/press/click state, click event generation and Editor viewport input-capture gating (viewport-aware routing CI #227 Success)
 - [x] Deliver UI Button click events to runtime Component callbacks with end-to-end automated coverage (Windows CI #225/#226 Success)
 - [x] Guard Scene click dispatch: require an active Entity with an enabled, interactable, valid UIButton2D before invoking callbacks (Windows CI #229/#230 Success)
-- [ ] Complete one Windows Editor UI verification session (checklist: [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md))
+- [x] Complete Windows Editor UI verification session (checklist: [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md); user-confirmed passed)
 - [ ] Runtime input action mapping integration
 - [ ] Scripting interface
 
@@ -90,4 +90,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Run one combined Windows Editor verification session using [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md), [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md), and the deferred Physics Joints checks. UI System v1 implementation is complete; keyboard/controller focus navigation can be a later enhancement. Keep miniaudio types private and editor-only code out of `ember_engine`.
+- UI System v1, Audio Runtime, and Physics Joints implementation plus Windows Editor verification are complete. Next focused milestone: Runtime Input Action Mapping integration. Keyboard/controller UI focus navigation can be a later enhancement. Keep miniaudio types private and editor-only code out of `ember_engine`.
