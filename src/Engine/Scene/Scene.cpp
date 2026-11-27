@@ -62,20 +62,29 @@ void Scene::BuildPhysicsWorld() noexcept
     for (const auto& [entityId, entity] : m_entities)
     {
         const auto* bodyConfig = entity->GetComponent<PhysicsBody2D>();
+        const auto* colliderSet = entity->GetComponent<ColliderSet2D>();
         const auto* box = entity->GetComponent<BoxCollider2D>();
         const auto* circle = entity->GetComponent<CircleCollider2D>();
+        const bool hasLegacyCollider = box != nullptr || circle != nullptr;
         if (bodyConfig == nullptr)
         {
-            if (box != nullptr || circle != nullptr)
+            if (hasLegacyCollider || colliderSet != nullptr)
                 m_physicsDiagnostics.push_back("Entity " + std::to_string(entityId) +
                     " has a collider but no PhysicsBody2D; physics was skipped.");
             continue;
         }
         if (!bodyConfig->enabled) continue;
-        if (box != nullptr && circle != nullptr)
+        if ((box != nullptr && circle != nullptr) ||
+            (colliderSet != nullptr && hasLegacyCollider))
         {
             m_physicsDiagnostics.push_back("Entity " + std::to_string(entityId) +
-                " has both BoxCollider2D and CircleCollider2D; only one collider is supported.");
+                " has conflicting legacy and ColliderSet2D collider components; physics was skipped.");
+            continue;
+        }
+        if (colliderSet != nullptr && !colliderSet->HasValidColliderIds())
+        {
+            m_physicsDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                " has invalid or duplicate ColliderSet2D IDs; physics was skipped.");
             continue;
         }
 
@@ -99,32 +108,78 @@ void Scene::BuildPhysicsWorld() noexcept
                 continue;
             }
 
-            bool colliderCreated = true;
-            if (box != nullptr)
+            const auto addCollider = [this, handle, pixelsToMeters](const Collider2D& entry)
             {
-                PhysicsBoxColliderDefinition2D collider;
-                collider.halfExtents = {box->halfExtents.x * pixelsToMeters,
-                    box->halfExtents.y * pixelsToMeters};
-                collider.offset = {box->offset.x * pixelsToMeters,
-                    box->offset.y * pixelsToMeters};
-                collider.rotation = box->rotation;
-                collider.density = box->density;
-                collider.friction = box->friction;
-                collider.restitution = box->restitution;
-                collider.isSensor = box->isSensor;
-                colliderCreated = m_physicsWorld->AddBoxCollider(handle, collider);
+                switch (entry.shape)
+                {
+                case ColliderShape2D::Box:
+                {
+                    PhysicsBoxColliderDefinition2D collider;
+                    collider.halfExtents = {entry.halfExtents.x * pixelsToMeters,
+                        entry.halfExtents.y * pixelsToMeters};
+                    collider.offset = {entry.offset.x * pixelsToMeters,
+                        entry.offset.y * pixelsToMeters};
+                    collider.rotation = entry.rotation;
+                    collider.density = entry.density;
+                    collider.friction = entry.friction;
+                    collider.restitution = entry.restitution;
+                    collider.isSensor = entry.isSensor;
+                    collider.categoryBits = entry.categoryBits;
+                    collider.maskBits = entry.maskBits;
+                    return m_physicsWorld->AddBoxCollider(handle, collider);
+                }
+                case ColliderShape2D::Circle:
+                {
+                    PhysicsCircleColliderDefinition2D collider;
+                    collider.radius = entry.radius * pixelsToMeters;
+                    collider.offset = {entry.offset.x * pixelsToMeters,
+                        entry.offset.y * pixelsToMeters};
+                    collider.density = entry.density;
+                    collider.friction = entry.friction;
+                    collider.restitution = entry.restitution;
+                    collider.isSensor = entry.isSensor;
+                    collider.categoryBits = entry.categoryBits;
+                    collider.maskBits = entry.maskBits;
+                    return m_physicsWorld->AddCircleCollider(handle, collider);
+                }
+                }
+                return false;
+            };
+
+            bool colliderCreated = true;
+            if (colliderSet != nullptr)
+            {
+                for (const Collider2D& entry : colliderSet->colliders)
+                {
+                    if (!addCollider(entry))
+                    {
+                        colliderCreated = false;
+                        break;
+                    }
+                }
+            }
+            else if (box != nullptr)
+            {
+                Collider2D entry(ColliderShape2D::Box, 1);
+                entry.halfExtents = box->halfExtents;
+                entry.offset = box->offset;
+                entry.rotation = box->rotation;
+                entry.density = box->density;
+                entry.friction = box->friction;
+                entry.restitution = box->restitution;
+                entry.isSensor = box->isSensor;
+                colliderCreated = addCollider(entry);
             }
             else if (circle != nullptr)
             {
-                PhysicsCircleColliderDefinition2D collider;
-                collider.radius = circle->radius * pixelsToMeters;
-                collider.offset = {circle->offset.x * pixelsToMeters,
-                    circle->offset.y * pixelsToMeters};
-                collider.density = circle->density;
-                collider.friction = circle->friction;
-                collider.restitution = circle->restitution;
-                collider.isSensor = circle->isSensor;
-                colliderCreated = m_physicsWorld->AddCircleCollider(handle, collider);
+                Collider2D entry(ColliderShape2D::Circle, 1);
+                entry.radius = circle->radius;
+                entry.offset = circle->offset;
+                entry.density = circle->density;
+                entry.friction = circle->friction;
+                entry.restitution = circle->restitution;
+                entry.isSensor = circle->isSensor;
+                colliderCreated = addCollider(entry);
             }
 
             if (!colliderCreated)
