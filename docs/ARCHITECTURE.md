@@ -77,5 +77,5 @@ The Editor runs Play Mode on an isolated Scene clone. The authoring Scene remain
 ## Known gaps
 - Physics runtime integration is covered by automated Scene tests, but interactive Editor/Play Mode behavior still requires manual verification on Windows.
 - Numeric body/collider configuration validation and disabled/static/kinematic transform-authority tests are implemented.
-- Scene exposes closest raycast and AABB overlap queries with engine-owned results and EntityId mapping. Query filter category/mask bits are supported; broader custom-filter and sensor-specific test coverage is the next focused validation task.
+- Scene exposes closest raycast and AABB overlap queries with engine-owned results and EntityId mapping. Query category/mask filters are forwarded to PhysicsWorld. Automated tests cover excluded masks/categories, allowed query categories, and sensor inclusion in raycast and AABB overlap results.
 - Runtime Play Mode input actions are not yet wired to persistent InputMap settings.
