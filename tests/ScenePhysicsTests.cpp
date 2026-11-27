@@ -42,12 +42,26 @@ int main()
     auto& ballCollider = ball.AddComponent<ember::CircleCollider2D>();
     ballCollider.radius = 35.0F;
 
+    auto& compound = scene.CreateEntity("Compound Collider");
+    compound.GetTransform().position = {1000.0F, 0.0F};
+    auto& compoundBody = compound.AddComponent<ember::PhysicsBody2D>();
+    compoundBody.type = ember::PhysicsBodyType2D::Static;
+    auto& compoundSet = compound.AddComponent<ember::ColliderSet2D>();
+    auto& compoundBox = compoundSet.AddBoxCollider();
+    compoundBox.offset = {-50.0F, 0.0F};
+    compoundBox.halfExtents = {20.0F, 20.0F};
+    compoundBox.categoryBits = 0x0001;
+    auto& compoundCircle = compoundSet.AddCircleCollider();
+    compoundCircle.offset = {50.0F, 0.0F};
+    compoundCircle.radius = 20.0F;
+    compoundCircle.categoryBits = 0x0002;
+
     Check(scene.GetPhysicsBodyCount() == 0,
         "Physics bodies are not created before Scene Start");
     scene.Start();
     Check(scene.IsStarted(), "Scene enters its running state");
-    Check(scene.GetPhysicsBodyCount() == 2,
-        "Scene creates runtime bodies from PhysicsBody2D components");
+    Check(scene.GetPhysicsBodyCount() == 3,
+        "Scene creates one runtime body for each enabled PhysicsBody2D entity, including compound colliders");
     Check(scene.GetPhysicsDiagnostics().empty(),
         "Valid body and collider configuration produces no diagnostics");
     const auto initialRayHit = scene.RaycastClosest({-100.0F, 0.0F}, {200.0F, 0.0F});
@@ -56,6 +70,25 @@ int main()
     const auto initialOverlaps = scene.OverlapAABB({-50.0F, -50.0F}, {50.0F, 50.0F});
     Check(initialOverlaps.size() == 1 && initialOverlaps.front() == ball.GetId(),
         "Scene OverlapAABB maps physics overlaps to EntityIds");
+
+    ember::PhysicsQueryFilter2D boxOnlyFilter;
+    boxOnlyFilter.maskBits = 0x0001;
+    const auto compoundBoxHit = scene.RaycastClosest(
+        {900.0F, 0.0F}, {100.0F, 0.0F}, boxOnlyFilter);
+    Check(compoundBoxHit.has_value() && compoundBoxHit->entity == compound.GetId(),
+        "Scene creates a Box shape from ColliderSet2D and applies its per-shape query filter");
+
+    ember::PhysicsQueryFilter2D circleOnlyFilter;
+    circleOnlyFilter.maskBits = 0x0002;
+    const auto compoundCircleHit = scene.RaycastClosest(
+        {1000.0F, 0.0F}, {100.0F, 0.0F}, circleOnlyFilter);
+    Check(compoundCircleHit.has_value() && compoundCircleHit->entity == compound.GetId(),
+        "Scene creates a Circle shape on the same body with an independent query filter");
+
+    const auto compoundOverlaps = scene.OverlapAABB(
+        {900.0F, -50.0F}, {1100.0F, 50.0F});
+    Check(compoundOverlaps.size() == 1 && compoundOverlaps.front() == compound.GetId(),
+        "Scene OverlapAABB deduplicates multiple ColliderSet2D shapes to one EntityId");
     Check(!scene.RaycastClosest({0.0F, 0.0F}, {}).has_value(),
         "Scene RaycastClosest safely rejects a zero-length ray");
     ember::PhysicsQueryFilter2D rejectAllFilter;
