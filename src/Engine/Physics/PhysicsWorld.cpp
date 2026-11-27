@@ -302,7 +302,7 @@ bool PhysicsWorld::Step(float timeStep, int subStepCount)
         const b2BodyId bodyB = b2Shape_GetBody(shapeB);
         if (!b2Body_IsValid(bodyA) || !b2Body_IsValid(bodyB)) return;
         const auto* metadataA = static_cast<const PhysicsBodyMetadata*>(b2Body_GetUserData(bodyA));
-        const auto* metadataB = static_cast<const Impl::BodyMetadata*>(b2Body_GetUserData(bodyB));
+        const auto* metadataB = static_cast<const PhysicsBodyMetadata*>(b2Body_GetUserData(bodyB));
         if (metadataA == nullptr || metadataB == nullptr) return;
         m_impl->contactEvents.push_back({type, metadataA->handle, metadataB->handle});
     };
