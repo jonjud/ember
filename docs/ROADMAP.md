@@ -32,7 +32,8 @@ EMBER is a 2D-first engine. Each milestone should produce a buildable, testable 
 - [x] Startup scene loading and Scene Manager workflow
 - [x] Versioned .emberscene serialization and migration/validation
 - [x] Scene dirty-state tracking with Save / Discard / Cancel prompts
-- [ ] Collision detection and Box2D integration
+- [x] Pin Box2D v3.2.0 as the private physics backend dependency
+- [ ] Collision detection and Box2D simulation integration
 
 ## Phase 3 — Editor
 

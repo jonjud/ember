@@ -12,13 +12,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`60e05ca`](https://github.com/jonjud/ember/commit/60e05ca08af44ec305988ff9dd88ccfee1d5589e) (component schema migration) |
-| Last verified CI | [Windows Build #92](https://github.com/jonjud/ember/actions/runs/45921944622) |
-| CI result | **Success** — Build และ CTest ผ่าน |
+| Last code commit | [`b1d7902`](https://github.com/jonjud/ember/commit/b1d79028c1f8184a5543d77ca339d8acd269e8d4) (Box2D dependency integration) |
+| Last verified CI | [Windows Build #92](https://github.com/jonjud/ember/actions/runs/45921944622) — code baseline ก่อนเพิ่ม Box2D |
+| Current CI | [Windows Build #95](https://github.com/jonjud/ember/actions/runs/45922737396) — In progress |
 | Last completed milestone | Versioned Component Schema Migration |
-| Current active milestone | Collision Detection & Physics — Stage 1: backend dependency and architecture |
+| Current active milestone | Collision Detection & Physics — Stage 2: PhysicsWorld wrapper and tests |
 | Physics backend | Box2D v3.2.0 pinned via FetchContent; integration wrapper not implemented yet |
-| Next planned milestone | Collision Detection and Physics Integration (Box2D evaluation/integration) |
+| Next planned milestone | Scene lifecycle integration and fixed timestep |
 
 > CI Success หมายถึงการ Compile และ Automated Tests ผ่านใน Windows workflow เท่านั้น ไม่ได้ยืนยันพฤติกรรม Editor/Runtime แบบ interactive บนเครื่องจริง
 
@@ -48,16 +48,18 @@
 | Phase | หัวข้อ | สถานะ |
 |---|---|---|
 | 1 | Engine Foundation | Core เสร็จ; ยังมี runtime verification และ logging |
-| 2 | 2D Core and Project Assets | Core เสร็จ; Collision/Physics ยังไม่เริ่ม |
+| 2 | 2D Core and Project Assets | Core เสร็จ; Box2D backend pinned; simulation ยังไม่เริ่ม |
 | 3 | Editor | ฟังก์ชันหลักมีแล้ว; Undo/Redo, Multi-selection และ interactive verification ยังเหลือ |
-| 4 | Game Systems | Component system เสร็จ; Physics, Animation, Audio, UI, Runtime InputMap และ Scripting ยังเหลือ |
+| 4 | Game Systems | Component system เสร็จ; Physics integration, Animation, Audio, UI, Runtime InputMap และ Scripting ยังเหลือ |
 | 5 | Packaging and Quality | CI tests มีแล้ว; Export, Templates, Profiler และ User Docs ยังเหลือ |
 
 ## 4. งานถัดไปที่ตกลงไว้
 
 ### Active milestone: Collision Detection and Physics Integration
 
-**Stage 1 — backend and architecture:** เลือก Box2D v3.2.0, เพิ่ม dependency แบบ pin version และกำหนดขอบเขต interface แล้ว; ยังไม่ถือว่ามี physics simulation ใช้งานได้จนกว่าจะมี wrapper และ tests
+**Stage 1 — backend and architecture: complete.** Pin Box2D v3.2.0 และกำหนดขอบเขต interface แล้ว
+
+**Stage 2 — PhysicsWorld wrapper and tests: active.** สร้าง RAII wrapper และ engine-owned body/shape API พร้อม automated tests; ยังไม่ถือว่ามี Scene/Editor integration จนกว่าจะทำขั้นถัดไป
 
 **เป้าหมาย:** วางระบบ Collision/Physics ให้ใช้งานร่วมกับ Entity/Component/Scene และ Play Mode ได้ โดยไม่ผูก physics dependency เข้ากับ Editor UI
 
@@ -70,7 +72,7 @@
 6. [ ] เพิ่ม automated tests สำหรับ collision, body lifecycle และ scene round-trip
 7. [ ] เชื่อม debug visualization ใน Editor เมื่อ core ทำงานเสถียรแล้ว
 
-**ยังไม่เริ่ม milestone นี้** จนกว่าจะมี commit แรกที่ลงมือทำจริง และจะไม่ติ๊กว่างานเสร็จจากการวางแผนเพียงอย่างเดียว
+**ขอบเขตปัจจุบัน:** backend และ design ลง repository แล้ว แต่ยังไม่มี simulation wrapper หรือ collision tests จึงยังไม่ถือว่า Physics integration เสร็จ
 
 ## 5. กติกาการพัฒนาและการอัปเดตเอกสาร
 
@@ -92,7 +94,7 @@
 | วันที่ | Commit | รายละเอียด | CI |
 |---|---|---|---|
 | 2026-11-27 | [`60e05ca`](https://github.com/jonjud/ember/commit/60e05ca08af44ec305988ff9dd88ccfee1d5589e) | Versioned component schema migrations; legacy v1 compatibility; migration tests | [Build #92 — Success](https://github.com/jonjud/ember/actions/runs/45921944622) |
-| 2026-11-27 | pending | Pin Box2D v3.2.0 and document Physics integration boundary | CI pending |
+| 2026-11-27 | [`b1d7902`](https://github.com/jonjud/ember/commit/b1d79028c1f8184a5543d77ca339d8acd269e8d4) | Pin Box2D v3.2.0, enable C language, document Physics boundary | [Build #95 — In progress](https://github.com/jonjud/ember/actions/runs/45922737396) |
 
 ---
 

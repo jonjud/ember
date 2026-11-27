@@ -3,7 +3,8 @@
 ## Status
 
 - Backend selected: Box2D **v3.2.0**, pinned by CMake FetchContent.
-- Current stage: dependency and architecture boundary.
+- Completed stage: dependency and architecture boundary.
+- Current stage: PhysicsWorld wrapper and automated tests.
 - Not implemented yet: PhysicsWorld wrapper, bodies, colliders, Scene synchronization, serialization, Inspector controls, and debug drawing.
 - This document records design decisions before simulation code is added.
 
@@ -58,8 +59,8 @@ Upstream: https://github.com/erincatto/box2d/releases/tag/v3.2.0
 
 ## Milestone order
 
-1. Pin Box2D and establish this boundary. (Current stage)
-2. Implement RAII PhysicsWorld and engine-owned body/shape descriptors.
+1. Pin Box2D and establish this boundary. (Complete)
+2. Implement RAII PhysicsWorld and engine-owned body/shape descriptors. (Current stage)
 3. Add tests for world creation, body lifecycle, gravity, and box/circle collision.
 4. Integrate Scene Start/Update/Stop and fixed timestep.
 5. Add serializable PhysicsBody2D and collider configuration components plus Inspector descriptors.
