@@ -1746,8 +1746,10 @@ void EditorApplication::DrawViewport()
                     {
                         const int frameColumn = animation->GetCurrentFrame() % animation->columns;
                         const int frameRow = animation->GetCurrentFrame() / animation->columns;
-                        const float sourceX = static_cast<float>(frameColumn * animation->frameWidth);
-                        const float sourceY = static_cast<float>(frameRow * animation->frameHeight);
+                        const float sourceX = static_cast<float>(frameColumn) *
+                            static_cast<float>(animation->frameWidth);
+                        const float sourceY = static_cast<float>(frameRow) *
+                            static_cast<float>(animation->frameHeight);
                         if (sourceX + animation->frameWidth <= textureWidth &&
                             sourceY + animation->frameHeight <= textureHeight)
                         {

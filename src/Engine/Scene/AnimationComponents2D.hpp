@@ -34,8 +34,8 @@ public:
     [[nodiscard]] Vector2 GetSourcePosition() const noexcept
     {
         if (columns <= 0 || frameWidth <= 0 || frameHeight <= 0) return {};
-        return {static_cast<float>((m_currentFrame % columns) * frameWidth),
-            static_cast<float>((m_currentFrame / columns) * frameHeight)};
+        return {static_cast<float>(m_currentFrame % columns) * static_cast<float>(frameWidth),
+            static_cast<float>(m_currentFrame / columns) * static_cast<float>(frameHeight)};
     }
     [[nodiscard]] Vector2 GetSourceSize() const noexcept
     {
