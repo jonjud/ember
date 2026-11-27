@@ -10,12 +10,12 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | `600f407` — UI input respects Editor viewport capture and blocked overlays |
-| Last verified CI | [Windows CI #225](https://github.com/jonjud/ember/actions/runs/46011291135) — **Success** (UI Button click dispatch and full Windows engine tests) |
-| Latest CI | [Windows CI #227](https://github.com/jonjud/ember/actions/runs/46014213385) — **In progress** (`600f407`; Editor viewport input capture) |
-| Latest documentation CI | Documentation-only updates do not require a separate CI run; latest verified code CI #225 is **Success** |
+| Last code commit | `663d9df` — Scene validates UI Button state before dispatching callbacks |
+| Last verified CI | [Windows CI #227](https://github.com/jonjud/ember/actions/runs/46014213385) — **Success** (viewport-aware UI input and full Windows engine tests) |
+| Latest CI | [Windows CI #230](https://github.com/jonjud/ember/actions/runs/46015090528) — **In progress** (`663d9df`; guarded runtime click dispatch) |
+| Latest documentation CI | [Windows CI #228](https://github.com/jonjud/ember/actions/runs/46014412490) — **Success** (docs/status update) |
 | Last completed milestone | Audio implementation — Windows CI #219 Success; final interactive Editor checklist remains outstanding |
-| Active milestone | UI System — Canvas/Panel/Text/Button authoring, serialization, Inspector, reference-resolution layout, viewport preview, pointer routing, runtime Component click dispatch and viewport-aware input capture are implemented. CI #226/#227 are running; final Windows Editor verification remains. |
+| Active milestone | UI System — Canvas/Panel/Text/Button authoring, serialization, Inspector, reference-resolution layout, viewport preview, pointer routing, runtime Component click dispatch and viewport-aware input capture are implemented. CI #226–#228 passed; click-dispatch hardening is in CI #229/#230. Final Windows Editor verification remains. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -41,7 +41,7 @@
 - [x] Add serializable UI Text and Button components with validation, cloning and Inspector properties
 - [x] Render UI Text and Button previews in the Editor viewport
 - [x] Add runtime UI pointer routing, Canvas-aware hit testing, transient hover/press/click state and Editor viewport input-capture gating
-- [x] Dispatch UI Button click events to runtime Component callbacks; end-to-end automated coverage verifies pointer release, outside-release cancellation and disabled-button behavior
+- [x] Dispatch UI Button click events to runtime Component callbacks; end-to-end automated coverage verifies pointer release, outside-release cancellation, non-Button entities and disabled/non-interactable Buttons
 - [ ] Complete Windows Editor UI verification
 
 ### Physics — completed slices
@@ -98,7 +98,7 @@
 
 ## 4. Current limitations / next milestone
 
-**UI System is active.** UI Canvas/Panel/Text/Button authoring, serialization, Inspector properties, aspect-preserving layout, Editor viewport preview, Canvas-aware pointer routing and runtime Component click dispatch are implemented. Commit `9e2c969` passed Windows CI #225; follow-up end-to-end tests and viewport input-capture hardening are committed in `0320a08` and `600f407` with CI #226/#227 running. Final interactive Windows Editor verification remains in [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md).
+**UI System is active.** UI Canvas/Panel/Text/Button authoring, serialization, Inspector properties, aspect-preserving layout, Editor viewport preview, Canvas-aware pointer routing and runtime Component click dispatch are implemented. Windows CI #226–#228 passed; click-dispatch hardening is committed in `79c6ab9` and `663d9df` with CI #229/#230 running. Final interactive Windows Editor verification remains in [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md).
 
 **Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user confirmed the Windows Editor checklist passed on 2026-11-27, including Editor launch/layout, Entity and Transform editing, duplicate/delete, PhysicsBody2D Inspector add/edit/remove, ColliderSet2D editing, Physics Debug Overlay, save/reopen persistence, and Play/Stop behavior.
 
@@ -132,8 +132,8 @@
 | 2026-11-27 | [Physics Joint API and lifetime tests, `d8a7061`](https://github.com/jonjud/ember/commit/d8a7061143ea6c1246dd5573713ae1ae1f7db9f5) | Committed; CI status not yet confirmed |
 | 2026-11-27 | Windows Editor manual verification | User-confirmed PASS: Editor launch/layout, Entity/Transform, duplicate/delete, PhysicsBody2D Inspector, ColliderSet2D, Debug Overlay, persistence, Play/Stop |
 | 2026-11-27 | [Audio runtime controls and edge-case tests, `a5b23a3`, CI #219](https://github.com/jonjud/ember/actions/runs/46003199338) | Success; final Editor verification checklist prepared |
-| 2026-11-27 | [UI Button click dispatch, `9e2c969`, CI #225](https://github.com/jonjud/ember/actions/runs/46011291135) | Success; runtime Component callback dispatch and initial Editor verification checklist prepared |\n| 2026-11-27 | [UI callback integration tests, `0320a08`, CI #226](https://github.com/jonjud/ember/actions/runs/46013967857) | In progress |\n| 2026-11-27 | [Viewport-aware UI input, `600f407`, CI #227](https://github.com/jonjud/ember/actions/runs/46014213385) | In progress |
+| 2026-11-27 | [UI Button click dispatch, `9e2c969`, CI #225](https://github.com/jonjud/ember/actions/runs/46011291135) | Success; runtime Component callback dispatch and initial Editor verification checklist prepared |\n| 2026-11-27 | [UI callback integration tests, `0320a08`, CI #226](https://github.com/jonjud/ember/actions/runs/46013967857) | Success |\n| 2026-11-27 | [Viewport-aware UI input, `600f407`, CI #227](https://github.com/jonjud/ember/actions/runs/46014213385) | Success |\n| 2026-11-27 | [UI status/roadmap refresh, CI #228](https://github.com/jonjud/ember/actions/runs/46014412490) | Success |\n| 2026-11-27 | [Guard UI click dispatch, `79c6ab9`, CI #229](https://github.com/jonjud/ember/actions/runs/46015014246) | In progress |\n| 2026-11-27 | [Test non-Button click rejection, `663d9df`, CI #230](https://github.com/jonjud/ember/actions/runs/46015090528) | In progress |
 
 ---
 
-**Handoff:** UI System implementation is on `develop` through `600f407`. Windows CI #225 passed; end-to-end callback tests and viewport-aware input capture are being verified in CI #226/#227. Automated coverage exercises the full UI pointer-to-Component click callback path. The remaining UI gate is the one-time Windows Editor checklist in [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md). Audio runtime implementation is on `develop` with Windows CI #219 green; its final interactive checklist remains in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md). Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Work on `develop` only; do not merge to `main`.
+**Handoff:** UI System implementation is on `develop` through `663d9df`. Windows CI #226–#228 passed; runtime click dispatch now validates that the target is an enabled, interactable, valid UIButton2D before invoking callbacks. CI #229/#230 are verifying this hardening. The remaining UI gate is the one-time Windows Editor checklist in [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md). Audio runtime implementation is on `develop` with Windows CI #219 green; its final interactive checklist remains in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md). Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Work on `develop` only; do not merge to `main`.
