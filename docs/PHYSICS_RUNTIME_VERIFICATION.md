@@ -13,28 +13,43 @@ This checklist verifies the Windows Editor workflow and the physics Inspector/ru
 3. Launch the Editor and open or create a test scene.
 4. Keep a copy of the scene before testing Play Mode.
 
+## A. Editor Smoke Test and Component Inspector
+
+| ID | Action | Expected result |
+|---|---|---|
+| E1 | Launch the Windows Editor | Editor window opens without crash |
+| E2 | Inspect the initial layout | Scene Hierarchy, Inspector, and Viewport are visible |
+| E3 | Create and select an Entity | Entity appears in Hierarchy and its data appears in Inspector |
+| E4 | Edit Transform Position X/Y | Inspector values update and Entity moves in the Viewport |
+| E5 | Duplicate then delete an Entity | Hierarchy and selection update correctly; no crash |
+| E6 | Add `PhysicsBody2D` | Body Type, Gravity Scale, Linear Damping, Angular Damping, and Enabled are visible |
+| E7 | Change Body Type among Static, Kinematic, and Dynamic | Values can be changed and retained in Inspector |
+| E8 | Remove and re-add `PhysicsBody2D` | Component removal/addition succeeds without crash |
+| E9 | Add `ColliderSet2D`, then add Box and Circle entries | Multiple collider entries appear in Inspector |
+| E10 | Edit, duplicate, and remove collider entries | Values and list update correctly; duplicate has a distinct stable ID |
+
 ## B. Physics Debug Overlay
 
 Create separate entities with `PhysicsBody2D` + `ColliderSet2D`. Include one set containing at least two Boxes and one Circle, with a mix of solid and sensor entries. Also keep a legacy single-collider scene/entity available to verify fallback compatibility.
 
 | ID | Action | Expected result |
 |---|---|---|
-| C1 | Turn on the `Physics` checkbox in the Viewport toolbar | Collider outlines appear; render geometry remains visible |
-| C2 | Inspect solid box and circle | Outlines are orange |
-| C3 | Inspect sensor box and circle | Outlines are cyan |
-| C4 | Change box half-extents and circle radius | Outline dimensions update immediately |
-| C5 | Change collider offset | Outline moves relative to the entity origin |
-| C6 | Rotate the entity; then change the box's local rotation | Box outline follows combined entity + collider rotation |
-| C7 | Change circle offset and rotate its entity | Circle center follows the rotated local offset; radius remains circular |
-| C8 | Turn off the `Physics` checkbox | All physics outlines disappear without hiding normal entity rendering |
-| C9 | Disable a PhysicsBody2D component | Its collider outline is not drawn |
-| C10 | Create a set containing multiple Boxes and Circles | Every configured shape is drawn; no shape is omitted or duplicated |
-| C11 | Set one entry as Sensor and leave another solid | Sensor outline is cyan; solid outline is orange |
-| C12 | Edit one entry's offset, half-extents/radius, and Box rotation | Only the selected shape's outline updates and matches its Inspector values |
-| C13 | Add Box and Circle entries, duplicate an entry, then remove one | List and overlay update immediately; duplicate receives a new stable ID |
-| C14 | Save, close/reopen, and inspect the scene | Collider order, IDs, geometry, materials, sensor and filter settings persist |
-| C15 | Load a legacy scene with one BoxCollider2D or CircleCollider2D | It migrates to a one-entry ColliderSet2D and remains visible |
-| C16 | Use an entity with a ColliderSet2D and legacy collider data together | Conflicting data is rejected/reported according to migration rules; no silent duplicate rendering |
+| B1 | Turn on the `Physics` checkbox in the Viewport toolbar | Collider outlines appear; render geometry remains visible |
+| B2 | Inspect solid box and circle | Outlines are orange |
+| B3 | Inspect sensor box and circle | Outlines are cyan |
+| B4 | Change box half-extents and circle radius | Outline dimensions update immediately |
+| B5 | Change collider offset | Outline moves relative to the entity origin |
+| B6 | Rotate the entity; then change the box's local rotation | Box outline follows combined entity + collider rotation |
+| B7 | Change circle offset and rotate its entity | Circle center follows the rotated local offset; radius remains circular |
+| B8 | Turn off the `Physics` checkbox | All physics outlines disappear without hiding normal entity rendering |
+| B9 | Disable a PhysicsBody2D component | Its collider outline is not drawn |
+| B10 | Create a set containing multiple Boxes and Circles | Every configured shape is drawn; no shape is omitted or duplicated |
+| B11 | Set one entry as Sensor and leave another solid | Sensor outline is cyan; solid outline is orange |
+| B12 | Edit one entry's offset, half-extents/radius, and Box rotation | Only the selected shape's outline updates and matches its Inspector values |
+| B13 | Add Box and Circle entries, duplicate an entry, then remove one | List and overlay update immediately; duplicate receives a new stable ID |
+| B14 | Save, close/reopen, and inspect the scene | Collider order, IDs, geometry, materials, sensor and filter settings persist |
+| B15 | Load a legacy scene with one BoxCollider2D or CircleCollider2D | It migrates to a one-entry ColliderSet2D and remains visible |
+| B16 | Use an entity with a ColliderSet2D and legacy collider data together | Conflicting data is rejected/reported according to migration rules; no silent duplicate rendering |
 
 ## C. Play Mode and Scene Isolation
 
