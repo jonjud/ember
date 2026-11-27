@@ -47,6 +47,17 @@ int main()
     scene.Update(0.1F);
     Check(animation.GetCurrentFrame() == 0, "Looping animation wraps to the first frame");
 
+    animation.frameCount = 6;
+    animation.Stop();
+    animation.Play();
+    scene.Update(0.25F);
+    scene.Update(0.25F);
+    Check(animation.GetCurrentFrame() == 4 &&
+        animation.GetSourcePosition().x == 0.0F &&
+        animation.GetSourcePosition().y == 24.0F,
+        "Sprite-sheet frame coordinates advance to the next row after the final column");
+
+    animation.frameCount = 4;
     animation.loop = false;
     animation.Stop();
     animation.Play();
