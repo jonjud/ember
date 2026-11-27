@@ -12,7 +12,7 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Current HEAD | [`60e05ca`](https://github.com/jonjud/ember/commit/60e05ca08af44ec305988ff9dd88ccfee1d5589e) |
+| Last code commit | [`60e05ca`](https://github.com/jonjud/ember/commit/60e05ca08af44ec305988ff9dd88ccfee1d5589e) (component schema migration) |
 | Last verified CI | [Windows Build #92](https://github.com/jonjud/ember/actions/runs/45921944622) |
 | CI result | **Success** — Build และ CTest ผ่าน |
 | Last completed milestone | Versioned Component Schema Migration |
