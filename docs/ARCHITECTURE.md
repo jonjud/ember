@@ -51,7 +51,7 @@ tests/
 - **Renderer / Camera2D:** world/screen conversion with camera position, zoom, and rotation.
 - **Renderer / Renderer2D:** SDL-backed primitive/sprite rendering and renderer-owned texture lifetime.
 - **Scene / Component:** polymorphic runtime behavior with Clone, OnCreate, OnUpdate, and OnDestroy hooks. Components are owned by entities and cloned independently. Structural changes are locked while a Scene is running.
-- **Scene / ComponentRegistry:** explicit stable-ID and display-name registration, factories, JSON serialize/deserialize callbacks, and typed property descriptors (bool, int, float, string). Property callbacks are UI-framework agnostic; the Editor renders them with ImGui.
+- **Scene / ComponentRegistry:** explicit stable-ID and display-name registration, factories, versioned JSON serialize/deserialize callbacks, sequential per-component schema migrations, and typed property descriptors (bool, int, float, string). Legacy component payloads without a version are interpreted as version 1; future versions and missing migration steps fail safely. Property callbacks are UI-framework agnostic; the Editor renders them with ImGui.
 - **Scene / Entity:** stable 64-bit ID, name, active state, Transform2D, RenderComponent2D, MovementComponent2D, and typed runtime components.
 - **Scene / Scene:** owns entities; supports create, duplicate, destroy, lookup, iteration, independent cloning, and explicit Start / Update / Stop lifecycle dispatch.
 - **Scene / SceneSerializer:** versioned JSON persistence of entity IDs and scene data. Renderer-owned texture handles are not serialized; stable asset IDs are.
@@ -90,6 +90,6 @@ The current Play Mode movement proof of concept moves the selected active entity
 ## Known gaps
 
 - Interactive runtime behavior has not yet been independently verified on Windows.
-- The Inspector can add/remove registered generic components and renders registered property descriptors without component-specific UI code. Generic component data is serialized through registered callbacks; physics/collision, animation, audio, UI system, and scripting interface are not implemented yet.
+- The Inspector can add/remove registered generic components and renders registered property descriptors without component-specific UI code. Generic component data is serialized through registered callbacks and per-component schema versions; physics/collision, animation, audio, UI system, and scripting interface are not implemented yet.
 - Runtime Play Mode movement is still a focused proof of concept; editor input-binding persistence is not yet wired into runtime action polling.
 - The Windows workflow currently compiles the project and runs CTest; it does not validate visual editor behavior.

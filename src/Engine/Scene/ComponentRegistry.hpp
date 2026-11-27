@@ -4,6 +4,7 @@
 #include <nlohmann/json.hpp>
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <map>
@@ -21,6 +22,7 @@ struct ComponentTypeInfo
     std::string id;
     std::string displayName;
     std::type_index cppType{typeid(void)};
+    std::uint32_t schemaVersion = 1;
 };
 
 enum class ComponentPropertyType
@@ -49,16 +51,18 @@ public:
     using Json = nlohmann::json;
     using SerializeFunction = std::function<Json(const Component&)>;
     using DeserializeFunction = std::function<bool(Component&, const Json&)>;
+    using MigrationFunction = std::function<bool(Json&)>;
 
     template <typename T>
-    bool Register(std::string id, std::string displayName, SerializeFunction serialize = {}, DeserializeFunction deserialize = {})
+    bool Register(std::string id, std::string displayName, SerializeFunction serialize = {},
+        DeserializeFunction deserialize = {}, std::uint32_t schemaVersion = 1)
     {
         static_assert(std::is_base_of_v<Component, T>,
             "Registered types must derive from ember::Component");
         static_assert(std::is_default_constructible_v<T>,
             "Registered components must be default constructible");
 
-        if (id.empty() || displayName.empty())
+        if (id.empty() || displayName.empty() || schemaVersion == 0)
             return false;
 
         const std::type_index type{typeid(T)};
@@ -66,7 +70,7 @@ public:
             return false;
 
         Entry entry;
-        entry.info = ComponentTypeInfo{std::move(id), std::move(displayName), type};
+        entry.info = ComponentTypeInfo{std::move(id), std::move(displayName), type, schemaVersion};
         entry.factory = [] { return std::make_unique<T>(); };
         entry.serialize = std::move(serialize);
         entry.deserialize = std::move(deserialize);
@@ -74,6 +78,16 @@ public:
         m_idsByType.emplace(type, registeredId);
         m_types.emplace(registeredId, std::move(entry));
         return true;
+    }
+
+    bool RegisterMigration(const std::string& componentId, std::uint32_t fromVersion,
+        MigrationFunction migration)
+    {
+        const auto entryIt = m_types.find(componentId);
+        if (entryIt == m_types.end() || fromVersion == 0 ||
+            fromVersion >= entryIt->second.info.schemaVersion || !migration)
+            return false;
+        return entryIt->second.migrations.emplace(fromVersion, std::move(migration)).second;
     }
 
     template <typename T, typename Value>
@@ -215,10 +229,39 @@ public:
     [[nodiscard]] std::unique_ptr<Component> Create(const std::string& id, const Json& data) const
     {
         const auto it = m_types.find(id);
-        if (it == m_types.end() || !it->second.deserialize) return nullptr;
-        auto component = it->second.factory();
-        if (!component || !it->second.deserialize(*component, data)) return nullptr;
-        return component;
+        if (it == m_types.end()) return nullptr;
+        return Create(id, it->second.info.schemaVersion, data);
+    }
+
+    [[nodiscard]] std::unique_ptr<Component> Create(
+        const std::string& id, std::uint32_t savedVersion, const Json& savedData) const
+    {
+        const auto it = m_types.find(id);
+        if (it == m_types.end() || !it->second.deserialize ||
+            savedVersion == 0 || savedVersion > it->second.info.schemaVersion)
+            return nullptr;
+
+        Json migratedData = savedData;
+        try
+        {
+            for (std::uint32_t version = savedVersion;
+                 version < it->second.info.schemaVersion; ++version)
+            {
+                const auto migration = it->second.migrations.find(version);
+                if (migration == it->second.migrations.end() ||
+                    !migration->second(migratedData))
+                    return nullptr;
+            }
+
+            auto component = it->second.factory();
+            if (!component || !it->second.deserialize(*component, migratedData))
+                return nullptr;
+            return component;
+        }
+        catch (...)
+        {
+            return nullptr;
+        }
     }
 
     [[nodiscard]] std::size_t Size() const { return m_types.size(); }
@@ -231,6 +274,7 @@ private:
         std::function<std::unique_ptr<Component>()> factory;
         SerializeFunction serialize;
         DeserializeFunction deserialize;
+        std::map<std::uint32_t, MigrationFunction> migrations;
         std::vector<ComponentPropertyInfo> properties;
     };
 

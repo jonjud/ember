@@ -43,15 +43,23 @@ int main()
     ember::ComponentRegistry registry;
     registry.Register<SerializableTestComponent>("test.serializable", "Serializable Test",
         [](const ember::Component& component) -> nlohmann::json {
-            return nlohmann::json{{"value", static_cast<const SerializableTestComponent&>(component).value}};
+            return nlohmann::json{{"amount", static_cast<const SerializableTestComponent&>(component).value}};
         },
         [](ember::Component& component, const nlohmann::json& data) {
-            if (!data.is_object() || !data.contains("value") || !data.at("value").is_number_integer()) return false;
-            const int value = data.at("value").get<int>();
+            if (!data.is_object() || !data.contains("amount") || !data.at("amount").is_number_integer()) return false;
+            const int value = data.at("amount").get<int>();
             if (value < 0 || value > 1000) return false;
             static_cast<SerializableTestComponent&>(component).value = value;
             return true;
-        });
+        }, 2);
+    Check(registry.RegisterMigration("test.serializable", 1,
+        [](nlohmann::json& data) {
+            if (!data.is_object() || !data.contains("value") ||
+                !data.at("value").is_number_integer()) return false;
+            data["amount"] = data["value"];
+            data.erase("value");
+            return true;
+        }), "Legacy generic component migration is registered");
 
     ember::Scene source("Forest Level");
     auto& player = source.CreateEntity("Player");
@@ -80,6 +88,14 @@ int main()
     std::string error;
     Check(ember::SceneSerializer::Save(source, scenePath, &error, &registry),
           "Scene is saved to a versioned JSON file");
+    nlohmann::json savedDocument;
+    {
+        std::ifstream savedInput(scenePath);
+        savedDocument = nlohmann::json::parse(savedInput);
+    }
+    Check(savedDocument.at("entities").at(0).at("components").at(0)
+              .at("version").get<std::uint32_t>() == 2,
+          "Saved component payload includes its schema version");
 
     ember::Scene loaded("Old Scene");
     loaded.CreateEntity("Will Be Replaced");
@@ -116,6 +132,38 @@ int main()
         Check(!loadedVisual.texture,
               "Runtime texture handles are not restored from serialized data");
     }
+
+    const auto legacyPath = root / "legacy_component.emberscene";
+    auto legacyDocument = savedDocument;
+    auto& legacyPayload = legacyDocument["entities"][0]["components"][0];
+    legacyPayload.erase("version"); // Files from the previous format had no component version.
+    legacyPayload["data"]["value"] = legacyPayload["data"]["amount"];
+    legacyPayload["data"].erase("amount");
+    {
+        std::ofstream legacyOutput(legacyPath);
+        legacyOutput << legacyDocument.dump(4);
+    }
+    ember::Scene legacyLoaded("Legacy Scene");
+    Check(ember::SceneSerializer::Load(legacyLoaded, legacyPath, &error, &registry),
+          "Versionless legacy component payloads load through the v1 migration");
+    const auto* legacyPlayer = legacyLoaded.FindEntity(player.GetId());
+    const auto* legacyComponent = legacyPlayer
+        ? legacyPlayer->GetComponent<SerializableTestComponent>() : nullptr;
+    Check(legacyComponent != nullptr && legacyComponent->value == 73,
+          "Legacy component values survive schema migration");
+
+    const auto futureComponentPath = root / "future_component.emberscene";
+    auto futureDocument = savedDocument;
+    futureDocument["entities"][0]["components"][0]["version"] = 999;
+    {
+        std::ofstream futureOutput(futureComponentPath);
+        futureOutput << futureDocument.dump(4);
+    }
+    const auto sceneBeforeFutureLoad = loaded.GetName();
+    Check(!ember::SceneSerializer::Load(loaded, futureComponentPath, &error, &registry),
+          "Future component schema versions are rejected by scene loading");
+    Check(loaded.GetName() == sceneBeforeFutureLoad,
+          "Failed future-component load leaves the destination scene unchanged");
 
     const auto nextEntityId = loaded.CreateEntity("Next").GetId();
     Check(nextEntityId > second.GetId(), "New entity IDs continue after deserialization");

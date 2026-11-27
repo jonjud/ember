@@ -135,7 +135,11 @@ Json ToJson(const Entity& entity, const ComponentRegistry* componentRegistry)
         Json data;
         if (info == nullptr || !componentRegistry->Serialize(*component, data))
             throw std::runtime_error("Scene contains an unregistered or non-serializable component.");
-        components.push_back({{"type", info->id}, {"data", std::move(data)}});
+        components.push_back({
+            {"type", info->id},
+            {"version", info->schemaVersion},
+            {"data", std::move(data)}
+        });
     }
     result["components"] = std::move(components);
     return result;
@@ -295,8 +299,32 @@ bool SceneSerializer::Load(
                         !componentValue.contains("data") || !componentValue.at("type").is_string() ||
                         componentRegistry == nullptr)
                         return Fail(error, "Scene contains a component that cannot be resolved.");
+
+                    // Files written before component versions existed are version 1.
+                    std::uint32_t componentVersion = 1;
+                    if (componentValue.contains("version"))
+                    {
+                        const Json& versionValue = componentValue.at("version");
+                        if (!versionValue.is_number_unsigned() && !versionValue.is_number_integer())
+                            return Fail(error, "Scene contains an invalid component schema version.");
+                        try
+                        {
+                            const auto version = versionValue.get<std::int64_t>();
+                            if (version <= 0 ||
+                                static_cast<std::uint64_t>(version) >
+                                    std::numeric_limits<std::uint32_t>::max())
+                                return Fail(error, "Scene contains an invalid component schema version.");
+                            componentVersion = static_cast<std::uint32_t>(version);
+                        }
+                        catch (...)
+                        {
+                            return Fail(error, "Scene contains an invalid component schema version.");
+                        }
+                    }
+
                     auto component = componentRegistry->Create(
-                        componentValue.at("type").get<std::string>(), componentValue.at("data"));
+                        componentValue.at("type").get<std::string>(),
+                        componentVersion, componentValue.at("data"));
                     if (!component)
                         return Fail(error, "Scene contains an unknown or invalid component type.");
                     entity->AddComponent(std::move(component));

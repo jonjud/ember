@@ -39,6 +39,16 @@ public:
         return std::make_unique<OtherComponent>(*this);
     }
 };
+
+class MigratingComponent final : public ember::Component
+{
+public:
+    int amount = 0;
+    [[nodiscard]] std::unique_ptr<ember::Component> Clone() const override
+    {
+        return std::make_unique<MigratingComponent>(*this);
+    }
+};
 }
 
 int main()
@@ -134,6 +144,54 @@ int main()
             source.label == "updated",
             "String descriptor rejects values exceeding the editor buffer limit");
     }
+
+    Check(registry.Register<MigratingComponent>("example.migrating", "Migrating",
+        [](const ember::Component& component) -> nlohmann::json {
+            return nlohmann::json{{"amount",
+                static_cast<const MigratingComponent&>(component).amount}};
+        },
+        [](ember::Component& component, const nlohmann::json& data) {
+            if (!data.is_object() || !data.contains("amount") ||
+                !data.at("amount").is_number_integer()) return false;
+            static_cast<MigratingComponent&>(component).amount =
+                data.at("amount").get<int>();
+            return true;
+        }, 2), "Versioned component type can be registered");
+    Check(!registry.Register<MigratingComponent>("example.bad-version", "Bad", {}, {}, 0),
+        "Component schema version zero is rejected");
+    Check(registry.RegisterMigration("example.migrating", 1,
+        [](nlohmann::json& data) {
+            if (!data.is_object() || !data.contains("value") ||
+                !data.at("value").is_number_integer()) return false;
+            data["amount"] = data["value"];
+            data.erase("value");
+            return true;
+        }), "A migration from schema version 1 can be registered");
+    Check(!registry.RegisterMigration("example.migrating", 1,
+        [](nlohmann::json&) { return true; }),
+        "Duplicate component migrations are rejected");
+    Check(!registry.RegisterMigration("example.migrating", 2,
+        [](nlohmann::json&) { return true; }),
+        "Migration from the current schema version is rejected");
+    Check(!registry.RegisterMigration("example.migrating", 0,
+        [](nlohmann::json&) { return true; }),
+        "Migration from schema version zero is rejected");
+
+    auto migrated = registry.Create("example.migrating", 1,
+        nlohmann::json{{"value", 88}});
+    const auto* migratedComponent =
+        dynamic_cast<const MigratingComponent*>(migrated.get());
+    Check(migratedComponent != nullptr && migratedComponent->amount == 88,
+        "Older component data is migrated before deserialization");
+    auto currentVersion = registry.Create("example.migrating", 2,
+        nlohmann::json{{"amount", 42}});
+    const auto* currentComponent =
+        dynamic_cast<const MigratingComponent*>(currentVersion.get());
+    Check(currentComponent != nullptr && currentComponent->amount == 42,
+        "Current component schema data loads without migration");
+    Check(registry.Create("example.migrating", 3,
+        nlohmann::json{{"amount", 42}}) == nullptr,
+        "Future component schema versions are rejected");
 
     if (failures != 0)
     {
