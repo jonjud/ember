@@ -8,7 +8,7 @@
 - Complete: Scene-level tests for lifecycle, falling/collision, invalid collider combinations, non-finite frame delta, stop and clone boundaries.
 - Complete: numeric body/collider configuration validation, disabled/static/kinematic behavior tests, and Editor collider debug overlay (Windows CI #113).
 - Complete: engine-owned Begin/End contact event API in PhysicsWorld and Scene, with EntityId pairs; Windows CI run 45939999840 passed.
-- Complete: engine-owned closest raycast and AABB overlap queries, including query filters and Scene EntityId mapping.
+- Complete: engine-owned closest raycast and AABB overlap queries, including category/mask query filters and Scene EntityId mapping; Windows CI run 45941862568 passed.
 - Not implemented: joints and multiple colliders per entity.
 
 ## Dependency boundary
@@ -55,7 +55,7 @@
 - Non-finite frame delta is ignored safely.
 
 ## Remaining validation work
-- Extend query coverage to custom category filters and sensor-specific behavior as collider filtering configuration evolves.
+- Expand automated query tests for custom category/mask combinations and sensor-specific behavior.
 - Interactive Editor/Play Mode verification on Windows remains outstanding.
 
 ## Milestone order
@@ -66,8 +66,9 @@
 5. Harden numeric validation and add body-mode edge-case tests. (Complete)
 6. Add Editor collider debug drawing. (Complete; CI #113)
 7. Add collision/contact begin/end event API. (Complete; Windows CI run 45939999840)
-8. Add raycast and overlap query APIs. (Complete; PhysicsWorld and Scene query tests)
-9. Consider multiple colliders and joints after the first 2D runtime slice is stable.
+8. Add raycast and overlap query APIs. (Complete; PhysicsWorld and Scene query tests; Windows CI #121)
+9. Expand query-filter and sensor-specific automated test coverage. (Next)
+10. Consider multiple colliders and joints after the first 2D runtime slice is stable.
 
 ## Explicit non-goals for first runtime slice
 - 3D physics, joints, ragdolls, character controllers, networking/rollback and multithreaded jobs.
