@@ -7,6 +7,7 @@
 #include "Engine/Scene/AnimationComponentRegistration.hpp"
 #include "Engine/Scene/AudioComponentRegistration.hpp"
 #include "Engine/UI/UIComponentRegistration.hpp"
+#include "Engine/UI/UILayout2D.hpp"
 #include "Engine/Platform/Input.hpp"
 #include "Engine/Project/ProjectConfigurationStore.hpp"
 
@@ -1976,6 +1977,62 @@ void EditorApplication::DrawViewport()
                 drawList->AddText(labelPosition, IM_COL32(255, 225, 140, 255), entity.GetName().c_str());
             }
         });
+
+        // UI Canvas is a screen-space layer rendered after world entities.
+        // The first active, valid Canvas in stable EntityId order defines the
+        // reference resolution for all enabled UI panels in this Scene.
+        const UICanvas2D* activeCanvas = nullptr;
+        activeScene.ForEachEntity([&](const Entity& entity)
+        {
+            if (activeCanvas != nullptr || !entity.IsActive()) return;
+            const auto* canvas = entity.GetComponent<UICanvas2D>();
+            if (canvas != nullptr && canvas->enabled && canvas->IsConfigurationValid())
+                activeCanvas = canvas;
+        });
+        if (activeCanvas != nullptr)
+        {
+            UICanvasLayout2D uiLayout;
+            if (ResolveUICanvasLayout(*activeCanvas,
+                {viewportSize.x, viewportSize.y}, uiLayout))
+            {
+                const ImVec2 uiCanvasMin{
+                    canvasMin.x + uiLayout.origin.x,
+                    canvasMin.y + uiLayout.origin.y
+                };
+                const ImVec2 uiCanvasMax{
+                    uiCanvasMin.x + activeCanvas->referenceResolution.x * uiLayout.scale,
+                    uiCanvasMin.y + activeCanvas->referenceResolution.y * uiLayout.scale
+                };
+                drawList->AddRect(uiCanvasMin, uiCanvasMax,
+                    IM_COL32(100, 190, 255, 150), 0.0F, 0, 1.0F);
+
+                activeScene.ForEachEntity([&](const Entity& entity)
+                {
+                    if (!entity.IsActive()) return;
+                    const auto* panel = entity.GetComponent<UIPanel2D>();
+                    if (panel == nullptr || !panel->enabled) return;
+
+                    UIRect2D panelRect;
+                    if (!ResolveUIPanelRect(*panel, uiLayout, panelRect)) return;
+
+                    const ImVec2 minimum{
+                        canvasMin.x + panelRect.position.x,
+                        canvasMin.y + panelRect.position.y
+                    };
+                    const ImVec2 maximum{
+                        minimum.x + panelRect.size.x,
+                        minimum.y + panelRect.size.y
+                    };
+                    const ImU32 fill = IM_COL32(
+                        static_cast<int>(std::lround(panel->red * 255.0F)),
+                        static_cast<int>(std::lround(panel->green * 255.0F)),
+                        static_cast<int>(std::lround(panel->blue * 255.0F)),
+                        static_cast<int>(std::lround(panel->alpha * 255.0F)));
+                    drawList->AddRectFilled(minimum, maximum, fill);
+                    drawList->AddRect(minimum, maximum, IM_COL32(225, 230, 245, 210));
+                });
+            }
+        }
 
         // Draw every configured physics shape without exposing backend handles
         // or Box2D types to Editor code. ColliderSet2D is canonical; legacy

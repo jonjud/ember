@@ -10,11 +10,11 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | `a5b23a3` — Audio traversal metadata rejection test fix |
-| Last verified CI | [Windows CI #219](https://github.com/jonjud/ember/actions/runs/46003199338) — **Success** (Audio runtime controls, traversal metadata rejection and full Windows engine tests) |
-| Latest documentation CI | [Windows CI #219](https://github.com/jonjud/ember/actions/runs/46003199338) — **Success** |
-| Last completed milestone | Sprite Animation — user-confirmed all checks passed; Windows CI #199 Success (2026-11-27) |
-| Active milestone | Audio — miniaudio runtime, AudioSource2D authoring, Scene playback, Editor Asset Browser preview, Inspector asset picker, Play Mode runtime controls and edge-case tests are implemented; Windows CI #219 is green. Final Windows Editor verification is the remaining Audio milestone gate. |
+| Last code commit | `16c4fe5` — UI Canvas/Panel foundation and serialization/layout tests |
+| Last verified CI | [Windows CI #221](https://github.com/jonjud/ember/actions/runs/46006393640) — **Success** (UI Canvas/Panel foundation and full Windows engine tests) |
+| Latest documentation CI | Docs commit CI is not required; latest code CI #221 is **Success** |
+| Last completed milestone | Audio implementation — Windows CI #219 Success; final interactive Editor checklist remains outstanding |
+| Active milestone | UI System — UI Canvas/Panel components, serialization, Inspector properties, reference-resolution layout and Editor viewport preview are implemented; Windows CI #221 is green. UI Text/Button, input routing and final Editor verification remain. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -30,6 +30,16 @@
 - [x] Generic Component lifecycle, clone, registry, factory, serialization and schema migrations
 - [x] Add/remove registered Components through Editor UI
 - [x] Typed Inspector property descriptors and widgets: bool, int, float, string, Vector2, Enumeration, EntityReference
+
+### UI System — in progress
+- [x] Add serializable UICanvas2D and UIPanel2D components with validation and Clone support
+- [x] Register UI components and expose reference resolution, geometry, color and enabled properties in Inspector
+- [x] Add reference-resolution layout with aspect-preserving scale and letterboxing
+- [x] Add automated tests for serialization, cloning, validation and viewport layout (Windows CI #221 Success)
+- [x] Render enabled UI panels as a screen-space overlay in the Editor viewport
+- [ ] Add UI Text and Button components
+- [ ] Add runtime UI input routing and interaction state
+- [ ] Complete Windows Editor UI verification
 
 ### Physics — completed slices
 - [x] Pin Box2D v3.2.0 and isolate it behind private engine implementation
@@ -85,6 +95,8 @@
 
 ## 4. Current limitations / next milestone
 
+**UI System is active.** UI Canvas/Panel authoring components, serialization, validation, Inspector properties, aspect-preserving reference-resolution layout and Editor viewport screen-space panel preview are implemented. Windows CI #221 passed. UI Text/Button, runtime input routing and final Windows Editor verification remain.
+
 **Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user confirmed the Windows Editor checklist passed on 2026-11-27, including Editor launch/layout, Entity and Transform editing, duplicate/delete, PhysicsBody2D Inspector add/edit/remove, ColliderSet2D editing, Physics Debug Overlay, save/reopen persistence, and Play/Stop behavior.
 
 **Audio implementation is complete pending final interactive verification.** The miniaudio 0.11.26 runtime facade, Application/Editor audio lifecycle, device-less generated-WAV tests, serializable `AudioSource2D`, typed Inspector properties and safe Audio-asset picker, Scene asset-resolution/playback lifecycle, runtime Play/Stop controls, safe Scene move/Stop lifetime, and Editor Asset Browser preview are implemented. Windows CI #219 passed. Automated coverage includes unavailable/uninitialized devices, missing dependencies/assets, inactive/disabled sources, invalid volume, wrong asset types and hand-edited traversal metadata. Run the final Windows Editor checklist in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md) before closing the milestone. Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; manual Editor verification remains deferred.
@@ -120,4 +132,4 @@
 
 ---
 
-**Handoff:** Audio runtime, AudioSource2D serialization/Inspector, Scene asset resolution/playback, runtime Play/Stop controls, safe Scene move/Stop lifetime, Editor Asset Browser preview, and Audio-asset picker are committed on `develop`. Windows CI #219 is green. The remaining gate is the one-time Windows Editor checklist in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md). Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Work on `develop` only; do not merge to `main`.
+**Handoff:** UI System is active on `develop`; Canvas/Panel and Editor screen-space preview are committed, with Windows CI #221 green. Continue with Text/Button and input routing. Audio runtime, AudioSource2D serialization/Inspector, Scene asset resolution/playback, runtime Play/Stop controls, safe Scene move/Stop lifetime, Editor Asset Browser preview, and Audio-asset picker are committed on `develop`. Windows CI #219 is green. The remaining gate is the one-time Windows Editor checklist in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md). Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191; its manual Editor checklist remains deferred to the final test session. Work on `develop` only; do not merge to `main`.
