@@ -160,22 +160,34 @@ int main()
     ember::Scene inputScene("Input Action Runtime");
     auto& inputEntity = inputScene.CreateEntity("Input Consumer");
     auto& inputConsumer = inputEntity.AddComponent<InputAwareComponent>();
+    std::cerr << "[TRACE] before inputScene.Start\\n" << std::flush;
     inputScene.Start();
+    std::cerr << "[TRACE] after inputScene.Start\\n" << std::flush;
     ember::InputMap inputMap;
+    std::cerr << "[TRACE] before BindAction\\n" << std::flush;
     (void)inputMap.BindAction("Jump", SDL_SCANCODE_SPACE);
+    std::cerr << "[TRACE] after BindAction\\n" << std::flush;
+    std::cerr << "[TRACE] before first InputMap Update\\n" << std::flush;
     inputMap.Update({SDL_SCANCODE_SPACE});
+    std::cerr << "[TRACE] after first InputMap Update\\n" << std::flush;
+    std::cerr << "[TRACE] before Scene Update pressed\\n" << std::flush;
     inputScene.Update(0.016F, inputMap.GetActionState());
+    std::cerr << "[TRACE] after Scene Update pressed\\n" << std::flush;
     Check(inputConsumer.down && inputConsumer.pressed && !inputConsumer.released,
         "Scene forwards a newly pressed action to gameplay Components");
     inputMap.Update({SDL_SCANCODE_SPACE});
     inputScene.Update(0.016F, inputMap.GetActionState());
     Check(inputConsumer.down && !inputConsumer.pressed && !inputConsumer.released,
         "Scene forwards held action state without repeating the pressed edge");
+    std::cerr << "[TRACE] before empty InputMap Update\\n" << std::flush;
     inputMap.Update({});
+    std::cerr << "[TRACE] after empty InputMap Update\\n" << std::flush;
     inputScene.Update(0.016F, inputMap.GetActionState());
     Check(!inputConsumer.down && !inputConsumer.pressed && inputConsumer.released,
         "Scene forwards released action edges to gameplay Components");
+    std::cerr << "[TRACE] before inputScene.Stop\\n" << std::flush;
     inputScene.Stop();
+    std::cerr << "[TRACE] after inputScene.Stop\\n" << std::flush;
 
     if (g_failures != 0)
     {
