@@ -99,7 +99,7 @@ int main()
     ember::ComponentRegistry registry;
     Check(ember::RegisterPhysicsComponents(registry),
         "Physics components register for Editor creation and serialization");
-    Check(registry.Size() == 3, "All three physics component types are registered");
+    Check(registry.Size() == 4, "All four physics component types are registered");
 
     auto registeredBody = registry.Create("ember.physics_body_2d");
     auto* editableBody = dynamic_cast<ember::PhysicsBody2D*>(registeredBody.get());
@@ -129,6 +129,32 @@ int main()
     auto* editableCircle = dynamic_cast<ember::CircleCollider2D*>(registeredCircle.get());
     Check(editableCircle != nullptr && registry.FindProperties(*editableCircle)->size() == 6,
         "Circle Collider exposes radius, offset, and material properties");
+
+    auto registeredSet = registry.Create("ember.collider_set_2d");
+    auto* editableSet = dynamic_cast<ember::ColliderSet2D*>(registeredSet.get());
+    Check(editableSet != nullptr, "Collider Set can be created through the registry");
+    if (editableSet) {
+        auto& boxEntry = editableSet->AddBoxCollider();
+        boxEntry.halfExtents = {1.25F, 0.75F};
+        boxEntry.categoryBits = 0x0004;
+        const auto boxId = boxEntry.id;
+        auto& circleEntry = editableSet->AddCircleCollider();
+        circleEntry.radius = 2.5F;
+        circleEntry.isSensor = true;
+        circleEntry.maskBits = 0x0008;
+        const auto circleId = circleEntry.id;
+        nlohmann::json data;
+        Check(registry.Serialize(*editableSet, data), "Collider Set serializes canonical entries");
+        auto restoredBase = registry.Create("ember.collider_set_2d", data);
+        const auto* restored = dynamic_cast<const ember::ColliderSet2D*>(restoredBase.get());
+        Check(restored && restored->colliders.size() == 2 &&
+            restored->colliders[0].id == boxId && restored->colliders[1].id == circleId &&
+            restored->colliders[0].halfExtents.x == 1.25F &&
+            restored->colliders[0].categoryBits == 0x0004 &&
+            restored->colliders[1].radius == 2.5F &&
+            restored->colliders[1].isSensor && restored->colliders[1].maskBits == 0x0008,
+            "Collider Set deserializes IDs, geometry, material and query filters");
+    }
 
     return failures == 0 ? 0 : 1;
 }
