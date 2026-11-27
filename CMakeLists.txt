@@ -94,9 +94,22 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 
+# miniaudio is compiled once behind EMBER's engine-owned audio facade.
+FetchContent_Declare(
+    miniaudio
+    GIT_REPOSITORY https://github.com/mackron/miniaudio.git
+    GIT_TAG 0.11.22
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(miniaudio)
+
+add_library(ember_miniaudio STATIC src/Engine/Audio/MiniaudioImplementation.cpp)
+target_include_directories(ember_miniaudio PRIVATE ${miniaudio_SOURCE_DIR})
+
 add_library(ember_engine STATIC
     src/Engine/Core/Application.cpp
     src/Engine/Core/Time.cpp
+    src/Engine/Audio/AudioEngine.cpp
     src/Engine/Resources/AssetDirectory.cpp
     src/Engine/Resources/AssetManager.cpp
     src/Engine/Resources/AssetImportService.cpp
@@ -114,7 +127,7 @@ add_library(ember_engine STATIC
 )
 
 target_include_directories(ember_engine PUBLIC src)
-target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image nlohmann_json::nlohmann_json PRIVATE box2d::box2d)
+target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image nlohmann_json::nlohmann_json PRIVATE box2d::box2d ember_miniaudio)
 
 add_library(ember_imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -138,6 +151,14 @@ target_include_directories(ember_editor PRIVATE src)
 target_link_libraries(ember_editor PRIVATE ember_engine ember_imgui SDL3::SDL3)
 
 if(BUILD_TESTING)
+    add_executable(ember_audio_engine_tests
+        tests/AudioEngineTests.cpp
+        src/Engine/Audio/AudioEngine.cpp
+    )
+    target_include_directories(ember_audio_engine_tests PRIVATE src ${miniaudio_SOURCE_DIR})
+    target_link_libraries(ember_audio_engine_tests PRIVATE ember_miniaudio)
+    add_test(NAME ember_audio_engine_tests COMMAND ember_audio_engine_tests)
+
     add_executable(ember_physics_components_tests
         tests/PhysicsComponentsTests.cpp
     )
@@ -285,6 +306,7 @@ if(MSVC)
     target_compile_options(ember_editor PRIVATE /W4 /permissive-)
     target_compile_options(ember_imgui PRIVATE /W4 /permissive-)
     if(BUILD_TESTING)
+        target_compile_options(ember_audio_engine_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_physics_world_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_scene_physics_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_physics_components_tests PRIVATE /W4 /permissive-)
@@ -306,6 +328,7 @@ else()
     target_compile_options(ember_editor PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(ember_imgui PRIVATE -Wall -Wextra -Wpedantic)
     if(BUILD_TESTING)
+        target_compile_options(ember_audio_engine_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_physics_world_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_physics_components_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_input_map_tests PRIVATE -Wall -Wextra -Wpedantic)
