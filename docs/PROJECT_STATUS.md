@@ -11,8 +11,8 @@
 | Active branch | `develop` |
 | Stable branch | `main` |
 | Last code commit | [`b8b6bc1`](https://github.com/jonjud/ember/commit/b8b6bc1d1c69a153f72f8bd1dfbd1040e225169f) — Link physics backend in Scene-based test targets |
-| Last verified CI | [Windows Build #113](https://github.com/jonjud/ember/actions/runs/45937028116) — **Success** (Configure, Build, Run engine tests) |
-| Last completed milestone | Physics Debug Overlay |
+| Last verified CI | [Windows CI run 45939999840](https://github.com/jonjud/ember/actions/runs/45939999840) — **Success** (Configure, Build, Run engine tests) |
+| Last completed milestone | Scene Contact Event API |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests ไม่ได้ยืนยันการทดสอบ Editor/Runtime แบบ interactive บนเครื่องจริง
@@ -46,6 +46,9 @@
 - [x] Validate physics body/collider numeric configuration and keep failed collider creation atomic
 - [x] Test disabled bodies and static/kinematic transform authority
 - [x] Add Editor viewport Physics debug overlay for box/circle collider outlines (CI #113)
+- [x] Add engine-owned PhysicsWorld Begin/End contact events mapped to Scene EntityIds
+- [x] Collect contact events after each fixed simulation step; Scene exposes the latest Update's events until next Update
+- [x] Wake touching dynamic bodies when a transform-driven static/kinematic body moves so contact separation can be processed
 
 ## 3. Physics decisions to preserve
 - Box2D v3.2.0 is private; Box2D types must not leak into public Scene/Entity/Component/Editor APIs.
@@ -62,7 +65,7 @@
 
 ## 4. Current limitations / next milestone
 
-The first Scene-owned 2D physics slice and Editor collider debug overlay are implemented and pass Windows CI. The next milestone is an engine-owned collision/contact event API that reports entity IDs and begin/end contact transitions without exposing Box2D types. After that, add raycast/overlap queries. Multiple colliders and joints remain deferred until these core APIs are stable.
+The Scene-owned 2D physics slice, Editor collider debug overlay, and engine-owned Begin/End contact event API are implemented and pass Windows CI. PhysicsWorld exposes backend-neutral body handles/events; Scene maps them to EntityIds through GetPhysicsContactEvents(). Events are frame-scoped to the most recent Scene::Update and accumulated across all fixed substeps in that update. Moving a transform-driven platform wakes dynamic bodies that were in contact so Box2D can refresh contact state and emit End events. The next milestone is raycast/overlap queries. Multiple colliders and joints remain deferred.
 
 Interactive Editor/Play Mode verification on a Windows machine is still outstanding; CI success does not replace that manual check.
 
@@ -84,7 +87,8 @@ Interactive Editor/Play Mode verification on a Windows machine is still outstand
 | 2026-11-27 | [Physics registration/Inspector, CI #103](https://github.com/jonjud/ember/actions/runs/45933429501) | Success |
 | 2026-11-27 | [Scene Physics Runtime Integration, CI #109](https://github.com/jonjud/ember/actions/runs/45935434409) | Success; Configure, Build and engine tests all passed |
 | 2026-11-27 | [Physics Debug Overlay, CI #113](https://github.com/jonjud/ember/actions/runs/45937028116) | Success; Windows build and automated tests passed |
+| 2026-11-27 | [Scene Contact Event API, CI run 45939999840](https://github.com/jonjud/ember/actions/runs/45939999840) | Success; Begin/End contact events and EntityId mapping verified by automated tests |
 
 ---
 
-**Handoff:** Start by checking latest `develop` HEAD and CI. Next focused task: engine-owned collision/contact begin/end event API, with EntityId mapping and tests; do not expose Box2D types.
+**Handoff:** Start by checking latest `develop` HEAD and CI. Next focused task: engine-owned Raycast and Overlap query API with EntityId mapping; keep Box2D types private.

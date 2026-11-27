@@ -7,7 +7,8 @@
 - Complete: Scene-owned PhysicsWorld, entity body construction, fixed-step simulation, transform synchronization and teardown.
 - Complete: Scene-level tests for lifecycle, falling/collision, invalid collider combinations, non-finite frame delta, stop and clone boundaries.
 - Complete: numeric body/collider configuration validation, disabled/static/kinematic behavior tests, and Editor collider debug overlay (Windows CI #113).
-- Next: collision/contact begin/end event API returning engine-owned EntityId pairs.
+- Complete: engine-owned Begin/End contact event API in PhysicsWorld and Scene, with EntityId pairs; Windows CI run 45939999840 passed.
+- Next: raycast/overlap query API.
 - Not implemented: raycasts/overlap queries, joints and multiple colliders per entity.
 
 ## Dependency boundary
@@ -36,7 +37,7 @@
 - `PhysicsBody2D`: body type (static, kinematic, dynamic), gravity scale, linear/angular damping and enabled flag.
 - `BoxCollider2D`: half extents, local offset/rotation, density, friction, restitution and sensor flag.
 - `CircleCollider2D`: radius, local offset, density, friction, restitution and sensor flag.
-- `PhysicsWorld`: gravity, body create/destroy, box/circle collider creation, transform read/write, stepping and body count.
+- `PhysicsWorld`: gravity, body create/destroy, box/circle collider creation, transform read/write, stepping, consuming Begin/End contact events and body count.
 - Components store configuration only; runtime handles are owned by Scene.
 - Initial scope is one collider per entity. An entity with both BoxCollider2D and CircleCollider2D is invalid and receives a diagnostic.
 
@@ -48,14 +49,15 @@
 - Fixed timestep: 1/60 second. Render delta is clamped to 0.25 seconds; at most 8 catch-up substeps are processed per frame.
 - Dynamic bodies are physics-authoritative: after stepping, write body position/rotation to Entity Transform2D (pixels/radians).
 - Static and kinematic bodies are transform-authoritative: update their physics transforms from Entity Transform2D before stepping.
+- After each fixed simulation step, Scene consumes contact events and maps PhysicsBodyHandles to EntityId pairs. GetPhysicsContactEvents() provides the events from the latest Update and is cleared at the next Update.
+- When a transform-driven static/kinematic body moves, PhysicsWorld wakes dynamic bodies with active contacts against it so contact separation is processed and an End event can be emitted.
 - Scene Stop clears body handles, destroys PhysicsWorld and resets the accumulator.
 - Non-finite frame delta is ignored safely.
 
 ## Remaining validation work
-- Validate all numeric configuration before creating runtime objects. Reject non-finite values, negative damping/material parameters and non-positive shape dimensions/radius.
-- Add tests for disabled bodies and static/kinematic transform authority.
-- Consider stronger diagnostics for unsupported or invalid body/collider combinations.
-- Keep failed creation atomic: no entity may retain partially created runtime physics state.
+- Add raycast and overlap query APIs with engine-owned result types and EntityId mapping.
+- Keep query behavior tested for sensors, filters and invalid inputs.
+- Interactive Editor/Play Mode verification on Windows remains outstanding.
 
 ## Milestone order
 1. Pin Box2D and establish private dependency boundary. (Complete)
@@ -64,8 +66,8 @@
 4. Integrate Scene Start/Update/Stop, fixed timestep and transform synchronization. (Complete; CI #109)
 5. Harden numeric validation and add body-mode edge-case tests. (Complete)
 6. Add Editor collider debug drawing. (Complete; CI #113)
-7. Add collision/contact begin/end event API. (Next)
-8. Add raycast and overlap query APIs.
+7. Add collision/contact begin/end event API. (Complete; Windows CI run 45939999840)
+8. Add raycast and overlap query APIs. (Next)
 9. Consider multiple colliders and joints after the first 2D runtime slice is stable.
 
 ## Explicit non-goals for first runtime slice
