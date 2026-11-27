@@ -1,5 +1,6 @@
 #include "Engine/Scene/Scene.hpp"
 #include "Engine/UI/UIComponents2D.hpp"
+#include "Engine/Platform/InputMap.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -18,6 +19,22 @@ void Check(bool condition, const char* description)
     }
     else std::cout << "[PASS] " << description << '\n';
 }
+
+class InputAwareComponent final : public ember::Component
+{
+public:
+    bool down = false, pressed = false, released = false;
+    [[nodiscard]] std::unique_ptr<ember::Component> Clone() const override
+    {
+        return std::make_unique<InputAwareComponent>(*this);
+    }
+    void OnUpdate(ember::Entity&, float, const ember::InputActionState& input) noexcept override
+    {
+        down = input.IsDown("Jump");
+        pressed = input.WasPressed("Jump");
+        released = input.WasReleased("Jump");
+    }
+};
 
 class CounterComponent final : public ember::Component
 {
@@ -139,6 +156,26 @@ int main()
     Check(clone.FindEntity(activeId)->GetComponent<CounterComponent>()->destroys == 1,
         "Cloned scene lifecycle remains independent");
     scene.Stop();
+
+    ember::Scene inputScene("Input Action Runtime");
+    auto& inputEntity = inputScene.CreateEntity("Input Consumer");
+    auto& inputConsumer = inputEntity.AddComponent<InputAwareComponent>();
+    inputScene.Start();
+    ember::InputMap inputMap;
+    (void)inputMap.BindAction("Jump", SDL_SCANCODE_SPACE);
+    inputMap.Update({SDL_SCANCODE_SPACE});
+    inputScene.Update(0.016F, inputMap.GetActionState());
+    Check(inputConsumer.down && inputConsumer.pressed && !inputConsumer.released,
+        "Scene forwards a newly pressed action to gameplay Components");
+    inputMap.Update({SDL_SCANCODE_SPACE});
+    inputScene.Update(0.016F, inputMap.GetActionState());
+    Check(inputConsumer.down && !inputConsumer.pressed && !inputConsumer.released,
+        "Scene forwards held action state without repeating the pressed edge");
+    inputMap.Update({});
+    inputScene.Update(0.016F, inputMap.GetActionState());
+    Check(!inputConsumer.down && !inputConsumer.pressed && inputConsumer.released,
+        "Scene forwards released action edges to gameplay Components");
+    inputScene.Stop();
 
     if (g_failures != 0)
     {

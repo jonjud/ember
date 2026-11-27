@@ -537,12 +537,24 @@ bool Scene::DispatchUIButtonClicked(EntityId entityId) noexcept
 
 void Scene::Update(float deltaSeconds) noexcept
 {
+    UpdateInternal(deltaSeconds, nullptr);
+}
+
+void Scene::Update(float deltaSeconds, const InputActionState& input) noexcept
+{
+    UpdateInternal(deltaSeconds, &input);
+}
+
+void Scene::UpdateInternal(float deltaSeconds, const InputActionState* input) noexcept
+{
     if (!m_started || !std::isfinite(deltaSeconds)) return;
     const float safeDeltaSeconds = std::max(0.0F, deltaSeconds);
     for (auto& [id, entity] : m_entities)
     {
         (void)id;
-        if (entity->IsActive()) entity->UpdateComponents(safeDeltaSeconds);
+        if (!entity->IsActive()) continue;
+        if (input != nullptr) entity->UpdateComponents(safeDeltaSeconds, *input);
+        else entity->UpdateComponents(safeDeltaSeconds);
     }
     m_physicsContactEvents.clear();
     StepPhysics(safeDeltaSeconds);

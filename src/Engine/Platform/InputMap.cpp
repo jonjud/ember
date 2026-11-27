@@ -82,7 +82,7 @@ bool InputMap::RenameAction(std::string_view oldName, std::string_view newName)
 void InputMap::Clear()
 {
     m_bindings.clear();
-    m_actionStates.clear();
+    m_actionState.m_states.clear();
 }
 
 void InputMap::Update()
@@ -104,12 +104,12 @@ void InputMap::Update(const std::vector<SDL_Scancode>& downKeys)
     const std::unordered_set<SDL_Scancode> pressedKeys(downKeys.begin(), downKeys.end());
     for (const auto& [action, keys] : m_bindings)
     {
-        ActionState& state = m_actionStates[action];
+        InputActionState::State& state = m_actionState.m_states[action];
         state.previousDown = state.currentDown;
         state.currentDown = std::any_of(keys.begin(), keys.end(),
             [&pressedKeys](SDL_Scancode key) { return pressedKeys.contains(key); });
     }
-    for (auto& [action, state] : m_actionStates)
+    for (auto& [action, state] : m_actionState.m_states)
     {
         if (!m_bindings.contains(action))
         {
@@ -121,8 +121,8 @@ void InputMap::Update(const std::vector<SDL_Scancode>& downKeys)
 
 bool InputMap::IsActionDown(std::string_view action) const
 {
-    const auto state = m_actionStates.find(std::string(action));
-    if (state != m_actionStates.end()) return state->second.currentDown;
+    if (m_actionState.m_states.contains(std::string(action)))
+        return m_actionState.IsDown(action);
     for (const SDL_Scancode key : GetBindings(action))
     {
         if (Input::IsKeyDown(key)) return true;
@@ -132,16 +132,12 @@ bool InputMap::IsActionDown(std::string_view action) const
 
 bool InputMap::WasActionPressed(std::string_view action) const
 {
-    const auto state = m_actionStates.find(std::string(action));
-    return state != m_actionStates.end() && state->second.currentDown &&
-        !state->second.previousDown;
+    return m_actionState.WasPressed(action);
 }
 
 bool InputMap::WasActionReleased(std::string_view action) const
 {
-    const auto state = m_actionStates.find(std::string(action));
-    return state != m_actionStates.end() && !state->second.currentDown &&
-        state->second.previousDown;
+    return m_actionState.WasReleased(action);
 }
 
 const std::vector<SDL_Scancode>& InputMap::GetBindings(std::string_view action) const

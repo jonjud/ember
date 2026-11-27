@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Platform/InputActionState.hpp"
 
 #include <memory>
 
@@ -19,6 +20,11 @@ public:
     {
         (void)entity;
         (void)deltaSeconds;
+    }
+    virtual void OnUpdate(Entity& entity, float deltaSeconds, const InputActionState& input) noexcept
+    {
+        (void)input;
+        OnUpdate(entity, deltaSeconds);
     }
     virtual void OnDestroy(Entity& entity) noexcept { (void)entity; }
     // Called on components attached to the Entity whose UI Button was clicked.

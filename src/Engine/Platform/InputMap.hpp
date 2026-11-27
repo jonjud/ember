@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL_scancode.h>
+#include "Engine/Platform/InputActionState.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -28,6 +29,7 @@ public:
     [[nodiscard]] bool IsActionDown(std::string_view action) const;
     [[nodiscard]] bool WasActionPressed(std::string_view action) const;
     [[nodiscard]] bool WasActionReleased(std::string_view action) const;
+    [[nodiscard]] const InputActionState& GetActionState() const noexcept { return m_actionState; }
     [[nodiscard]] const std::vector<SDL_Scancode>& GetBindings(std::string_view action) const;
     [[nodiscard]] const std::unordered_map<std::string, std::vector<SDL_Scancode>>&
         GetAllBindings() const noexcept { return m_bindings; }
@@ -35,13 +37,7 @@ public:
     [[nodiscard]] static InputMap CreateDefaultMovementMap();
 
 private:
-    struct ActionState
-    {
-        bool previousDown = false;
-        bool currentDown = false;
-    };
-
     std::unordered_map<std::string, std::vector<SDL_Scancode>> m_bindings;
-    std::unordered_map<std::string, ActionState> m_actionStates;
+    InputActionState m_actionState;
 };
 } // namespace ember

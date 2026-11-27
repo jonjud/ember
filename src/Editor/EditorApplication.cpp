@@ -212,7 +212,8 @@ void EditorApplication::UpdatePlayMode()
     }
 
     m_inputMap.Update();
-    m_playScene.Update(std::clamp(m_time.DeltaSeconds(), 0.0F, 0.05F));
+    m_playScene.Update(std::clamp(m_time.DeltaSeconds(), 0.0F, 0.05F),
+        m_inputMap.GetActionState());
 
     Entity* entity = m_playScene.FindEntity(m_selectedEntity);
     if (entity == nullptr || !entity->IsActive())

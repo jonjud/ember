@@ -52,6 +52,7 @@ public:
 
     void Start(AudioEngine* audioEngine = nullptr, const AssetRegistry* assets = nullptr) noexcept;
     void Update(float deltaSeconds) noexcept;
+    void Update(float deltaSeconds, const InputActionState& input) noexcept;
     // Dispatches a UI Button click to components on the target Entity while running.
     [[nodiscard]] bool DispatchUIButtonClicked(EntityId entity) noexcept;
     void Stop() noexcept;
@@ -119,6 +120,7 @@ private:
     void DestroyAudioSources() noexcept;
     void DestroyPhysicsWorld() noexcept;
     void StepPhysics(float deltaSeconds) noexcept;
+    void UpdateInternal(float deltaSeconds, const InputActionState* input) noexcept;
 
     std::string m_name;
     EntityId m_nextEntityId = 1;

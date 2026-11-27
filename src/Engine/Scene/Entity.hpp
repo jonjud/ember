@@ -153,6 +153,12 @@ private:
         for (const auto& component : m_components) component->OnUpdate(*this, deltaSeconds);
     }
 
+    void UpdateComponents(float deltaSeconds, const InputActionState& input) noexcept
+    {
+        for (const auto& component : m_components)
+            component->OnUpdate(*this, deltaSeconds, input);
+    }
+
     void DestroyComponents() noexcept
     {
         if (!m_componentsStarted) return;
