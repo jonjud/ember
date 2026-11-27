@@ -220,6 +220,43 @@ void Scene::StepPhysics(float deltaSeconds) noexcept
     }
 }
 
+std::optional<SceneRaycastHit2D> Scene::RaycastClosest(
+    Vector2 origin, Vector2 translation, const PhysicsQueryFilter2D& filter) const
+{
+    if (!m_started || m_physicsWorld == nullptr) return std::nullopt;
+    constexpr float scale = 0.01F;
+    const auto hit = m_physicsWorld->RaycastClosest(
+        {origin.x * scale, origin.y * scale},
+        {translation.x * scale, translation.y * scale}, filter);
+    if (!hit) return std::nullopt;
+    const auto entity = std::find_if(m_physicsBodies.begin(), m_physicsBodies.end(),
+        [&hit](const auto& entry) { return entry.second == hit->body; });
+    if (entity == m_physicsBodies.end()) return std::nullopt;
+    constexpr float inverseScale = 100.0F;
+    return SceneRaycastHit2D{entity->first,
+        {hit->point.x * inverseScale, hit->point.y * inverseScale}, hit->normal, hit->fraction};
+}
+
+std::vector<EntityId> Scene::OverlapAABB(
+    Vector2 lowerBound, Vector2 upperBound, const PhysicsQueryFilter2D& filter) const
+{
+    if (!m_started || m_physicsWorld == nullptr) return {};
+    constexpr float scale = 0.01F;
+    const auto bodies = m_physicsWorld->OverlapAABB(
+        {lowerBound.x * scale, lowerBound.y * scale},
+        {upperBound.x * scale, upperBound.y * scale}, filter);
+    std::vector<EntityId> entities;
+    for (const auto body : bodies)
+    {
+        const auto entity = std::find_if(m_physicsBodies.begin(), m_physicsBodies.end(),
+            [body](const auto& entry) { return entry.second == body; });
+        if (entity != m_physicsBodies.end()) entities.push_back(entity->first);
+    }
+    std::sort(entities.begin(), entities.end());
+    entities.erase(std::unique(entities.begin(), entities.end()), entities.end());
+    return entities;
+}
+
 void Scene::Start() noexcept
 {
     if (m_started) return;

@@ -8,8 +8,8 @@
 - Complete: Scene-level tests for lifecycle, falling/collision, invalid collider combinations, non-finite frame delta, stop and clone boundaries.
 - Complete: numeric body/collider configuration validation, disabled/static/kinematic behavior tests, and Editor collider debug overlay (Windows CI #113).
 - Complete: engine-owned Begin/End contact event API in PhysicsWorld and Scene, with EntityId pairs; Windows CI run 45939999840 passed.
-- Next: raycast/overlap query API.
-- Not implemented: raycasts/overlap queries, joints and multiple colliders per entity.
+- Complete: engine-owned closest raycast and AABB overlap queries, including query filters and Scene EntityId mapping.
+- Not implemented: joints and multiple colliders per entity.
 
 ## Dependency boundary
 - Box2D headers and IDs must not appear in public EMBER Scene, Entity, Component or Editor headers.
@@ -37,7 +37,7 @@
 - `PhysicsBody2D`: body type (static, kinematic, dynamic), gravity scale, linear/angular damping and enabled flag.
 - `BoxCollider2D`: half extents, local offset/rotation, density, friction, restitution and sensor flag.
 - `CircleCollider2D`: radius, local offset, density, friction, restitution and sensor flag.
-- `PhysicsWorld`: gravity, body create/destroy, box/circle collider creation, transform read/write, stepping, consuming Begin/End contact events and body count.
+- `PhysicsWorld`: gravity, body create/destroy, box/circle collider creation, transform read/write, stepping, consuming Begin/End contact events, closest raycasts, AABB overlap queries and body count.
 - Components store configuration only; runtime handles are owned by Scene.
 - Initial scope is one collider per entity. An entity with both BoxCollider2D and CircleCollider2D is invalid and receives a diagnostic.
 
@@ -55,8 +55,7 @@
 - Non-finite frame delta is ignored safely.
 
 ## Remaining validation work
-- Add raycast and overlap query APIs with engine-owned result types and EntityId mapping.
-- Keep query behavior tested for sensors, filters and invalid inputs.
+- Extend query coverage to custom category filters and sensor-specific behavior as collider filtering configuration evolves.
 - Interactive Editor/Play Mode verification on Windows remains outstanding.
 
 ## Milestone order
@@ -67,7 +66,7 @@
 5. Harden numeric validation and add body-mode edge-case tests. (Complete)
 6. Add Editor collider debug drawing. (Complete; CI #113)
 7. Add collision/contact begin/end event API. (Complete; Windows CI run 45939999840)
-8. Add raycast and overlap query APIs. (Next)
+8. Add raycast and overlap query APIs. (Complete; PhysicsWorld and Scene query tests)
 9. Consider multiple colliders and joints after the first 2D runtime slice is stable.
 
 ## Explicit non-goals for first runtime slice

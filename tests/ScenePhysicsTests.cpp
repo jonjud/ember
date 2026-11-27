@@ -50,6 +50,14 @@ int main()
         "Scene creates runtime bodies from PhysicsBody2D components");
     Check(scene.GetPhysicsDiagnostics().empty(),
         "Valid body and collider configuration produces no diagnostics");
+    const auto initialRayHit = scene.RaycastClosest({-100.0F, 0.0F}, {200.0F, 0.0F});
+    Check(initialRayHit.has_value() && initialRayHit->entity == ball.GetId(),
+        "Scene RaycastClosest maps the nearest physics hit to an EntityId");
+    const auto initialOverlaps = scene.OverlapAABB({-50.0F, -50.0F}, {50.0F, 50.0F});
+    Check(initialOverlaps.size() == 1 && initialOverlaps.front() == ball.GetId(),
+        "Scene OverlapAABB maps physics overlaps to EntityIds");
+    Check(!scene.RaycastClosest({0.0F, 0.0F}, {}).has_value(),
+        "Scene RaycastClosest safely rejects a zero-length ray");
 
     bool sawBeginContact = false;
     for (int frame = 0; frame < 180; ++frame)

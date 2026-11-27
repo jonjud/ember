@@ -18,6 +18,14 @@ enum class SceneContactEventType2D
     End
 };
 
+struct SceneRaycastHit2D
+{
+    EntityId entity = 0;
+    Vector2 point{}; // world pixels
+    Vector2 normal{};
+    float fraction = 0.0F;
+};
+
 struct SceneContactEvent2D
 {
     SceneContactEventType2D type = SceneContactEventType2D::Begin;
@@ -51,6 +59,11 @@ public:
     {
         return m_physicsContactEvents;
     }
+
+    [[nodiscard]] std::optional<SceneRaycastHit2D> RaycastClosest(
+        Vector2 origin, Vector2 translation, const PhysicsQueryFilter2D& filter = {}) const;
+    [[nodiscard]] std::vector<EntityId> OverlapAABB(
+        Vector2 lowerBound, Vector2 upperBound, const PhysicsQueryFilter2D& filter = {}) const;
 
     Entity& CreateEntity(std::string name = "Entity");
     [[nodiscard]] bool DestroyEntity(EntityId id);

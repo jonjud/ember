@@ -47,6 +47,7 @@
 - [x] Test disabled bodies and static/kinematic transform authority
 - [x] Add Editor viewport Physics debug overlay for box/circle collider outlines (CI #113)
 - [x] Add engine-owned PhysicsWorld Begin/End contact events mapped to Scene EntityIds
+- [x] Add closest raycast and AABB overlap queries with engine-owned query filters/results and Scene EntityId mapping
 - [x] Collect contact events after each fixed simulation step; Scene exposes the latest Update's events until next Update
 - [x] Wake touching dynamic bodies when a transform-driven static/kinematic body moves so contact separation can be processed
 
@@ -65,7 +66,7 @@
 
 ## 4. Current limitations / next milestone
 
-The Scene-owned 2D physics slice, Editor collider debug overlay, and engine-owned Begin/End contact event API are implemented and pass Windows CI. PhysicsWorld exposes backend-neutral body handles/events; Scene maps them to EntityIds through GetPhysicsContactEvents(). Events are frame-scoped to the most recent Scene::Update and accumulated across all fixed substeps in that update. Moving a transform-driven platform wakes dynamic bodies that were in contact so Box2D can refresh contact state and emit End events. The next milestone is raycast/overlap queries. Multiple colliders and joints remain deferred.
+The Scene-owned 2D physics slice, Editor collider debug overlay, and engine-owned Begin/End contact event API are implemented and pass Windows CI. PhysicsWorld exposes backend-neutral body handles/events; Scene maps them to EntityIds through GetPhysicsContactEvents(). Events are frame-scoped to the most recent Scene::Update and accumulated across all fixed substeps in that update. Moving a transform-driven platform wakes dynamic bodies that were in contact so Box2D can refresh contact state and emit End events. Closest raycast and AABB overlap query APIs are implemented in PhysicsWorld and Scene, including category/mask query filters and pixel-to-meter conversion at the Scene boundary. Multiple colliders and joints remain deferred.
 
 Interactive Editor/Play Mode verification on a Windows machine is still outstanding; CI success does not replace that manual check.
 

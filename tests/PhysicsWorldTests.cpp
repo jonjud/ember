@@ -51,6 +51,20 @@ int main()
           "PhysicsWorld rejects a zero-radius collider");
     Check(!world.AddBoxCollider({9999}, {}), "PhysicsWorld rejects an unknown body handle");
 
+    const auto rayHit = world.RaycastClosest({-2.0F, 0.0F}, {4.0F, 0.0F});
+    Check(rayHit.has_value() && rayHit->body == fallingBody,
+        "RaycastClosest returns the nearest body hit");
+    Check(rayHit.has_value() && rayHit->normal.x < -0.9F &&
+          std::abs(rayHit->fraction - 0.4125F) < 0.03F,
+        "RaycastClosest reports hit normal and normalized fraction");
+    Check(!world.RaycastClosest({0.0F, 0.0F}, {}).has_value(),
+        "RaycastClosest rejects a zero-length ray");
+    const auto overlaps = world.OverlapAABB({-0.5F, -0.5F}, {0.5F, 0.5F});
+    Check(overlaps.size() == 1 && overlaps.front() == fallingBody,
+        "OverlapAABB returns bodies whose shapes overlap the query bounds");
+    Check(world.OverlapAABB({1.0F, 1.0F}, {-1.0F, -1.0F}).empty(),
+        "OverlapAABB rejects inverted bounds");
+
     for (int step = 0; step < 180; ++step)
         Check(world.Step(1.0F / 60.0F), "PhysicsWorld advances a fixed simulation step");
 

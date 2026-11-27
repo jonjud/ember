@@ -2,6 +2,7 @@
 
 #include <box2d/box2d.h>
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <stdexcept>
@@ -12,6 +13,39 @@ namespace ember
 {
 namespace
 {
+struct PhysicsBodyMetadata { PhysicsBodyHandle handle{}; };
+struct RaycastQueryContext { std::optional<PhysicsRaycastHit2D> hit; };
+float CollectRaycastHit(b2ShapeId shapeId, b2Pos point, b2Vec2 normal, float fraction, void* context)
+{
+    auto& query = *static_cast<RaycastQueryContext*>(context);
+    if (!b2Shape_IsValid(shapeId)) return -1.0F;
+    const b2BodyId body = b2Shape_GetBody(shapeId);
+    if (!b2Body_IsValid(body)) return -1.0F;
+    const auto* metadata = static_cast<const PhysicsBodyMetadata*>(b2Body_GetUserData(body));
+    if (metadata == nullptr || !metadata->handle) return -1.0F;
+    query.hit = PhysicsRaycastHit2D{metadata->handle,
+        {static_cast<float>(point.x), static_cast<float>(point.y)},
+        {normal.x, normal.y}, fraction};
+    return fraction;
+}
+struct OverlapQueryContext { std::vector<PhysicsBodyHandle> bodies; };
+bool CollectOverlap(b2ShapeId shapeId, void* context)
+{
+    auto& query = *static_cast<OverlapQueryContext*>(context);
+    if (!b2Shape_IsValid(shapeId)) return true;
+    const b2BodyId body = b2Shape_GetBody(shapeId);
+    if (!b2Body_IsValid(body)) return true;
+    const auto* metadata = static_cast<const PhysicsBodyMetadata*>(b2Body_GetUserData(body));
+    if (metadata != nullptr && metadata->handle) query.bodies.push_back(metadata->handle);
+    return true;
+}
+b2QueryFilter ToBox2DQueryFilter(const PhysicsQueryFilter2D& filter)
+{
+    b2QueryFilter result = b2DefaultQueryFilter();
+    result.categoryBits = filter.categoryBits;
+    result.maskBits = filter.maskBits;
+    return result;
+}
 bool IsFinite(Vector2 value)
 {
     return std::isfinite(value.x) && std::isfinite(value.y);
@@ -51,13 +85,8 @@ struct PhysicsWorld::Impl
     }
 
     b2WorldId worldId = b2_nullWorldId;
-    struct BodyMetadata
-    {
-        PhysicsBodyHandle handle{};
-    };
-
     std::unordered_map<std::uint64_t, b2BodyId> bodies;
-    std::unordered_map<std::uint64_t, std::unique_ptr<BodyMetadata>> bodyMetadata;
+    std::unordered_map<std::uint64_t, std::unique_ptr<PhysicsBodyMetadata>> bodyMetadata;
     std::vector<PhysicsContactEvent2D> contactEvents;
     std::uint64_t nextHandle = 1;
 };
@@ -114,7 +143,7 @@ PhysicsBodyHandle PhysicsWorld::CreateBody(const PhysicsBodyDefinition2D& defini
     if (!b2Body_IsValid(bodyId)) return {};
 
     const std::uint64_t handle = m_impl->nextHandle++;
-    auto metadata = std::make_unique<Impl::BodyMetadata>();
+    auto metadata = std::make_unique<PhysicsBodyMetadata>();
     metadata->handle = {handle};
     auto metadataIt = m_impl->bodyMetadata.emplace(handle, std::move(metadata)).first;
     try
@@ -272,7 +301,7 @@ bool PhysicsWorld::Step(float timeStep, int subStepCount)
         const b2BodyId bodyA = b2Shape_GetBody(shapeA);
         const b2BodyId bodyB = b2Shape_GetBody(shapeB);
         if (!b2Body_IsValid(bodyA) || !b2Body_IsValid(bodyB)) return;
-        const auto* metadataA = static_cast<const Impl::BodyMetadata*>(b2Body_GetUserData(bodyA));
+        const auto* metadataA = static_cast<const PhysicsBodyMetadata*>(b2Body_GetUserData(bodyA));
         const auto* metadataB = static_cast<const Impl::BodyMetadata*>(b2Body_GetUserData(bodyB));
         if (metadataA == nullptr || metadataB == nullptr) return;
         m_impl->contactEvents.push_back({type, metadataA->handle, metadataB->handle});
@@ -293,6 +322,32 @@ std::vector<PhysicsContactEvent2D> PhysicsWorld::ConsumeContactEvents()
     std::vector<PhysicsContactEvent2D> events = std::move(m_impl->contactEvents);
     m_impl->contactEvents.clear();
     return events;
+}
+
+std::optional<PhysicsRaycastHit2D> PhysicsWorld::RaycastClosest(
+    Vector2 origin, Vector2 translation, const PhysicsQueryFilter2D& filter) const
+{
+    if (!IsValid() || !IsFinite(origin) || !IsFinite(translation) ||
+        (translation.x == 0.0F && translation.y == 0.0F)) return std::nullopt;
+    RaycastQueryContext context;
+    (void)b2World_CastRay(m_impl->worldId, {origin.x, origin.y},
+        {translation.x, translation.y}, ToBox2DQueryFilter(filter), CollectRaycastHit, &context);
+    return context.hit;
+}
+
+std::vector<PhysicsBodyHandle> PhysicsWorld::OverlapAABB(
+    Vector2 lowerBound, Vector2 upperBound, const PhysicsQueryFilter2D& filter) const
+{
+    if (!IsValid() || !IsFinite(lowerBound) || !IsFinite(upperBound) ||
+        lowerBound.x > upperBound.x || lowerBound.y > upperBound.y) return {};
+    const b2AABB bounds{{lowerBound.x, lowerBound.y}, {upperBound.x, upperBound.y}};
+    OverlapQueryContext context;
+    (void)b2World_OverlapAABB(m_impl->worldId, {0.0F, 0.0F}, bounds,
+        ToBox2DQueryFilter(filter), CollectOverlap, &context);
+    std::sort(context.bodies.begin(), context.bodies.end(),
+        [](PhysicsBodyHandle a, PhysicsBodyHandle b) { return a.value < b.value; });
+    context.bodies.erase(std::unique(context.bodies.begin(), context.bodies.end()), context.bodies.end());
+    return context.bodies;
 }
 
 std::size_t PhysicsWorld::GetBodyCount() const

@@ -58,7 +58,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Scene physics integration tests: lifecycle, simulation, collision, invalid component combinations and teardown
 - [x] Numeric physics configuration validation and disabled/static/kinematic body-mode tests
 - [x] Collision/contact begin/end event API (engine-owned EntityId results; Windows CI run 45939999840)
-- [ ] Raycast and overlap query API
+- [x] Closest raycast and AABB overlap query API (engine-owned results, query filters and Scene EntityId mapping)
 - [ ] Multiple colliders per entity
 - [ ] Joints
 - [ ] Animation
