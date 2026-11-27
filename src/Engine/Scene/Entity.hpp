@@ -55,6 +55,30 @@ public:
         return result;
     }
 
+    Component& AddComponent(std::unique_ptr<Component> component)
+    {
+        if (m_componentsStarted)
+            throw std::logic_error("Components cannot be added while their Scene is running.");
+        if (!component) throw std::invalid_argument("Cannot add a null component.");
+        Component& result = *component;
+        m_components.push_back(std::move(component));
+        return result;
+    }
+
+    [[nodiscard]] std::vector<std::unique_ptr<Component>>& GetComponents() { return m_components; }
+    [[nodiscard]] const std::vector<std::unique_ptr<Component>>& GetComponents() const { return m_components; }
+
+    bool RemoveComponent(const Component* component)
+    {
+        if (m_componentsStarted)
+            throw std::logic_error("Components cannot be removed while their Scene is running.");
+        const auto it = std::find_if(m_components.begin(), m_components.end(),
+            [component](const std::unique_ptr<Component>& value) { return value.get() == component; });
+        if (it == m_components.end()) return false;
+        m_components.erase(it);
+        return true;
+    }
+
     template <typename T>
     [[nodiscard]] T* GetComponent()
     {

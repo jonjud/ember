@@ -5,6 +5,7 @@
 #include "Engine/Resources/AssetRegistry.hpp"
 #include "Engine/Renderer/Camera2D.hpp"
 #include "Engine/Scene/Scene.hpp"
+#include "Engine/Scene/ComponentRegistry.hpp"
 #include "Engine/Platform/InputMap.hpp"
 #include "Engine/Project/ProjectConfiguration.hpp"
 
@@ -72,6 +73,7 @@ private:
     std::unordered_map<std::string, SDL_Texture*> m_previewTextures;
     bool m_isRunning = false;
     Scene m_scene{"Untitled Scene"};
+    ComponentRegistry m_componentRegistry;
     Scene m_playScene{"Play Scene"};
     bool m_isPlaying = false;
     bool m_sceneDirty = false;

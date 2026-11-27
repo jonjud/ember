@@ -57,8 +57,9 @@ EMBER is a 2D-first engine. Each milestone should produce a buildable, testable 
 
 - [x] General component update/lifecycle API (typed components, cloning, Start / Update / Stop)
 - [x] Stable component type registry and creation factories
-- [ ] Generic component serialization and schema migration
-- [ ] Component Inspector: inspect, add, and remove registered components
+- [x] Generic component serialization through stable type IDs and registered callbacks
+- [x] Component Inspector: display, add, remove, and edit registered components
+- [ ] Component schema migration/versioned component payloads
 - [ ] Collision and physics integration (planned Box2D backend)
 - [ ] Animation
 - [ ] Audio (planned miniaudio backend)

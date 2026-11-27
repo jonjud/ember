@@ -97,7 +97,7 @@ add_library(ember_engine STATIC
 )
 
 target_include_directories(ember_engine PUBLIC src)
-target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image nlohmann_json::nlohmann_json)
 
 add_library(ember_imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -149,6 +149,7 @@ if(BUILD_TESTING)
         tests/ComponentRegistryTests.cpp
     )
     target_include_directories(ember_component_registry_tests PRIVATE src)
+    target_link_libraries(ember_component_registry_tests PRIVATE nlohmann_json::nlohmann_json)
     add_test(NAME ember_component_registry_tests COMMAND ember_component_registry_tests)
 
     add_executable(ember_texture_cache_tests

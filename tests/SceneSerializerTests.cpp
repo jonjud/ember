@@ -4,9 +4,20 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <memory>
 
 namespace
 {
+class SerializableTestComponent final : public ember::Component
+{
+public:
+    int value = 17;
+    std::unique_ptr<ember::Component> Clone() const override
+    {
+        return std::make_unique<SerializableTestComponent>(*this);
+    }
+};
+
 int g_failures = 0;
 
 void Check(bool condition, const char* description)
@@ -29,6 +40,19 @@ int main()
     std::error_code filesystemError;
     std::filesystem::remove_all(root, filesystemError);
 
+    ember::ComponentRegistry registry;
+    registry.Register<SerializableTestComponent>("test.serializable", "Serializable Test",
+        [](const ember::Component& component) -> nlohmann::json {
+            return nlohmann::json{{"value", static_cast<const SerializableTestComponent&>(component).value}};
+        },
+        [](ember::Component& component, const nlohmann::json& data) {
+            if (!data.is_object() || !data.contains("value") || !data.at("value").is_number_integer()) return false;
+            const int value = data.at("value").get<int>();
+            if (value < 0 || value > 1000) return false;
+            static_cast<SerializableTestComponent&>(component).value = value;
+            return true;
+        });
+
     ember::Scene source("Forest Level");
     auto& player = source.CreateEntity("Player");
     player.GetTransform().position = {12.5F, -8.0F};
@@ -37,6 +61,7 @@ int main()
     player.SetActive(false);
     player.GetMovementComponent().enabled = true;
     player.GetMovementComponent().speed = 375.0F;
+    player.AddComponent<SerializableTestComponent>().value = 73;
 
     auto& visual = player.GetRenderComponent();
     visual.size = {48.0F, 32.0F};
@@ -53,12 +78,12 @@ int main()
 
     const auto scenePath = root / "scenes" / "forest.emberscene";
     std::string error;
-    Check(ember::SceneSerializer::Save(source, scenePath, &error),
+    Check(ember::SceneSerializer::Save(source, scenePath, &error, &registry),
           "Scene is saved to a versioned JSON file");
 
     ember::Scene loaded("Old Scene");
     loaded.CreateEntity("Will Be Replaced");
-    Check(ember::SceneSerializer::Load(loaded, scenePath, &error),
+    Check(ember::SceneSerializer::Load(loaded, scenePath, &error, &registry),
           "Saved scene can be loaded");
     Check(loaded.GetName() == "Forest Level", "Scene name survives round-trip");
     Check(loaded.GetEntityCount() == 2, "All entities survive round-trip");
@@ -80,6 +105,9 @@ int main()
               loadedVisual.blue == 60 && loadedVisual.alpha == 200 &&
               loadedVisual.visible,
               "Render component values survive round-trip");
+        const auto* generic = loadedPlayer->GetComponent<SerializableTestComponent>();
+        Check(generic != nullptr && generic->value == 73,
+              "Registered generic component data survives scene round-trip");
         Check(loadedPlayer->GetMovementComponent().enabled &&
               loadedPlayer->GetMovementComponent().speed == 375.0F,
               "Movement component settings survive round-trip");

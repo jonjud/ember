@@ -16,9 +16,20 @@
 #include <iostream>
 #include <optional>
 #include <vector>
+#include <string>
 
 namespace
 {
+class EditorNoteComponent final : public ember::Component
+{
+public:
+    std::string text = "New note";
+    [[nodiscard]] std::unique_ptr<ember::Component> Clone() const override
+    {
+        return std::make_unique<EditorNoteComponent>(*this);
+    }
+};
+
 constexpr int kWindowWidth = 1440;
 constexpr int kWindowHeight = 900;
 
@@ -123,6 +134,20 @@ bool EditorApplication::Initialize()
         Shutdown();
         return false;
     }
+
+    m_componentRegistry.Register<EditorNoteComponent>("ember.note", "Note",
+        [](const ember::Component& component) -> nlohmann::json
+        {
+            return nlohmann::json{{"text", static_cast<const EditorNoteComponent&>(component).text}};
+        },
+        [](ember::Component& component, const nlohmann::json& data)
+        {
+            if (!data.is_object() || !data.contains("text") || !data.at("text").is_string()) return false;
+            const std::string text = data.at("text").get<std::string>();
+            if (text.size() > 4096) return false;
+            static_cast<EditorNoteComponent&>(component).text = text;
+            return true;
+        });
 
     LoadInputSettings();
     RefreshAssets();
@@ -462,6 +487,65 @@ void EditorApplication::DrawInspector()
                 render.blue = static_cast<std::uint8_t>(std::clamp(color[2], 0, 255));
                 render.alpha = static_cast<std::uint8_t>(std::clamp(color[3], 0, 255));
                 MarkSceneDirty();
+            }
+
+            ImGui::SeparatorText("Components");
+            for (const auto& component : entity->GetComponents())
+            {
+                const auto* info = m_componentRegistry.Find(*component);
+                const char* displayName = info ? info->displayName.c_str() : "Unknown Component";
+                ImGui::PushID(component.get());
+                if (ImGui::TreeNode(displayName))
+                {
+                    if (auto* note = dynamic_cast<EditorNoteComponent*>(component.get()))
+                    {
+                        char noteText[4097]{};
+                        std::snprintf(noteText, sizeof(noteText), "%s", note->text.c_str());
+                        if (ImGui::InputTextMultiline("Text", noteText, sizeof(noteText),
+                            ImVec2(-1.0F, 72.0F)))
+                        {
+                            note->text = noteText;
+                            MarkSceneDirty();
+                        }
+                    }
+                    if (ImGui::SmallButton("Remove Component"))
+                    {
+                        (void)entity->RemoveComponent(component.get());
+                        MarkSceneDirty();
+                        ImGui::TreePop();
+                        ImGui::PopID();
+                        break;
+                    }
+                    ImGui::TreePop();
+                }
+                ImGui::PopID();
+            }
+
+            if (ImGui::Button("Add Component"))
+                ImGui::OpenPopup("Add Component Popup");
+            if (ImGui::BeginPopup("Add Component Popup"))
+            {
+                for (const auto& type : m_componentRegistry.GetRegisteredTypes())
+                {
+                    bool alreadyAdded = false;
+                    for (const auto& component : entity->GetComponents())
+                    {
+                        const auto* existing = m_componentRegistry.Find(*component);
+                        if (existing && existing->id == type.id) alreadyAdded = true;
+                    }
+                    ImGui::BeginDisabled(alreadyAdded);
+                    if (ImGui::MenuItem(type.displayName.c_str()))
+                    {
+                        auto component = m_componentRegistry.Create(type.id);
+                        if (component)
+                        {
+                            entity->AddComponent(std::move(component));
+                            MarkSceneDirty();
+                        }
+                    }
+                    ImGui::EndDisabled();
+                }
+                ImGui::EndPopup();
             }
 
             ImGui::Separator();
@@ -1591,7 +1675,7 @@ bool EditorApplication::SaveScene()
     }
 
     std::string error;
-    if (SceneSerializer::Save(m_scene, *resolvedPath, &error))
+    if (SceneSerializer::Save(m_scene, *resolvedPath, &error, &m_componentRegistry))
     {
         m_sceneDirty = false;
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
@@ -1624,7 +1708,7 @@ bool EditorApplication::LoadSceneFromPath(const std::filesystem::path& path)
 
     Scene loadedScene;
     std::string error;
-    if (!SceneSerializer::Load(loadedScene, *resolvedPath, &error))
+    if (!SceneSerializer::Load(loadedScene, *resolvedPath, &error, &m_componentRegistry))
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "Load failed: %.220s", error.c_str());
@@ -1745,7 +1829,7 @@ void EditorApplication::LoadStartupScene()
 
     Scene loadedScene;
     std::string error;
-    if (!SceneSerializer::Load(loadedScene, *startupScene, &error))
+    if (!SceneSerializer::Load(loadedScene, *startupScene, &error, &m_componentRegistry))
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "Startup scene load failed: %.180s", error.c_str());

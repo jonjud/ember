@@ -7,6 +7,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <stdexcept>
 #include <utility>
 
 namespace ember
@@ -101,13 +102,13 @@ bool ReadEntityId(const Json& value, EntityId& result)
     return true;
 }
 
-Json ToJson(const Entity& entity)
+Json ToJson(const Entity& entity, const ComponentRegistry* componentRegistry)
 {
     const Transform2D& transform = entity.GetTransform();
     const RenderComponent2D& render = entity.GetRenderComponent();
     const MovementComponent2D& movement = entity.GetMovementComponent();
 
-    return {
+    Json result{
         {"id", entity.GetId()},
         {"name", entity.GetName()},
         {"active", entity.IsActive()},
@@ -124,13 +125,28 @@ Json ToJson(const Entity& entity)
             {"texture_asset_id", render.textureAssetId}
         }}
     };
+
+    Json components = Json::array();
+    for (const auto& component : entity.GetComponents())
+    {
+        if (componentRegistry == nullptr)
+            throw std::runtime_error("Cannot save generic components without a component registry.");
+        const auto* info = componentRegistry->Find(*component);
+        Json data;
+        if (info == nullptr || !componentRegistry->Serialize(*component, data))
+            throw std::runtime_error("Scene contains an unregistered or non-serializable component.");
+        components.push_back({{"type", info->id}, {"data", std::move(data)}});
+    }
+    result["components"] = std::move(components);
+    return result;
 }
 }
 
 bool SceneSerializer::Save(
     const Scene& scene,
     const std::filesystem::path& filePath,
-    std::string* error)
+    std::string* error,
+    const ComponentRegistry* componentRegistry)
 {
     if (filePath.empty())
     {
@@ -142,7 +158,7 @@ bool SceneSerializer::Save(
         Json entities = Json::array();
         scene.ForEachEntity([&entities](const Entity& entity)
         {
-            entities.push_back(ToJson(entity));
+            entities.push_back(ToJson(entity, componentRegistry));
         });
 
         const Json document{
@@ -184,7 +200,8 @@ bool SceneSerializer::Save(
 bool SceneSerializer::Load(
     Scene& scene,
     const std::filesystem::path& filePath,
-    std::string* error)
+    std::string* error,
+    const ComponentRegistry* componentRegistry)
 {
     try
     {
@@ -266,6 +283,25 @@ bool SceneSerializer::Load(
             render.textureAssetId = renderJson.at("texture_asset_id").get<std::string>();
             // TextureHandle is deliberately not deserialized; it belongs to a live renderer.
             entity->SetActive(active);
+
+            if (value.contains("components"))
+            {
+                const Json& components = value.at("components");
+                if (!components.is_array())
+                    return Fail(error, "Entity components field must be an array.");
+                for (const Json& componentValue : components)
+                {
+                    if (!componentValue.is_object() || !componentValue.contains("type") ||
+                        !componentValue.contains("data") || !componentValue.at("type").is_string() ||
+                        componentRegistry == nullptr)
+                        return Fail(error, "Scene contains a component that cannot be resolved.");
+                    auto component = componentRegistry->Create(
+                        componentValue.at("type").get<std::string>(), componentValue.at("data"));
+                    if (!component)
+                        return Fail(error, "Scene contains an unknown or invalid component type.");
+                    entity->AddComponent(std::move(component));
+                }
+            }
 
             loadedScene.m_entities.emplace(id, std::move(entity));
             if (id > maxId)
