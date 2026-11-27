@@ -169,8 +169,15 @@ int main()
     traversalMetadata.assetId = "audio-traversal";
     traversalMetadata.type = ember::AssetType::Audio;
     traversalMetadata.source = "../ember_audio_scene_outside.wav";
-    assert(ember::AssetMetadataStore::Save(root / "audio" / "traversal.emberasset", traversalMetadata));
+    // Write an intentionally invalid sidecar directly: Save() correctly refuses
+    // traversal paths, while Scan()/Load() must also reject hand-edited metadata.
+    {
+        std::ofstream sidecar(root / "audio" / "traversal.emberasset", std::ios::binary);
+        sidecar << R"({"schema_version":1,"asset_id":"audio-traversal","type":"audio","source":"../ember_audio_scene_outside.wav"})";
+        assert(sidecar.good());
+    }
     assert(assets.Scan());
+    assert(assets.Find("audio-traversal") == nullptr);
 
     ember::Scene invalidReferencesScene("Invalid Audio References");
     auto& wrongTypeEntity = invalidReferencesScene.CreateEntity("Wrong Type");
