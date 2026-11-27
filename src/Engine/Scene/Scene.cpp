@@ -2,6 +2,7 @@
 #include "Engine/Physics/PhysicsComponents2D.hpp"
 #include "Engine/Resources/AssetRegistry.hpp"
 #include "Engine/Scene/AudioComponents2D.hpp"
+#include "Engine/UI/UIComponents2D.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -523,6 +524,11 @@ bool Scene::DispatchUIButtonClicked(EntityId entityId) noexcept
     if (!m_started) return false;
     Entity* entity = FindEntity(entityId);
     if (entity == nullptr || !entity->IsActive()) return false;
+
+    const auto* button = entity->GetComponent<UIButton2D>();
+    if (button == nullptr || !button->enabled || !button->interactable ||
+        !button->IsConfigurationValid())
+        return false;
 
     for (const auto& component : entity->GetComponents())
         component->OnUIButtonClicked(*entity);

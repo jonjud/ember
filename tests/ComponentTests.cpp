@@ -1,4 +1,5 @@
 #include "Engine/Scene/Scene.hpp"
+#include "Engine/UI/UIComponents2D.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -60,6 +61,7 @@ int main()
     Check(active.RemoveComponent<CounterComponent>(), "Entity removes a component before start");
     Check(!active.HasComponent<CounterComponent>(), "Removed component is no longer present");
     CounterComponent& counter = active.AddComponent<CounterComponent>();
+    auto& activeButton = active.AddComponent<ember::UIButton2D>();
 
     Check(!scene.DispatchUIButtonClicked(active.GetId()),
         "UI click events are rejected before the Scene starts");
@@ -70,7 +72,15 @@ int main()
     Check(inactive.GetComponent<CounterComponent>()->creates == 1,
         "OnCreate runs for components on inactive entities");
     Check(scene.DispatchUIButtonClicked(active.GetId()) && counter.uiClicks == 1,
-        "Scene dispatches a UI click to components on the target Entity");
+        "Scene dispatches a UI click to components on an active Button Entity");
+    activeButton.interactable = false;
+    Check(!scene.DispatchUIButtonClicked(active.GetId()) && counter.uiClicks == 1,
+        "Scene rejects UI clicks for non-interactable Buttons");
+    activeButton.interactable = true;
+    activeButton.enabled = false;
+    Check(!scene.DispatchUIButtonClicked(active.GetId()) && counter.uiClicks == 1,
+        "Scene rejects UI clicks for disabled Buttons");
+    activeButton.enabled = true;
     Check(!scene.DispatchUIButtonClicked(inactive.GetId()) &&
         inactive.GetComponent<CounterComponent>()->uiClicks == 0,
         "UI clicks are not dispatched to inactive Entities");
