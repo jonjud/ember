@@ -10,9 +10,9 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`f6d7e16`](https://github.com/jonjud/ember/commit/f6d7e16a7b39214b11bc1513d8474d1ee2b67c83) — Restore collider entries without generating replacement IDs |
-| Last verified CI | [Windows CI #135](https://github.com/jonjud/ember/actions/runs/45948659696) — **Success** (Configure, Build, Run engine tests); collider serialization/migration CI pending |
-| Last completed milestone | ColliderSet2D value model and stable ID tests passed CI #135 |
+| Last code commit | [`40ef348`](https://github.com/jonjud/ember/commit/40ef3489cca923d5ebf42c528242d869b8c75718) — Test Entity-level compound contact event aggregation |
+| Last verified CI | [Windows CI #155](https://github.com/jonjud/ember/actions/runs/45955629661) — **Success** (Configure, Build, Run engine tests); latest contact-aggregation changes are awaiting CI verification |
+| Last completed milestone | ColliderSet2D serialization and legacy Scene migration passed CI #151 |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests ไม่ได้ยืนยันการทดสอบ Editor/Runtime แบบ interactive บนเครื่องจริง
@@ -36,7 +36,7 @@
 - [x] Automated PhysicsWorld tests
 - [x] Add serializable configuration components: PhysicsBody2D, BoxCollider2D, CircleCollider2D
 - [x] Add ColliderSet2D with stable ColliderId generation, lookup/removal, validation and clone tests (CI #135)
-- [ ] Add canonical ColliderSet2D serialization and legacy Box/Circle Scene migration (code committed; CI pending)
+- [x] Add canonical ColliderSet2D serialization and legacy Box/Circle Scene migration (CI #151)
 - [x] Register physics component types, serializers/deserializers and Inspector properties
 - [x] Add Vector2 Inspector controls and enum dropdown support
 - [x] Scene owns PhysicsWorld during runtime and builds bodies/colliders from entity components
@@ -50,6 +50,7 @@
 - [x] Add Editor viewport Physics debug overlay for box/circle collider outlines (CI #113)
 - [x] Add engine-owned PhysicsWorld Begin/End contact events mapped to Scene EntityIds
 - [x] Add closest raycast and AABB overlap queries with engine-owned query filters/results and Scene EntityId mapping
+- [x] Create multiple ColliderSet2D Box/Circle shapes on one PhysicsBody; preserve per-shape query filters and Entity-level query deduplication (latest runtime integration CI verification pending)
 - [x] Test query category/mask filtering for raycasts and AABB overlaps
 - [x] Verify raycasts and AABB overlaps include sensor shapes
 - [x] Verify Scene forwards query filters to PhysicsWorld
@@ -66,7 +67,7 @@
 - Collider geometry is explicit, never inferred from sprite/render size.
 - Physics handles are runtime-only and never serialized or cloned as raw backend IDs.
 - Fixed timestep is 1/60 s with bounded accumulator and substeps.
-- Initial slice supports one collider per entity. Both Box and Circle colliders on one entity are rejected with a diagnostic.
+- ColliderSet2D is the canonical multi-shape configuration: one PhysicsBody2D owns an ordered set of Box/Circle shapes. Legacy BoxCollider2D/CircleCollider2D inputs migrate to one-entry sets during Scene loading; conflicting combinations are rejected.
 - Collider without PhysicsBody2D is skipped with a diagnostic.
 - Dynamic bodies are physics-authoritative; static and kinematic bodies are transform-authoritative.
 
@@ -74,7 +75,7 @@
 
 The Scene-owned 2D physics slice includes the Editor collider debug overlay, Begin/End contact events, closest raycast/AABB overlap queries, query filters and sensor inclusion. Interactive Windows verification of the overlay and Play Mode has now been user-confirmed as passed using [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md). Windows CI #132 also passed Configure, Build and engine tests.
 
-**Active milestone: Multiple Colliders per Entity.** The design is documented and CI #133 passed. The first implementation slice adds an engine-owned ColliderSet2D value model with nonzero monotonic IDs, lookup/removal, duplicate-ID validation and clone preservation; runtime integration and serialization are intentionally unchanged pending CI. Joints remain deferred until the multi-collider slice is stable.
+**Active milestone: Multiple Colliders per Entity.** ColliderSet2D model passed CI #135; canonical serialization and legacy migration passed CI #151. PhysicsWorld now accepts per-shape category/mask filters, and Scene builds multiple Box/Circle shapes on one body with Entity-level query deduplication. The latest slice aggregates shape-pair contact transitions into one Entity-pair Begin/End; code is committed and awaiting CI verification. Inspector list editing and multi-shape debug overlay remain. Joints stay deferred.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -100,4 +101,4 @@ The Scene-owned 2D physics slice includes the Editor collider debug overlay, Beg
 
 ---
 
-**Handoff:** Active milestone: Multiple Colliders per Entity. ColliderSet2D model passed CI #135. Current slice: canonical serialization and legacy Box/Circle Scene migration; next extend PhysicsWorld and Scene runtime to create multiple shapes per body. Read [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md) before implementation; preserve legacy scene compatibility and keep Box2D types private.
+**Handoff:** Active milestone: Multiple Colliders per Entity. Model passed CI #135; canonical serialization and legacy migration passed CI #151; PhysicsWorld multi-shape filter/runtime tests passed CI #155. Latest code commit `40ef348` adds Entity-pair contact aggregation and its regression test; CI verification is pending. Next: verify CI, then update Inspector list editing and draw every collider in the Physics debug overlay. Preserve legacy compatibility and keep Box2D types private.
