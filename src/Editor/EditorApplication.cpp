@@ -567,13 +567,58 @@ void EditorApplication::DrawInspector()
                             }
                             case ComponentPropertyType::String:
                             {
-                                char value[4097]{};
                                 const std::string current = property.get(*component).get<std::string>();
-                                std::snprintf(value, sizeof(value), "%s", current.c_str());
-                                if (ImGui::InputTextMultiline(property.displayName.c_str(), value,
-                                    sizeof(value), ImVec2(-1.0F, 72.0F)) &&
-                                    property.set(*component, nlohmann::json(value)))
-                                    MarkSceneDirty();
+                                if (property.id == "audio_asset_id")
+                                {
+                                    const AssetMetadata* currentAsset = m_assetRegistry.Find(current);
+                                    const std::string preview = current.empty() ? "None"
+                                        : (currentAsset != nullptr && currentAsset->type == AssetType::Audio
+                                            ? currentAsset->source.generic_string()
+                                            : "Missing Audio asset: " + current);
+                                    if (ImGui::BeginCombo(property.displayName.c_str(), preview.c_str()))
+                                    {
+                                        if (ImGui::Selectable("None", current.empty()) &&
+                                            property.set(*component, nlohmann::json(std::string{})))
+                                            MarkSceneDirty();
+                                        std::vector<const AssetMetadata*> audioAssets;
+                                        for (const auto& [assetId, metadata] : m_assetRegistry.GetAssets())
+                                        {
+                                            (void)assetId;
+                                            if (metadata.type != AssetType::Audio) continue;
+                                            const auto path = m_assetRegistry.GetDirectory().Resolve(metadata.source);
+                                            std::error_code pathError;
+                                            if (!path || !std::filesystem::exists(*path, pathError) || pathError)
+                                                continue;
+                                            audioAssets.push_back(&metadata);
+                                        }
+                                        std::sort(audioAssets.begin(), audioAssets.end(),
+                                            [](const AssetMetadata* left, const AssetMetadata* right)
+                                            {
+                                                return left->source.generic_string() < right->source.generic_string();
+                                            });
+                                        for (const AssetMetadata* metadata : audioAssets)
+                                        {
+                                            const std::string label = metadata->source.generic_string() +
+                                                " (" + metadata->assetId + ")##" + metadata->assetId;
+                                            const bool selected = metadata->assetId == current;
+                                            if (ImGui::Selectable(label.c_str(), selected) &&
+                                                property.set(*component, nlohmann::json(metadata->assetId)))
+                                                MarkSceneDirty();
+                                            if (selected) ImGui::SetItemDefaultFocus();
+                                        }
+                                        ImGui::EndCombo();
+                                    }
+                                    ImGui::TextDisabled("Choose an imported Audio asset from the project Asset Browser.");
+                                }
+                                else
+                                {
+                                    char value[4097]{};
+                                    std::snprintf(value, sizeof(value), "%s", current.c_str());
+                                    if (ImGui::InputTextMultiline(property.displayName.c_str(), value,
+                                        sizeof(value), ImVec2(-1.0F, 72.0F)) &&
+                                        property.set(*component, nlohmann::json(value)))
+                                        MarkSceneDirty();
+                                }
                                 break;
                             }
                             case ComponentPropertyType::Vector2:

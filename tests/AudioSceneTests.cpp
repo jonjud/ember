@@ -87,10 +87,16 @@ int main()
     disabled.audioAssetId = "audio-ambience";
     disabled.enabled = false;
 
+    auto& inactiveEntity = scene.CreateEntity("Inactive Sound");
+    auto& inactive = inactiveEntity.AddComponent<ember::AudioSource2D>();
+    inactive.audioAssetId = "audio-ambience";
+    inactiveEntity.SetActive(false);
+
     scene.Start(&audio, &assets);
     assert(scene.IsStarted());
     assert(scene.GetAudioSourceCount() == 2);
     assert(scene.IsAudioSourcePlaying(ambienceEntity.GetId()));
+    assert(!scene.IsAudioSourcePlaying(inactiveEntity.GetId()));
     assert(!scene.IsAudioSourcePlaying(delayedEntity.GetId()));
     assert(scene.PlayAudioSource(delayedEntity.GetId()));
     assert(scene.IsAudioSourcePlaying(delayedEntity.GetId()));
@@ -118,6 +124,25 @@ int main()
     assert(missingAssetScene.GetAudioSourceCount() == 0);
     assert(!missingAssetScene.GetAudioDiagnostics().empty());
     missingAssetScene.Stop();
+
+    // A missing AudioEngine and a missing AssetRegistry are reported per active source.
+    ember::Scene missingEngineScene("Missing Audio Engine");
+    auto& noEngineEntity = missingEngineScene.CreateEntity("No Engine");
+    auto& noEngineSource = noEngineEntity.AddComponent<ember::AudioSource2D>();
+    noEngineSource.audioAssetId = "audio-ambience";
+    missingEngineScene.Start(nullptr, &assets);
+    assert(missingEngineScene.GetAudioSourceCount() == 0);
+    assert(missingEngineScene.GetAudioDiagnostics().size() == 1);
+    missingEngineScene.Stop();
+
+    ember::Scene missingRegistryScene("Missing Asset Registry");
+    auto& noRegistryEntity = missingRegistryScene.CreateEntity("No Registry");
+    auto& noRegistrySource = noRegistryEntity.AddComponent<ember::AudioSource2D>();
+    noRegistrySource.audioAssetId = "audio-ambience";
+    missingRegistryScene.Start(&audio, nullptr);
+    assert(missingRegistryScene.GetAudioSourceCount() == 0);
+    assert(missingRegistryScene.GetAudioDiagnostics().size() == 1);
+    missingRegistryScene.Stop();
 
     // Moving a running Scene transfers ownership of its runtime sound handles.
     ember::Scene moveSource("Move Source");

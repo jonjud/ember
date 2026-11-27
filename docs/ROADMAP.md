@@ -66,7 +66,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Multiple colliders per entity (model #135; serialization/migration #151; runtime/query #155; contact aggregation #164; Inspector #169; overlay #170; Windows interactive checklist user-confirmed passed)
 - [x] Physics Joints (PhysicsWorld API, serializable Revolute/Distance components, Entity-reference Inspector controls, Scene lifecycle integration, and automated tests passed Windows CI #191; final Windows manual checklist is intentionally deferred)
 - [x] Animation (SpriteAnimation2D frame playback, Scene lifecycle, serialization, Inspector controls, sprite-sheet viewport preview, Renderer2D source-region API and multi-row frame tests; Windows CI #199 Success; user-confirmed all checks passed)
-- [ ] Audio (in progress: miniaudio runtime and AudioSource2D authoring passed CI; Scene resolves stable Audio asset IDs, creates per-entity runtime sounds, applies volume/loop/play-on-start, exposes runtime Play/Stop controls, transfers handle ownership safely during Scene moves, and releases handles on Stop; Windows CI #214 Success)
+- [ ] Audio (in progress: miniaudio runtime, AudioSource2D serialization/Inspector, Scene asset resolution and playback controls, safe Scene move/Stop lifetime, and Editor Asset Browser preview are implemented; AudioSource2D Inspector now offers a safe project Audio-asset picker; Scene reports missing AudioEngine/AssetRegistry dependencies; Windows CI #216 Success)
 - [ ] UI system
 - [ ] Runtime input action mapping integration
 - [ ] Scripting interface

@@ -27,3 +27,8 @@ Provide a small runtime-facing 2D audio foundation while keeping miniaudio types
 - Use miniaudio's device-less engine mode so CI does not require a physical playback device.
 - Generate a tiny WAV fixture in the test process; do not depend on external sample assets.
 - Cover initialization validation, load failure, playback control, volume bounds, looping, unload, and shutdown/reinitialize behavior.
+
+
+## Editor authoring and diagnostics
+- The AudioSource2D Inspector presents a project Audio-asset picker backed by AssetRegistry instead of requiring users to type stable asset IDs. Only Audio assets with safely resolved, existing source files are offered.
+- Scene startup reports a diagnostic when an enabled, active AudioSource2D has no AudioEngine or AssetRegistry. Disabled and inactive sources are intentionally skipped without loading sounds.

@@ -417,12 +417,17 @@ void Scene::Start(AudioEngine* audioEngine, const AssetRegistry* assets) noexcep
 void Scene::BuildAudioSources(const AssetRegistry* assets) noexcept
 {
     m_audioDiagnostics.clear();
-    if (m_audioEngine == nullptr) return;
 
     for (const auto& [entityId, entity] : m_entities)
     {
         const auto* source = entity->GetComponent<AudioSource2D>();
         if (source == nullptr || !source->enabled || !entity->IsActive()) continue;
+        if (m_audioEngine == nullptr)
+        {
+            m_audioDiagnostics.push_back("AudioEngine was not supplied; Entity " +
+                std::to_string(entityId) + " audio was skipped.");
+            continue;
+        }
         if (!source->IsConfigurationValid() || source->audioAssetId.empty())
         {
             m_audioDiagnostics.push_back("Entity " + std::to_string(entityId) +
