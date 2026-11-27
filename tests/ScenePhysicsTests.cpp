@@ -301,16 +301,32 @@ int main()
     auto& invalidJoint = invalidJointOwner.AddComponent<ember::DistanceJoint2D>();
     invalidJoint.connectedEntity = 999999;
 
+    auto& selfJointOwner = jointScene.CreateEntity("Self Joint Owner");
+    selfJointOwner.AddComponent<ember::PhysicsBody2D>();
+    auto& selfJoint = selfJointOwner.AddComponent<ember::RevoluteJoint2D>();
+    selfJoint.connectedEntity = selfJointOwner.GetId();
+
+    auto& disabledTarget = jointScene.CreateEntity("Disabled Joint Target");
+    disabledTarget.AddComponent<ember::PhysicsBody2D>().enabled = false;
+    auto& disabledJointOwner = jointScene.CreateEntity("Disabled Target Joint Owner");
+    disabledJointOwner.AddComponent<ember::PhysicsBody2D>();
+    auto& disabledJoint = disabledJointOwner.AddComponent<ember::DistanceJoint2D>();
+    disabledJoint.connectedEntity = disabledTarget.GetId();
+
     jointScene.Start();
-    Check(jointScene.GetPhysicsBodyCount() == 5,
+    Check(jointScene.GetPhysicsBodyCount() == 7,
         "Scene creates bodies before resolving joint references");
     Check(jointScene.GetPhysicsJointCount() == 2,
         "Scene creates valid Revolute and Distance joints from Entity references");
-    Check(!jointScene.GetPhysicsDiagnostics().empty(),
-        "Scene reports a joint whose target Entity has no runtime physics body");
+    Check(jointScene.GetPhysicsDiagnostics().size() >= 3,
+        "Scene diagnoses missing, self-referencing, and disabled-body joint references");
     jointScene.Stop();
     Check(jointScene.GetPhysicsJointCount() == 0 && jointScene.GetPhysicsBodyCount() == 0,
         "Scene Stop destroys runtime joints and bodies together");
+    jointScene.Start();
+    Check(jointScene.GetPhysicsJointCount() == 2,
+        "Scene Start recreates valid joints after a Stop/Start cycle");
+    jointScene.Stop();
 
     ember::Scene missingBodyScene("Missing Joint Body Test");
     auto& missingOwner = missingBodyScene.CreateEntity("Owner");
