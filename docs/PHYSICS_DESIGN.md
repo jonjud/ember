@@ -9,6 +9,7 @@
 - Complete: numeric body/collider configuration validation, disabled/static/kinematic behavior tests, and Editor collider debug overlay (Windows CI #113).
 - Complete: engine-owned Begin/End contact event API in PhysicsWorld and Scene, with EntityId pairs; Windows CI run 45939999840 passed.
 - Complete: engine-owned closest raycast and AABB overlap queries, including category/mask query filters and Scene EntityId mapping; Windows CI run 45941862568 passed.
+- Complete: automated category/mask filter coverage, sensor inclusion in raycast/AABB overlap queries, and Scene filter-forwarding tests; PhysicsWorld query coverage passed Windows CI #126.
 - Not implemented: joints and multiple colliders per entity.
 
 ## Dependency boundary
@@ -55,7 +56,6 @@
 - Non-finite frame delta is ignored safely.
 
 ## Remaining validation work
-- Expand automated query tests for custom category/mask combinations and sensor-specific behavior.
 - Interactive Editor/Play Mode verification on Windows remains outstanding.
 
 ## Milestone order
@@ -67,8 +67,9 @@
 6. Add Editor collider debug drawing. (Complete; CI #113)
 7. Add collision/contact begin/end event API. (Complete; Windows CI run 45939999840)
 8. Add raycast and overlap query APIs. (Complete; PhysicsWorld and Scene query tests; Windows CI #121)
-9. Expand query-filter and sensor-specific automated test coverage. (Next)
-10. Consider multiple colliders and joints after the first 2D runtime slice is stable.
+9. Expand query-filter and sensor-specific automated test coverage. (Complete; Windows CI #126)
+10. Verify Editor/Play Mode physics behavior interactively on Windows. (Next)
+11. Consider multiple colliders and joints after the first 2D runtime slice is stable.
 
 ## Explicit non-goals for first runtime slice
 - 3D physics, joints, ragdolls, character controllers, networking/rollback and multithreaded jobs.
