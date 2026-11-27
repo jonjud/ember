@@ -189,6 +189,8 @@ bool PhysicsWorld::AddBoxCollider(
     shapeDefinition.material.restitution = definition.restitution;
     shapeDefinition.isSensor = definition.isSensor;
     shapeDefinition.enableContactEvents = !definition.isSensor;
+    shapeDefinition.filter.categoryBits = definition.categoryBits;
+    shapeDefinition.filter.maskBits = definition.maskBits;
 
     const b2Polygon polygon = b2MakeOffsetBox(
         definition.halfExtents.x, definition.halfExtents.y,
@@ -213,6 +215,8 @@ bool PhysicsWorld::AddCircleCollider(
     shapeDefinition.material.restitution = definition.restitution;
     shapeDefinition.isSensor = definition.isSensor;
     shapeDefinition.enableContactEvents = !definition.isSensor;
+    shapeDefinition.filter.categoryBits = definition.categoryBits;
+    shapeDefinition.filter.maskBits = definition.maskBits;
 
     const b2Circle circle{{definition.offset.x, definition.offset.y}, definition.radius};
     return b2Shape_IsValid(b2CreateCircleShape(it->second, &shapeDefinition, &circle));
