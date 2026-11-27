@@ -148,6 +148,8 @@ bool EditorApplication::Initialize()
             static_cast<EditorNoteComponent&>(component).text = text;
             return true;
         });
+    (void)m_componentRegistry.RegisterProperty<EditorNoteComponent>(
+        "ember.note", "text", "Text", &EditorNoteComponent::text);
 
     LoadInputSettings();
     RefreshAssets();
@@ -497,15 +499,51 @@ void EditorApplication::DrawInspector()
                 ImGui::PushID(component.get());
                 if (ImGui::TreeNode(displayName))
                 {
-                    if (auto* note = dynamic_cast<EditorNoteComponent*>(component.get()))
+                    const auto* properties = m_componentRegistry.FindProperties(*component);
+                    if (properties != nullptr)
                     {
-                        char noteText[4097]{};
-                        std::snprintf(noteText, sizeof(noteText), "%s", note->text.c_str());
-                        if (ImGui::InputTextMultiline("Text", noteText, sizeof(noteText),
-                            ImVec2(-1.0F, 72.0F)))
+                        for (const auto& property : *properties)
                         {
-                            note->text = noteText;
-                            MarkSceneDirty();
+                            ImGui::PushID(property.id.c_str());
+                            switch (property.type)
+                            {
+                            case ComponentPropertyType::Boolean:
+                            {
+                                bool value = property.get(*component).get<bool>();
+                                if (ImGui::Checkbox(property.displayName.c_str(), &value) &&
+                                    property.set(*component, nlohmann::json(value)))
+                                    MarkSceneDirty();
+                                break;
+                            }
+                            case ComponentPropertyType::Integer:
+                            {
+                                int value = property.get(*component).get<int>();
+                                if (ImGui::DragInt(property.displayName.c_str(), &value) &&
+                                    property.set(*component, nlohmann::json(value)))
+                                    MarkSceneDirty();
+                                break;
+                            }
+                            case ComponentPropertyType::Float:
+                            {
+                                float value = property.get(*component).get<float>();
+                                if (ImGui::DragFloat(property.displayName.c_str(), &value, 0.05F) &&
+                                    property.set(*component, nlohmann::json(value)))
+                                    MarkSceneDirty();
+                                break;
+                            }
+                            case ComponentPropertyType::String:
+                            {
+                                char value[4097]{};
+                                const std::string current = property.get(*component).get<std::string>();
+                                std::snprintf(value, sizeof(value), "%s", current.c_str());
+                                if (ImGui::InputTextMultiline(property.displayName.c_str(), value,
+                                    sizeof(value), ImVec2(-1.0F, 72.0F)) &&
+                                    property.set(*component, nlohmann::json(value)))
+                                    MarkSceneDirty();
+                                break;
+                            }
+                            }
+                            ImGui::PopID();
                         }
                     }
                     if (ImGui::SmallButton("Remove Component"))

@@ -73,6 +73,31 @@ int main()
           "Registered types are listed in deterministic ID order");
     Check(registry.Size() == 2, "Registry reports its type count");
 
+    Check(registry.RegisterProperty<MarkerComponent>(
+        "example.marker", "value", "Value", &MarkerComponent::value),
+        "Registered component properties can be described");
+    Check(!registry.RegisterProperty<MarkerComponent>(
+        "example.marker", "value", "Duplicate", &MarkerComponent::value),
+        "Duplicate property IDs are rejected");
+    Check(!registry.RegisterProperty<OtherComponent>(
+        "example.marker", "wrong-owner", "Wrong Owner", nullptr),
+        "Properties cannot be registered against a different component type");
+    const auto* markerProperties = registry.FindProperties(source);
+    Check(markerProperties != nullptr && markerProperties->size() == 1 &&
+        markerProperties->front().type == ember::ComponentPropertyType::Integer,
+        "Property metadata can be queried by component instance");
+    if (markerProperties != nullptr && !markerProperties->empty())
+    {
+        Check(markerProperties->front().get(source).get<int>() == 42,
+            "Property descriptor reads the current component value");
+        Check(markerProperties->front().set(source, 73) && source.value == 73,
+            "Property descriptor updates the component value");
+        Check(!markerProperties->front().set(source, "not an integer") && source.value == 73,
+            "Property descriptor rejects values with the wrong type");
+        Check(!markerProperties->front().set(source, 999999999999LL) && source.value == 73,
+            "Integer property rejects values outside the supported range");
+    }
+
     if (failures != 0)
     {
         std::cerr << failures << " component registry test(s) failed.\n";
