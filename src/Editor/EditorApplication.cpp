@@ -244,6 +244,7 @@ void EditorApplication::Shutdown()
         m_playScene.Clear();
         m_isPlaying = false;
     }
+    StopAudioPreview();
     m_audio.Shutdown();
     ClearPreviewTextures();
     if (ImGui::GetCurrentContext() != nullptr)
@@ -1065,6 +1066,7 @@ void EditorApplication::DrawAssetBrowser()
                 const std::string label = metadata->assetId + "##asset";
                 if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
                 {
+                    if (m_selectedAssetId != metadata->assetId) StopAudioPreview();
                     m_selectedAssetId = metadata->assetId;
                     LoadSelectedTextureSettings();
                 }
@@ -1134,9 +1136,68 @@ void EditorApplication::DrawAssetBrowser()
                 }
                 ImGui::TextDisabled("Changes are saved to the .emberasset sidecar. Reload runtime assets to apply.");
             }
+            else if (selected->type == AssetType::Audio)
+            {
+                ImGui::SeparatorText("Audio Preview");
+                const bool previewLoaded = m_audioPreviewSound &&
+                    m_audioPreviewAssetId == selected->assetId;
+                const bool previewPlaying = previewLoaded &&
+                    m_audio.IsPlaying(m_audioPreviewSound);
+                ImGui::BeginDisabled(m_isPlaying || !m_audio.IsInitialized());
+                if (ImGui::Button(previewPlaying ? "Stop Preview" : "Play Preview"))
+                {
+                    if (previewPlaying)
+                    {
+                        if (m_audio.Stop(m_audioPreviewSound))
+                            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                                "Audio preview stopped");
+                        else
+                            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                                "Could not stop audio preview");
+                    }
+                    else
+                    {
+                        if (!previewLoaded)
+                        {
+                            StopAudioPreview();
+                            const auto path = m_assetRegistry.GetDirectory().Resolve(selected->source);
+                            if (!path)
+                            {
+                                std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                                    "Audio preview path is invalid or outside the asset directory");
+                            }
+                            else
+                            {
+                                m_audioPreviewSound = m_audio.LoadSound(*path, false);
+                                if (m_audioPreviewSound)
+                                    m_audioPreviewAssetId = selected->assetId;
+                                else
+                                    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                                        "Could not load audio preview: %.170s", selected->source.string().c_str());
+                            }
+                        }
+
+                        if (m_audioPreviewSound && m_audio.Play(m_audioPreviewSound))
+                        {
+                            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                                "Playing audio preview: %.180s", selected->assetId.c_str());
+                        }
+                        else if (m_audioPreviewSound)
+                        {
+                            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                                "Could not start audio preview");
+                        }
+                    }
+                }
+                ImGui::EndDisabled();
+                if (!m_audio.IsInitialized())
+                    ImGui::TextDisabled("Audio device is unavailable; preview is disabled.");
+                else
+                    ImGui::TextDisabled("Preview plays once through the Editor audio device.");
+            }
             else
             {
-                ImGui::TextDisabled("Import settings are currently available for Texture assets only.");
+                ImGui::TextDisabled("No additional actions are available for this asset type.");
             }
         }
         else if (!m_selectedAssetId.empty())
@@ -1281,6 +1342,17 @@ SDL_Texture* EditorApplication::GetPreviewTexture(const AssetMetadata& metadata)
 
     m_previewTextures.emplace(metadata.assetId, texture);
     return texture;
+}
+
+void EditorApplication::StopAudioPreview()
+{
+    if (m_audioPreviewSound && m_audio.IsInitialized())
+    {
+        (void)m_audio.Stop(m_audioPreviewSound);
+        (void)m_audio.UnloadSound(m_audioPreviewSound);
+    }
+    m_audioPreviewSound = {};
+    m_audioPreviewAssetId.clear();
 }
 
 void EditorApplication::ClearPreviewTextures()
@@ -1946,6 +2018,7 @@ Scene& EditorApplication::GetActiveScene()
 void EditorApplication::StartPlayMode()
 {
     if (m_isPlaying) return;
+    StopAudioPreview();
     m_playScene = m_scene.Clone();
     m_playScene.Start(&m_audio, &m_assetRegistry);
     m_isPlaying = true;
@@ -2182,6 +2255,7 @@ void EditorApplication::LoadStartupScene()
 
 void EditorApplication::RefreshAssets()
 {
+    StopAudioPreview();
     ClearPreviewTextures();
     const bool scanSucceeded = m_assetRegistry.Scan();
     const bool importScanSucceeded = m_assetImportService.Scan();

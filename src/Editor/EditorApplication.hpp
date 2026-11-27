@@ -68,9 +68,12 @@ private:
     [[nodiscard]] bool SaveProjectSettings();
     [[nodiscard]] SDL_Texture* GetPreviewTexture(const AssetMetadata& metadata);
     void ClearPreviewTextures();
+    void StopAudioPreview();
 
     SDL_Window* m_window = nullptr;
     AudioEngine m_audio;
+    AudioSoundHandle m_audioPreviewSound{};
+    std::string m_audioPreviewAssetId;
     SDL_Renderer* m_renderer = nullptr;
     std::unordered_map<std::string, SDL_Texture*> m_previewTextures;
     bool m_isRunning = false;
