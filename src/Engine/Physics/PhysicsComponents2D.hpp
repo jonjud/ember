@@ -25,9 +25,29 @@ enum class ColliderShape2D
 
 // IDs identify authored collider entries, not backend shapes. Copies preserve
 // IDs so cloning a Scene does not silently change collider identity.
-[[nodiscard]] inline ColliderId GenerateColliderId() noexcept
+inline std::atomic<ColliderId>& ColliderIdCounter() noexcept
 {
     static std::atomic<ColliderId> nextId{1};
+    return nextId;
+}
+
+inline bool ReserveColliderId(ColliderId id) noexcept
+{
+    if (id == 0) return false;
+    auto& nextId = ColliderIdCounter();
+    ColliderId current = nextId.load(std::memory_order_relaxed);
+    const ColliderId desired = id == std::numeric_limits<ColliderId>::max() ? 0 : id + 1;
+    while (current != 0 && current <= id)
+    {
+        if (nextId.compare_exchange_weak(current, desired,
+            std::memory_order_relaxed, std::memory_order_relaxed)) return true;
+    }
+    return current != 0 || id == std::numeric_limits<ColliderId>::max();
+}
+
+[[nodiscard]] inline ColliderId GenerateColliderId() noexcept
+{
+    auto& nextId = ColliderIdCounter();
     ColliderId current = nextId.load(std::memory_order_relaxed);
     while (current != 0)
     {
