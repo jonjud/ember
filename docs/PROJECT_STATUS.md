@@ -52,6 +52,7 @@
 - [x] Add closest raycast and AABB overlap queries with engine-owned query filters/results and Scene EntityId mapping
 - [x] Create multiple ColliderSet2D Box/Circle shapes on one PhysicsBody; preserve per-shape query filters and Entity-level query deduplication (CI #155)
 - [x] Aggregate overlapping shape-pair contact transitions into one Entity-pair Begin/End event (CI #164)
+- [x] Add Inspector list editing for ColliderSet2D: Add Box/Circle, duplicate, remove, edit geometry/material/filter properties (CI #169)
 - [x] Test query category/mask filtering for raycasts and AABB overlaps
 - [x] Verify raycasts and AABB overlaps include sensor shapes
 - [x] Verify Scene forwards query filters to PhysicsWorld
