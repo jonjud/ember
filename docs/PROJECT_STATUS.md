@@ -13,8 +13,8 @@
 | Active branch | `develop` |
 | Stable branch | `main` |
 | Last code commit | [`b1d7902`](https://github.com/jonjud/ember/commit/b1d79028c1f8184a5543d77ca339d8acd269e8d4) (Box2D dependency integration) |
-| Last verified CI | [Windows Build #92](https://github.com/jonjud/ember/actions/runs/45921944622) — code baseline ก่อนเพิ่ม Box2D |
-| Current CI | [Windows Build #95](https://github.com/jonjud/ember/actions/runs/45922737396) — In progress |
+| Last verified code CI | [Windows Build #95](https://github.com/jonjud/ember/actions/runs/45922737396) — **Success**; Box2D dependency commit `b1d7902` |
+| Latest CI | [Windows Build #96](https://github.com/jonjud/ember/actions/runs/45922782711) — **Success**; status-document update commit `a78e461` |
 | Last completed milestone | Versioned Component Schema Migration |
 | Current active milestone | Collision Detection & Physics — Stage 2: PhysicsWorld wrapper and tests |
 | Physics backend | Box2D v3.2.0 pinned via FetchContent; integration wrapper not implemented yet |
@@ -94,7 +94,8 @@
 | วันที่ | Commit | รายละเอียด | CI |
 |---|---|---|---|
 | 2026-11-27 | [`60e05ca`](https://github.com/jonjud/ember/commit/60e05ca08af44ec305988ff9dd88ccfee1d5589e) | Versioned component schema migrations; legacy v1 compatibility; migration tests | [Build #92 — Success](https://github.com/jonjud/ember/actions/runs/45921944622) |
-| 2026-11-27 | [`b1d7902`](https://github.com/jonjud/ember/commit/b1d79028c1f8184a5543d77ca339d8acd269e8d4) | Pin Box2D v3.2.0, enable C language, document Physics boundary | [Build #95 — In progress](https://github.com/jonjud/ember/actions/runs/45922737396) |
+| 2026-11-27 | [`b1d7902`](https://github.com/jonjud/ember/commit/b1d79028c1f8184a5543d77ca339d8acd269e8d4) | Pin Box2D v3.2.0, enable C language, document Physics boundary | [Build #95 — Success](https://github.com/jonjud/ember/actions/runs/45922737396) |
+| 2026-11-27 | [`a78e461`](https://github.com/jonjud/ember/commit/a78e4618f3483c3d3d6be987b704fb9ea466a62d) | Update Physics milestone tracking and design docs | [Build #96 — Success](https://github.com/jonjud/ember/actions/runs/45922782711) |
 
 ---
 
