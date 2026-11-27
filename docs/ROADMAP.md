@@ -68,8 +68,9 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Animation (SpriteAnimation2D frame playback, Scene lifecycle, serialization, Inspector controls, sprite-sheet viewport preview, Renderer2D source-region API and multi-row frame tests; Windows CI #199 Success; user-confirmed all checks passed)
 - [x] Audio implementation (miniaudio runtime, AudioSource2D serialization/Inspector and safe Audio-asset picker, Scene asset resolution/playback, Play Mode runtime controls, safe Scene move/Stop lifetime, Editor Asset Browser preview, and edge-case tests; Windows CI #219 Success). Final Windows Editor verification remains: [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md)
 - [x] UI authoring: Canvas/Panel/Text/Button components, serialization, Inspector, reference-resolution layout and Editor viewport preview (Windows CI #223 Success)
-- [x] UI runtime pointer routing: Canvas-aware hit testing, topmost-button selection, pointer capture, hover/press/click state and click event generation (commit `c59132a`; CI pending)
-- [ ] Deliver UI Button click events to runtime Component callbacks and verify end-to-end Play Mode interaction
+- [x] UI runtime pointer routing: Canvas-aware hit testing, topmost-button selection, pointer capture, hover/press/click state and click event generation (Windows CI #224 Success)
+- [x] Deliver UI Button click events to runtime Component callbacks with end-to-end automated coverage (Windows CI #225 Success)
+- [ ] Complete one Windows Editor UI verification session (checklist: [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md))
 - [ ] Runtime input action mapping integration
 - [ ] Scripting interface
 
@@ -88,4 +89,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Continue UI System: connect generated UI Button click events to runtime Component callbacks, add automated end-to-end coverage, then complete one Windows Editor verification session. Audio implementation and CI #219 are complete; the one-time Windows Audio Editor checklist remains documented in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md). Keep miniaudio types private and editor-only code out of `ember_engine`.
+- Continue UI System: complete automated UI Button-to-Component click dispatch coverage, then complete one Windows Editor verification session. Audio implementation and CI #219 are complete; the one-time Windows Audio Editor checklist remains documented in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md). Keep miniaudio types private and editor-only code out of `ember_engine`.

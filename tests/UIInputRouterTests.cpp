@@ -1,9 +1,21 @@
 #include "Engine/UI/UIInputRouter2D.hpp"
 
 #include <iostream>
+#include <memory>
 
 namespace
 {
+class ClickCounterComponent final : public ember::Component
+{
+public:
+    int clicks = 0;
+    [[nodiscard]] std::unique_ptr<ember::Component> Clone() const override
+    {
+        return std::make_unique<ClickCounterComponent>(*this);
+    }
+    void OnUIButtonClicked(ember::Entity&) noexcept override { ++clicks; }
+};
+
 int failures = 0;
 
 void Check(bool condition, const char* message)
@@ -88,6 +100,48 @@ int main()
     router.Reset();
     Check(router.GetEvents().empty() && !router.GetState(buttonEntity.GetId()).hovered,
         "Reset clears transient interaction state and events");
+
+    // Exercise the complete path from pointer input through the generated
+    // event to the runtime Component callback.
+    ember::Scene callbackScene("UI Click Callback Test");
+    auto& callbackCanvasEntity = callbackScene.CreateEntity("Canvas");
+    auto& callbackCanvas = callbackCanvasEntity.AddComponent<ember::UICanvas2D>();
+    auto& callbackButtonEntity = callbackScene.CreateEntity("Callback Button");
+    auto& callbackButton = callbackButtonEntity.AddComponent<ember::UIButton2D>();
+    callbackButton.position = {20.0F, 30.0F};
+    callbackButton.size = {100.0F, 50.0F};
+    auto& clickCounter = callbackButtonEntity.AddComponent<ClickCounterComponent>();
+    callbackScene.Start();
+
+    ember::UIInputRouter2D callbackRouter;
+    callbackRouter.Update(callbackScene, &callbackCanvas, {1280.0F, 720.0F},
+        {40.0F, 40.0F}, true, true, false);
+    callbackRouter.Update(callbackScene, &callbackCanvas, {1280.0F, 720.0F},
+        {40.0F, 40.0F}, false, false, true);
+    for (const auto& event : callbackRouter.GetEvents())
+        (void)callbackScene.DispatchUIButtonClicked(event.entity);
+    Check(clickCounter.clicks == 1,
+        "Pointer release dispatches one runtime Component click callback");
+
+    callbackRouter.Update(callbackScene, &callbackCanvas, {1280.0F, 720.0F},
+        {40.0F, 40.0F}, true, true, false);
+    callbackRouter.Update(callbackScene, &callbackCanvas, {1280.0F, 720.0F},
+        {300.0F, 300.0F}, false, false, true);
+    for (const auto& event : callbackRouter.GetEvents())
+        (void)callbackScene.DispatchUIButtonClicked(event.entity);
+    Check(clickCounter.clicks == 1,
+        "Pointer release outside the Button does not invoke its callback");
+
+    callbackButton.enabled = false;
+    callbackRouter.Update(callbackScene, &callbackCanvas, {1280.0F, 720.0F},
+        {40.0F, 40.0F}, true, true, false);
+    callbackRouter.Update(callbackScene, &callbackCanvas, {1280.0F, 720.0F},
+        {40.0F, 40.0F}, false, false, true);
+    for (const auto& event : callbackRouter.GetEvents())
+        (void)callbackScene.DispatchUIButtonClicked(event.entity);
+    Check(clickCounter.clicks == 1,
+        "Disabled Button cannot trigger a runtime Component callback");
+    callbackScene.Stop();
 
     if (failures != 0)
     {
