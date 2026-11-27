@@ -11,7 +11,8 @@
 - Complete: engine-owned closest raycast and AABB overlap queries, including category/mask query filters and Scene EntityId mapping; Windows CI run 45941862568 passed.
 - Complete: automated category/mask filter coverage, sensor inclusion in raycast/AABB overlap queries, and Scene filter-forwarding tests; PhysicsWorld query coverage passed Windows CI #126.
 - Active milestone: multiple colliders per entity. ColliderSet2D model and stable IDs passed CI #135. Canonical ColliderSet2D serialization and migration of legacy single Box/Circle components during Scene loading are implemented; runtime multi-shape integration is pending CI.
-- Active milestone: PhysicsJointHandle, Revolute/Distance PhysicsWorld API, serializable RevoluteJoint2D/DistanceJoint2D components, EntityId references, Scene runtime creation/teardown, and Inspector reference/settings controls are implemented; Windows CI #191 passed implementation and automated tests; final Windows manual verification remains deferred until the planned test session.
+- Completed implementation milestone: PhysicsJointHandle, Revolute/Distance PhysicsWorld API, serializable components, EntityId references, Scene runtime creation/teardown, Inspector controls and automated tests passed Windows CI #191. Final Windows manual verification remains deferred until the planned test session.
+- Active milestone: SpriteAnimation2D frame playback, Scene component updates, serialization, Inspector settings, Editor sprite-sheet preview and Renderer2D source-region API; Windows CI #193 pending.
 
 ## Dependency boundary
 - Box2D headers and IDs must not appear in public EMBER Scene, Entity, Component or Editor headers.
