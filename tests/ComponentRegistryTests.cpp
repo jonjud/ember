@@ -1,4 +1,5 @@
 #include "Engine/Scene/ComponentRegistry.hpp"
+#include "Engine/Scene/AudioComponentRegistration.hpp"
 
 #include <iostream>
 #include <memory>
@@ -192,6 +193,51 @@ int main()
     Check(registry.Create("example.migrating", 3,
         nlohmann::json{{"amount", 42}}) == nullptr,
         "Future component schema versions are rejected");
+
+
+    ember::ComponentRegistry audioRegistry;
+    Check(ember::RegisterAudioComponents(audioRegistry),
+        "AudioSource2D registers with serialization and Inspector properties");
+    ember::AudioSource2D audioSource;
+    audioSource.audioAssetId = "audio/ambience";
+    audioSource.volume = 0.65F;
+    audioSource.loop = true;
+    audioSource.playOnStart = true;
+    audioSource.streaming = true;
+    ember::Json audioData;
+    Check(audioRegistry.Serialize(audioSource, audioData),
+        "AudioSource2D configuration serializes");
+    auto restoredAudio = audioRegistry.Create("ember.audio_source_2d", audioData);
+    const auto* restoredSource = dynamic_cast<const ember::AudioSource2D*>(restoredAudio.get());
+    Check(restoredSource && restoredSource->audioAssetId == "audio/ambience" &&
+        restoredSource->volume == 0.65F && restoredSource->loop &&
+        restoredSource->playOnStart && restoredSource->streaming,
+        "AudioSource2D configuration round-trips through the component registry");
+    const auto* audioProperties = audioRegistry.FindProperties(audioSource);
+    Check(audioProperties && audioProperties->size() == 5,
+        "AudioSource2D exposes all authoring properties to the Inspector");
+    if (audioProperties) {
+        const auto findAudioProperty = [audioProperties](const std::string& id)
+            -> const ember::ComponentPropertyInfo* {
+            for (const auto& property : *audioProperties)
+                if (property.id == id) return &property;
+            return nullptr;
+        };
+        const auto* volume = findAudioProperty("volume");
+        const auto* asset = findAudioProperty("audio_asset_id");
+        Check(volume && volume->set(audioSource, 1.25) && audioSource.volume == 1.25F,
+            "AudioSource2D volume can be edited through the Inspector descriptor");
+        Check(asset && asset->set(audioSource, "audio/new") &&
+            audioSource.audioAssetId == "audio/new",
+            "AudioSource2D asset reference can be edited through the Inspector descriptor");
+    }
+    audioSource.volume = 5.0F;
+    Check(!audioSource.IsConfigurationValid(),
+        "AudioSource2D rejects volume outside the supported range");
+    audioSource.volume = 1.0F;
+    audioSource.audioAssetId.assign(257, 'x');
+    Check(!audioSource.IsConfigurationValid(),
+        "AudioSource2D rejects oversized asset IDs");
 
     if (failures != 0)
     {

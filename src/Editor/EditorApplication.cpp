@@ -5,6 +5,7 @@
 #include "Engine/Physics/PhysicsComponents2D.hpp"
 #include "Engine/Scene/AnimationComponents2D.hpp"
 #include "Engine/Scene/AnimationComponentRegistration.hpp"
+#include "Engine/Scene/AudioComponentRegistration.hpp"
 #include "Engine/Platform/Input.hpp"
 #include "Engine/Project/ProjectConfigurationStore.hpp"
 
@@ -167,6 +168,12 @@ bool EditorApplication::Initialize()
     if (!RegisterAnimationComponents(m_componentRegistry))
     {
         std::cerr << "EMBER Editor: Animation component registration failed.\n";
+        return false;
+    }
+
+    if (!RegisterAudioComponents(m_componentRegistry))
+    {
+        std::cerr << "EMBER Editor: Audio component registration failed.\n";
         return false;
     }
 

@@ -34,7 +34,7 @@ tests/
 
 ## Responsibilities and ownership
 - **Core / Application:** runtime window, active Scene, AssetManager, AudioEngine, and application event/update/render lifecycle. Audio device initialization is best-effort; an unavailable output device does not prevent the Editor or sample application from opening.
-- **Audio / AudioEngine:** engine-owned PImpl facade around miniaudio. AudioSoundHandle values identify loaded sounds without exposing backend objects; the engine owns sound lifetime and shuts sounds down before the mixer. Device-less initialization supports deterministic automated tests and offline tools.
+- **Audio / AudioEngine:** engine-owned PImpl facade around miniaudio. Serializable `AudioSource2D` authoring data stores a stable project Audio asset ID plus volume, loop, play-on-start, streaming and enabled settings; it never stores a runtime sound handle. The Scene playback integration resolves these settings against the owning AudioEngine during runtime. AudioSoundHandle values identify loaded sounds without exposing backend objects; the engine owns sound lifetime and shuts sounds down before the mixer. Device-less initialization supports deterministic automated tests and offline tools.
 - **Editor / EditorApplication:** editor panels, viewport, gizmos, scene workflow and Play Mode; editor UI does not own physics backend objects. The viewport Physics toggle draws configured box/circle collider outlines using engine component data only.
 - **Math / Vector2:** engine-owned 2D vector type.
 - **Scene / Component:** polymorphic runtime behavior with Clone, OnCreate, OnUpdate and OnDestroy hooks. Components are owned by entities; structural changes are locked while a Scene is running.
