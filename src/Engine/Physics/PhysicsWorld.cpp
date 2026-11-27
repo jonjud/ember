@@ -211,10 +211,49 @@ bool PhysicsWorld::SetBodyTransform(PhysicsBodyHandle handle, const PhysicsTrans
 
     const auto it = m_impl->bodies.find(handle.value);
     if (it == m_impl->bodies.end() || !b2Body_IsValid(it->second)) return false;
+
+    const b2BodyId movedBody = it->second;
+    const b2Pos currentPosition = b2Body_GetPosition(movedBody);
+    const float currentRotation = b2Rot_GetAngle(b2Body_GetRotation(movedBody));
+    const bool hasMoved = currentPosition.x != transform.position.x ||
+        currentPosition.y != transform.position.y || currentRotation != transform.rotation;
+
+    // Transform-driven static/kinematic bodies can be teleported by the Scene.
+    // Wake dynamic bodies that were touching the moved body so Box2D refreshes
+    // their contact state and can emit the corresponding End event.
+    std::vector<b2BodyId> bodiesToWake;
+    if (hasMoved)
+    {
+        const int contactCapacity = b2Body_GetContactCapacity(movedBody);
+        if (contactCapacity > 0)
+        {
+            std::vector<b2ContactData> contacts(static_cast<std::size_t>(contactCapacity));
+            const int contactCount = b2Body_GetContactData(
+                movedBody, contacts.data(), contactCapacity);
+            for (int index = 0; index < contactCount; ++index)
+            {
+                const b2ContactData& contact = contacts[static_cast<std::size_t>(index)];
+                if (contact.manifold.pointCount == 0) continue;
+
+                const b2BodyId bodyA = b2Shape_GetBody(contact.shapeIdA);
+                const b2BodyId bodyB = b2Shape_GetBody(contact.shapeIdB);
+                const bool bodyAIsMoved = bodyA.index1 == movedBody.index1 &&
+                    bodyA.world0 == movedBody.world0 && bodyA.generation == movedBody.generation;
+                const b2BodyId otherBody = bodyAIsMoved ? bodyB : bodyA;
+                if (b2Body_IsValid(otherBody) && b2Body_GetType(otherBody) == b2_dynamicBody)
+                    bodiesToWake.push_back(otherBody);
+            }
+        }
+    }
+
     b2Body_SetTransform(
-        it->second,
+        movedBody,
         {transform.position.x, transform.position.y},
         b2MakeRot(transform.rotation));
+    for (const b2BodyId body : bodiesToWake)
+    {
+        if (b2Body_IsValid(body)) b2Body_SetAwake(body, true);
+    }
     return true;
 }
 
