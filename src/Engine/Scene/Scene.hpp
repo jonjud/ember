@@ -53,6 +53,7 @@ public:
     void Stop() noexcept;
     [[nodiscard]] bool IsStarted() const { return m_started; }
     [[nodiscard]] std::size_t GetPhysicsBodyCount() const { return m_physicsBodies.size(); }
+    [[nodiscard]] std::size_t GetPhysicsJointCount() const { return m_physicsWorld ? m_physicsWorld->GetJointCount() : 0; }
     [[nodiscard]] const std::vector<std::string>& GetPhysicsDiagnostics() const { return m_physicsDiagnostics; }
     // Events are collected during the most recent Update and remain available until the next Update.
     [[nodiscard]] const std::vector<SceneContactEvent2D>& GetPhysicsContactEvents() const

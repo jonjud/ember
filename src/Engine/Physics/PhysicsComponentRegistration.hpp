@@ -159,6 +159,58 @@ inline bool RegisterPhysicsComponents(ComponentRegistry& registry)
                 c.radius > 0.0F && detail::ValidMaterial(c.density, c.friction, c.restitution);
         }) && ok;
 
+
+    ok = registry.Register<RevoluteJoint2D>("ember.revolute_joint_2d", "Revolute Joint 2D",
+        [](const Component& base) {
+            const auto& c = static_cast<const RevoluteJoint2D&>(base);
+            return nlohmann::json{{"connected_entity", c.connectedEntity},
+                {"local_anchor_a", {c.localAnchorA.x, c.localAnchorA.y}},
+                {"local_anchor_b", {c.localAnchorB.x, c.localAnchorB.y}},
+                {"enable_limit", c.enableLimit}, {"lower_angle", c.lowerAngle},
+                {"upper_angle", c.upperAngle}, {"enable_motor", c.enableMotor},
+                {"motor_speed", c.motorSpeed}, {"max_motor_torque", c.maxMotorTorque},
+                {"collide_connected", c.collideConnected}};
+        },
+        [](Component& base, const nlohmann::json& data) {
+            if (!data.is_object() || !data.contains("connected_entity") ||
+                !data.at("connected_entity").is_number_unsigned()) return false;
+            const auto target = data.at("connected_entity").get<EntityId>();
+            if (target == 0) return false;
+            auto& c = static_cast<RevoluteJoint2D&>(base);
+            c.connectedEntity = target;
+            return detail::ReadPhysicsVector2(data, "local_anchor_a", c.localAnchorA) &&
+                detail::ReadPhysicsVector2(data, "local_anchor_b", c.localAnchorB) &&
+                detail::ReadPhysicsBool(data, "enable_limit", c.enableLimit) &&
+                detail::ReadPhysicsFloat(data, "lower_angle", c.lowerAngle) &&
+                detail::ReadPhysicsFloat(data, "upper_angle", c.upperAngle) &&
+                detail::ReadPhysicsBool(data, "enable_motor", c.enableMotor) &&
+                detail::ReadPhysicsFloat(data, "motor_speed", c.motorSpeed) &&
+                detail::ReadPhysicsFloat(data, "max_motor_torque", c.maxMotorTorque) &&
+                detail::ReadPhysicsBool(data, "collide_connected", c.collideConnected) &&
+                c.lowerAngle <= c.upperAngle && c.maxMotorTorque >= 0.0F;
+        }) && ok;
+    ok = registry.Register<DistanceJoint2D>("ember.distance_joint_2d", "Distance Joint 2D",
+        [](const Component& base) {
+            const auto& c = static_cast<const DistanceJoint2D&>(base);
+            return nlohmann::json{{"connected_entity", c.connectedEntity},
+                {"local_anchor_a", {c.localAnchorA.x, c.localAnchorA.y}},
+                {"local_anchor_b", {c.localAnchorB.x, c.localAnchorB.y}},
+                {"length", c.length}, {"collide_connected", c.collideConnected}};
+        },
+        [](Component& base, const nlohmann::json& data) {
+            if (!data.is_object() || !data.contains("connected_entity") ||
+                !data.at("connected_entity").is_number_unsigned()) return false;
+            const auto target = data.at("connected_entity").get<EntityId>();
+            if (target == 0) return false;
+            auto& c = static_cast<DistanceJoint2D&>(base);
+            c.connectedEntity = target;
+            return detail::ReadPhysicsVector2(data, "local_anchor_a", c.localAnchorA) &&
+                detail::ReadPhysicsVector2(data, "local_anchor_b", c.localAnchorB) &&
+                detail::ReadPhysicsFloat(data, "length", c.length) &&
+                detail::ReadPhysicsBool(data, "collide_connected", c.collideConnected) &&
+                c.length > 0.0F;
+        }) && ok;
+
     ok = registry.RegisterEnumProperty<PhysicsBody2D>("ember.physics_body_2d", "type", "Body Type",
         &PhysicsBody2D::type, {{PhysicsBodyType2D::Static, "Static"},
             {PhysicsBodyType2D::Kinematic, "Kinematic"}, {PhysicsBodyType2D::Dynamic, "Dynamic"}}) && ok;
@@ -198,6 +250,35 @@ inline bool RegisterPhysicsComponents(ComponentRegistry& registry)
         "Restitution", &CircleCollider2D::restitution) && ok;
     ok = registry.RegisterProperty<CircleCollider2D>("ember.circle_collider_2d", "is_sensor",
         "Is Sensor", &CircleCollider2D::isSensor) && ok;
+
+    ok = registry.RegisterVector2Property<RevoluteJoint2D>("ember.revolute_joint_2d",
+        "local_anchor_a", "Local Anchor A", &RevoluteJoint2D::localAnchorA) && ok;
+    ok = registry.RegisterVector2Property<RevoluteJoint2D>("ember.revolute_joint_2d",
+        "local_anchor_b", "Local Anchor B", &RevoluteJoint2D::localAnchorB) && ok;
+    ok = registry.RegisterProperty<RevoluteJoint2D>("ember.revolute_joint_2d",
+        "enable_limit", "Enable Limit", &RevoluteJoint2D::enableLimit) && ok;
+    ok = registry.RegisterProperty<RevoluteJoint2D>("ember.revolute_joint_2d",
+        "lower_angle", "Lower Angle (rad)", &RevoluteJoint2D::lowerAngle) && ok;
+    ok = registry.RegisterProperty<RevoluteJoint2D>("ember.revolute_joint_2d",
+        "upper_angle", "Upper Angle (rad)", &RevoluteJoint2D::upperAngle) && ok;
+    ok = registry.RegisterProperty<RevoluteJoint2D>("ember.revolute_joint_2d",
+        "enable_motor", "Enable Motor", &RevoluteJoint2D::enableMotor) && ok;
+    ok = registry.RegisterProperty<RevoluteJoint2D>("ember.revolute_joint_2d",
+        "motor_speed", "Motor Speed (rad/s)", &RevoluteJoint2D::motorSpeed) && ok;
+    ok = registry.RegisterProperty<RevoluteJoint2D>("ember.revolute_joint_2d",
+        "max_motor_torque", "Max Motor Torque", &RevoluteJoint2D::maxMotorTorque) && ok;
+    ok = registry.RegisterProperty<RevoluteJoint2D>("ember.revolute_joint_2d",
+        "collide_connected", "Collide Connected", &RevoluteJoint2D::collideConnected) && ok;
+
+    ok = registry.RegisterVector2Property<DistanceJoint2D>("ember.distance_joint_2d",
+        "local_anchor_a", "Local Anchor A", &DistanceJoint2D::localAnchorA) && ok;
+    ok = registry.RegisterVector2Property<DistanceJoint2D>("ember.distance_joint_2d",
+        "local_anchor_b", "Local Anchor B", &DistanceJoint2D::localAnchorB) && ok;
+    ok = registry.RegisterProperty<DistanceJoint2D>("ember.distance_joint_2d",
+        "length", "Length (pixels)", &DistanceJoint2D::length) && ok;
+    ok = registry.RegisterProperty<DistanceJoint2D>("ember.distance_joint_2d",
+        "collide_connected", "Collide Connected", &DistanceJoint2D::collideConnected) && ok;
+
     return ok;
 }
 } // namespace ember

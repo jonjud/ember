@@ -197,6 +197,68 @@ void Scene::BuildPhysicsWorld() noexcept
             if (handle) (void)m_physicsWorld->DestroyBody(handle);
             m_physicsDiagnostics.push_back("Entity " + std::to_string(entityId) +
                 " physics setup failed: " + exception.what());
+
+        }
+    }
+
+    // Resolve Entity references only after all runtime bodies have been created.
+    for (const auto& [entityId, entity] : m_entities)
+    {
+        const auto ownerBody = m_physicsBodies.find(entityId);
+        if (const auto* joint = entity->GetComponent<RevoluteJoint2D>())
+        {
+            const auto targetBody = m_physicsBodies.find(joint->connectedEntity);
+            if (joint->connectedEntity == entityId || ownerBody == m_physicsBodies.end() ||
+                targetBody == m_physicsBodies.end())
+            {
+                m_physicsDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                    " has a RevoluteJoint2D with a missing, self, disabled, or invalid body reference.");
+            }
+            else
+            {
+                PhysicsRevoluteJointDefinition2D definition;
+                definition.bodyA = ownerBody->second;
+                definition.bodyB = targetBody->second;
+                definition.localAnchorA = {joint->localAnchorA.x * pixelsToMeters,
+                    joint->localAnchorA.y * pixelsToMeters};
+                definition.localAnchorB = {joint->localAnchorB.x * pixelsToMeters,
+                    joint->localAnchorB.y * pixelsToMeters};
+                definition.enableLimit = joint->enableLimit;
+                definition.lowerAngle = joint->lowerAngle;
+                definition.upperAngle = joint->upperAngle;
+                definition.enableMotor = joint->enableMotor;
+                definition.motorSpeed = joint->motorSpeed;
+                definition.maxMotorTorque = joint->maxMotorTorque;
+                definition.collideConnected = joint->collideConnected;
+                if (!m_physicsWorld->CreateRevoluteJoint(definition))
+                    m_physicsDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                        " could not create its RevoluteJoint2D.");
+            }
+        }
+        if (const auto* joint = entity->GetComponent<DistanceJoint2D>())
+        {
+            const auto targetBody = m_physicsBodies.find(joint->connectedEntity);
+            if (joint->connectedEntity == entityId || ownerBody == m_physicsBodies.end() ||
+                targetBody == m_physicsBodies.end())
+            {
+                m_physicsDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                    " has a DistanceJoint2D with a missing, self, disabled, or invalid body reference.");
+            }
+            else
+            {
+                PhysicsDistanceJointDefinition2D definition;
+                definition.bodyA = ownerBody->second;
+                definition.bodyB = targetBody->second;
+                definition.localAnchorA = {joint->localAnchorA.x * pixelsToMeters,
+                    joint->localAnchorA.y * pixelsToMeters};
+                definition.localAnchorB = {joint->localAnchorB.x * pixelsToMeters,
+                    joint->localAnchorB.y * pixelsToMeters};
+                definition.length = joint->length * pixelsToMeters;
+                definition.collideConnected = joint->collideConnected;
+                if (!m_physicsWorld->CreateDistanceJoint(definition))
+                    m_physicsDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                        " could not create its DistanceJoint2D.");
+            }
         }
     }
 }

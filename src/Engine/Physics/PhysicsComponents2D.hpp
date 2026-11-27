@@ -2,6 +2,7 @@
 
 #include "Engine/Physics/PhysicsWorld.hpp"
 #include "Engine/Scene/Component.hpp"
+#include "Engine/Scene/Entity.hpp"
 
 #include <atomic>
 #include <algorithm>
@@ -190,5 +191,34 @@ public:
     {
         return std::make_unique<CircleCollider2D>(*this);
     }
+};
+
+class RevoluteJoint2D final : public Component
+{
+public:
+    EntityId connectedEntity = 0;
+    Vector2 localAnchorA{};
+    Vector2 localAnchorB{};
+    bool enableLimit = false;
+    float lowerAngle = 0.0F;
+    float upperAngle = 0.0F;
+    bool enableMotor = false;
+    float motorSpeed = 0.0F;
+    float maxMotorTorque = 0.0F;
+    bool collideConnected = false;
+    [[nodiscard]] std::unique_ptr<Component> Clone() const override
+    { return std::make_unique<RevoluteJoint2D>(*this); }
+};
+
+class DistanceJoint2D final : public Component
+{
+public:
+    EntityId connectedEntity = 0;
+    Vector2 localAnchorA{};
+    Vector2 localAnchorB{};
+    float length = 100.0F; // pixels; converted to meters when Scene starts
+    bool collideConnected = false;
+    [[nodiscard]] std::unique_ptr<Component> Clone() const override
+    { return std::make_unique<DistanceJoint2D>(*this); }
 };
 } // namespace ember

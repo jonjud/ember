@@ -99,7 +99,7 @@ int main()
     ember::ComponentRegistry registry;
     Check(ember::RegisterPhysicsComponents(registry),
         "Physics components register for Editor creation and serialization");
-    Check(registry.Size() == 4, "All four physics component types are registered");
+    Check(registry.Size() == 6, "All six physics component types are registered, including both joint types");
 
     auto registeredBody = registry.Create("ember.physics_body_2d");
     auto* editableBody = dynamic_cast<ember::PhysicsBody2D*>(registeredBody.get());
@@ -154,6 +154,44 @@ int main()
             restored->colliders[1].radius == 2.5F &&
             restored->colliders[1].isSensor && restored->colliders[1].maskBits == 0x0008,
             "Collider Set deserializes IDs, geometry, material and query filters");
+    }
+
+
+    auto revoluteBase = registry.Create("ember.revolute_joint_2d");
+    auto* revolute = dynamic_cast<ember::RevoluteJoint2D*>(revoluteBase.get());
+    Check(revolute != nullptr, "Revolute Joint can be created through the registry");
+    if (revolute)
+    {
+        revolute->connectedEntity = 42;
+        revolute->localAnchorA = {10.0F, 20.0F};
+        revolute->enableLimit = true;
+        revolute->lowerAngle = -0.5F;
+        revolute->upperAngle = 0.75F;
+        nlohmann::json data;
+        Check(registry.Serialize(*revolute, data), "Revolute Joint serializes its Entity reference and settings");
+        auto restoredBase = registry.Create("ember.revolute_joint_2d", data);
+        const auto* restored = dynamic_cast<const ember::RevoluteJoint2D*>(restoredBase.get());
+        Check(restored && restored->connectedEntity == 42 &&
+            restored->localAnchorA.x == 10.0F && restored->enableLimit &&
+            restored->lowerAngle == -0.5F && restored->upperAngle == 0.75F,
+            "Revolute Joint deserializes reference, anchors, and limits");
+    }
+    auto distanceBase = registry.Create("ember.distance_joint_2d");
+    auto* distance = dynamic_cast<ember::DistanceJoint2D*>(distanceBase.get());
+    Check(distance != nullptr, "Distance Joint can be created through the registry");
+    if (distance)
+    {
+        distance->connectedEntity = 7;
+        distance->length = 250.0F;
+        nlohmann::json data;
+        Check(registry.Serialize(*distance, data), "Distance Joint serializes its Entity reference and settings");
+        auto restoredBase = registry.Create("ember.distance_joint_2d", data);
+        const auto* restored = dynamic_cast<const ember::DistanceJoint2D*>(restoredBase.get());
+        Check(restored && restored->connectedEntity == 7 && restored->length == 250.0F,
+            "Distance Joint deserializes reference and length");
+        data["length"] = -1.0F;
+        Check(!registry.Create("ember.distance_joint_2d", data),
+            "Distance Joint rejects a non-positive serialized length");
     }
 
     return failures == 0 ? 0 : 1;

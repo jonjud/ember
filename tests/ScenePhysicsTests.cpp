@@ -276,6 +276,53 @@ int main()
     Check(checkTransformAuthority(ember::PhysicsBodyType2D::Kinematic, "Kinematic Transform Authority"),
         "Kinematic physics bodies follow Entity Transform2D changes before simulation steps");
 
+
+    ember::Scene jointScene("Physics Joint Runtime Test");
+    auto& hingeA = jointScene.CreateEntity("Hinge A");
+    hingeA.AddComponent<ember::PhysicsBody2D>().type = ember::PhysicsBodyType2D::Static;
+    auto& hingeB = jointScene.CreateEntity("Hinge B");
+    hingeB.AddComponent<ember::PhysicsBody2D>().type = ember::PhysicsBodyType2D::Dynamic;
+    auto& hinge = hingeA.AddComponent<ember::RevoluteJoint2D>();
+    hinge.connectedEntity = hingeB.GetId();
+    hinge.enableLimit = true;
+    hinge.lowerAngle = -0.25F;
+    hinge.upperAngle = 0.5F;
+
+    auto& ropeA = jointScene.CreateEntity("Rope A");
+    ropeA.AddComponent<ember::PhysicsBody2D>().type = ember::PhysicsBodyType2D::Static;
+    auto& ropeB = jointScene.CreateEntity("Rope B");
+    ropeB.AddComponent<ember::PhysicsBody2D>().type = ember::PhysicsBodyType2D::Dynamic;
+    auto& rope = ropeA.AddComponent<ember::DistanceJoint2D>();
+    rope.connectedEntity = ropeB.GetId();
+    rope.length = 150.0F;
+
+    auto& invalidJointOwner = jointScene.CreateEntity("Invalid Joint Owner");
+    invalidJointOwner.AddComponent<ember::PhysicsBody2D>();
+    auto& invalidJoint = invalidJointOwner.AddComponent<ember::DistanceJoint2D>();
+    invalidJoint.connectedEntity = 999999;
+
+    jointScene.Start();
+    Check(jointScene.GetPhysicsBodyCount() == 5,
+        "Scene creates bodies before resolving joint references");
+    Check(jointScene.GetPhysicsJointCount() == 2,
+        "Scene creates valid Revolute and Distance joints from Entity references");
+    Check(!jointScene.GetPhysicsDiagnostics().empty(),
+        "Scene reports a joint whose target Entity has no runtime physics body");
+    jointScene.Stop();
+    Check(jointScene.GetPhysicsJointCount() == 0 && jointScene.GetPhysicsBodyCount() == 0,
+        "Scene Stop destroys runtime joints and bodies together");
+
+    ember::Scene missingBodyScene("Missing Joint Body Test");
+    auto& missingOwner = missingBodyScene.CreateEntity("Owner");
+    missingOwner.AddComponent<ember::PhysicsBody2D>();
+    auto& missingTargetJoint = missingOwner.AddComponent<ember::RevoluteJoint2D>();
+    missingTargetJoint.connectedEntity = 12345;
+    missingBodyScene.Start();
+    Check(missingBodyScene.GetPhysicsJointCount() == 0 &&
+        !missingBodyScene.GetPhysicsDiagnostics().empty(),
+        "Scene skips and diagnoses a joint with a missing Entity reference");
+    missingBodyScene.Stop();
+
     if (failures != 0)
     {
         std::cerr << failures << " scene physics test(s) failed.\n";
