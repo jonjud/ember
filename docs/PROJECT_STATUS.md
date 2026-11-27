@@ -10,9 +10,9 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`009723a`](https://github.com/jonjud/ember/commit/009723a7e11d2cf01111668ef33cf98665aa85f5) — Multi-collider Inspector editing fix |
-| Last verified CI | [Windows CI #169](https://github.com/jonjud/ember/actions/runs/45959345669) — **Success** (Configure, Build, Run engine tests), including multi-collider Inspector editing |
-| Last completed milestone | ColliderSet2D serialization and legacy Scene migration passed CI #151 |
+| Last code commit | [`d67b96b`](https://github.com/jonjud/ember/commit/d67b96bbd860f945db6332db54c9e26f6e256314) — Multi-collider Physics Debug Overlay |
+| Last verified CI | [Windows CI #170](https://github.com/jonjud/ember/actions/runs/45961198358) — **Success** (Configure, Build, Run engine tests), including multi-collider Debug Overlay |
+| Last completed milestone | Multi-collider Inspector and Debug Overlay passed Windows CI #169 and #170; interactive Windows checklist remains |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests ไม่ได้ยืนยันการทดสอบ Editor/Runtime แบบ interactive บนเครื่องจริง
@@ -53,6 +53,7 @@
 - [x] Create multiple ColliderSet2D Box/Circle shapes on one PhysicsBody; preserve per-shape query filters and Entity-level query deduplication (CI #155)
 - [x] Aggregate overlapping shape-pair contact transitions into one Entity-pair Begin/End event (CI #164)
 - [x] Add Inspector list editing for ColliderSet2D: Add Box/Circle, duplicate, remove, edit geometry/material/filter properties (CI #169)
+- [x] Extend Physics Debug Overlay to draw every ColliderSet2D Box/Circle entry, retaining sensor/solid colors and legacy fallback (CI #170)
 - [x] Test query category/mask filtering for raycasts and AABB overlaps
 - [x] Verify raycasts and AABB overlaps include sensor shapes
 - [x] Verify Scene forwards query filters to PhysicsWorld
@@ -77,7 +78,7 @@
 
 The Scene-owned 2D physics slice includes the Editor collider debug overlay, Begin/End contact events, closest raycast/AABB overlap queries, query filters and sensor inclusion. Interactive Windows verification of the overlay and Play Mode has now been user-confirmed as passed using [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md). Windows CI #132 also passed Configure, Build and engine tests.
 
-**Active milestone: Multiple Colliders per Entity.** ColliderSet2D model passed CI #135; canonical serialization and legacy migration passed CI #151; multi-shape runtime/query filters passed CI #155; Entity-pair contact aggregation passed CI #164; Inspector list editing passed Windows CI #169. Multi-shape debug overlay and Windows interactive verification remain. Joints stay deferred.
+**Active milestone: Multiple Colliders per Entity.** Model passed CI #135; serialization/migration passed CI #151; multi-shape runtime/query filters passed CI #155; Entity-pair contact aggregation passed CI #164; Inspector list editing passed CI #169; multi-shape Physics Debug Overlay passed CI #170. Only Windows interactive multi-collider verification remains. Joints stay deferred.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -101,7 +102,8 @@ The Scene-owned 2D physics slice includes the Editor collider debug overlay, Beg
 | 2026-11-27 | [Raycast and Overlap Query API, CI run 45941862568](https://github.com/jonjud/ember/actions/runs/45941862568) | Success; Configure, Build and engine tests passed |
 | 2026-11-27 | [Query filter and sensor coverage, CI run 45945132511](https://github.com/jonjud/ember/actions/runs/45945132511) | Success; query masks/categories and sensor inclusion verified in PhysicsWorld tests |
 | 2026-11-27 | [Multi-collider Inspector editing, CI #169](https://github.com/jonjud/ember/actions/runs/45959345669) | Success; Configure, Build and engine tests passed |
+| 2026-11-27 | [Multi-collider Physics Debug Overlay, CI #170](https://github.com/jonjud/ember/actions/runs/45961198358) | Success; Configure, Build and engine tests passed |
 
 ---
 
-**Handoff:** Active milestone: Multiple Colliders per Entity. Model passed CI #135; serialization/migration passed CI #151; multi-shape runtime/query tests passed CI #155; Entity-pair contact aggregation passed CI #164; Inspector list editing passed CI #169 (`009723a`). Next, extend the viewport Physics overlay to draw every ColliderSet2D entry, then update the Windows manual verification checklist. Preserve legacy compatibility and keep Box2D types private.
+**Handoff:** Active milestone: Multiple Colliders per Entity. Model passed CI #135; serialization/migration passed CI #151; multi-shape runtime/query tests passed CI #155; Entity-pair contact aggregation passed CI #164; Inspector list editing passed CI #169; multi-shape Debug Overlay passed CI #170 (`d67b96b`). Next, complete the Windows interactive checklist for multi-collider Inspector, overlay, save/load, and Play Mode. Preserve legacy compatibility and keep Box2D types private.
