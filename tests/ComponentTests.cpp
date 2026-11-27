@@ -58,6 +58,9 @@ int main()
     inactive.SetActive(false);
     inactive.AddComponent<CounterComponent>();
 
+    ember::Entity& plainEntity = scene.CreateEntity("No Button");
+    CounterComponent& plainCounter = plainEntity.AddComponent<CounterComponent>();
+
     Check(active.RemoveComponent<CounterComponent>(), "Entity removes a component before start");
     Check(!active.HasComponent<CounterComponent>(), "Removed component is no longer present");
     CounterComponent& counter = active.AddComponent<CounterComponent>();
@@ -73,6 +76,8 @@ int main()
         "OnCreate runs for components on inactive entities");
     Check(scene.DispatchUIButtonClicked(active.GetId()) && counter.uiClicks == 1,
         "Scene dispatches a UI click to components on an active Button Entity");
+    Check(!scene.DispatchUIButtonClicked(plainEntity.GetId()) && plainCounter.uiClicks == 0,
+        "Scene rejects UI click dispatch to an active Entity without a Button");
     activeButton.interactable = false;
     Check(!scene.DispatchUIButtonClicked(active.GetId()) && counter.uiClicks == 1,
         "Scene rejects UI clicks for non-interactable Buttons");
