@@ -162,6 +162,51 @@ int main()
           std::abs(moved->rotation - 0.25F) < rotationTolerance,
           "PhysicsWorld returns the updated body transform");
 
+    ember::PhysicsBodyDefinition2D jointBodyDefinition;
+    jointBodyDefinition.type = ember::PhysicsBodyType2D::Dynamic;
+    jointBodyDefinition.position = {30.0F, 0.0F};
+    const auto jointBodyA = world.CreateBody(jointBodyDefinition);
+    jointBodyDefinition.position = {31.0F, 0.0F};
+    const auto jointBodyB = world.CreateBody(jointBodyDefinition);
+    Check(static_cast<bool>(jointBodyA) && static_cast<bool>(jointBodyB),
+        "PhysicsWorld creates bodies for joint tests");
+
+    ember::PhysicsDistanceJointDefinition2D distanceDefinition;
+    distanceDefinition.bodyA = jointBodyA;
+    distanceDefinition.bodyB = jointBodyB;
+    distanceDefinition.length = 1.0F;
+    const auto distanceJoint = world.CreateDistanceJoint(distanceDefinition);
+    Check(static_cast<bool>(distanceJoint) && world.GetJointCount() == 1,
+        "PhysicsWorld creates an opaque Distance joint handle");
+    Check(!world.CreateDistanceJoint({jointBodyA, jointBodyA, {}, {}, 1.0F, false}),
+        "PhysicsWorld rejects a joint connecting a body to itself");
+    auto invalidDistance = distanceDefinition;
+    invalidDistance.length = 0.0F;
+    Check(!world.CreateDistanceJoint(invalidDistance),
+        "PhysicsWorld rejects a nonpositive Distance joint length");
+
+    ember::PhysicsRevoluteJointDefinition2D revoluteDefinition;
+    revoluteDefinition.bodyA = jointBodyA;
+    revoluteDefinition.bodyB = jointBodyB;
+    revoluteDefinition.enableLimit = true;
+    revoluteDefinition.lowerAngle = 0.5F;
+    revoluteDefinition.upperAngle = -0.5F;
+    Check(!world.CreateRevoluteJoint(revoluteDefinition),
+        "PhysicsWorld rejects inverted Revolute joint limits");
+    revoluteDefinition.lowerAngle = -0.5F;
+    revoluteDefinition.upperAngle = 0.5F;
+    const auto revoluteJoint = world.CreateRevoluteJoint(revoluteDefinition);
+    Check(static_cast<bool>(revoluteJoint) && world.GetJointCount() == 2,
+        "PhysicsWorld creates an opaque Revolute joint handle");
+    Check(world.DestroyJoint(distanceJoint) && world.GetJointCount() == 1,
+        "PhysicsWorld destroys a joint handle");
+    Check(!world.DestroyJoint(distanceJoint),
+        "PhysicsWorld rejects destroying the same joint handle twice");
+    Check(world.DestroyBody(jointBodyA) && world.GetJointCount() == 0,
+        "PhysicsWorld destroys attached joints before destroying a body");
+    Check(world.DestroyBody(jointBodyB),
+        "PhysicsWorld destroys the remaining joint test body");
+
     Check(world.GetBodyCount() == 4, "PhysicsWorld tracks its live body count including a compound body");
     Check(world.DestroyBody(fallingBody), "PhysicsWorld destroys a body");
     Check(!world.DestroyBody(fallingBody), "PhysicsWorld rejects destroying the same handle twice");
