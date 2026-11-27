@@ -153,6 +153,15 @@ if(BUILD_TESTING)
     target_link_libraries(ember_physics_world_tests PRIVATE box2d::box2d)
     add_test(NAME ember_physics_world_tests COMMAND ember_physics_world_tests)
 
+    add_executable(ember_scene_physics_tests
+        tests/ScenePhysicsTests.cpp
+        src/Engine/Scene/Scene.cpp
+        src/Engine/Physics/PhysicsWorld.cpp
+    )
+    target_include_directories(ember_scene_physics_tests PRIVATE src)
+    target_link_libraries(ember_scene_physics_tests PRIVATE box2d::box2d)
+    add_test(NAME ember_scene_physics_tests COMMAND ember_scene_physics_tests)
+
     add_executable(ember_input_map_tests
         tests/InputMapTests.cpp
         src/Engine/Platform/InputMap.cpp
@@ -263,6 +272,7 @@ if(MSVC)
     target_compile_options(ember_imgui PRIVATE /W4 /permissive-)
     if(BUILD_TESTING)
         target_compile_options(ember_physics_world_tests PRIVATE /W4 /permissive-)
+        target_compile_options(ember_scene_physics_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_physics_components_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_input_map_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_scene_tests PRIVATE /W4 /permissive-)
