@@ -34,7 +34,8 @@ enum class ComponentPropertyType
     Float,
     String,
     Vector2,
-    Enumeration
+    Enumeration,
+    EntityReference
 };
 
 struct ComponentPropertyInfo
@@ -183,6 +184,41 @@ public:
         return true;
     }
 
+
+
+    template <typename T>
+    bool RegisterEntityReferenceProperty(const std::string& componentId, std::string propertyId,
+        std::string displayName, std::uint64_t T::* member)
+    {
+        static_assert(std::is_base_of_v<Component, T>,
+            "Property owner must derive from ember::Component");
+        const auto entryIt = m_types.find(componentId);
+        if (entryIt == m_types.end() ||
+            entryIt->second.info.cppType != std::type_index(typeid(T)) ||
+            propertyId.empty() || displayName.empty() || member == nullptr)
+            return false;
+        auto& properties = entryIt->second.properties;
+        for (const auto& property : properties)
+            if (property.id == propertyId) return false;
+
+        ComponentPropertyInfo property;
+        property.id = std::move(propertyId);
+        property.displayName = std::move(displayName);
+        property.type = ComponentPropertyType::EntityReference;
+        property.get = [member](const Component& component) -> Json {
+            return Json(static_cast<const T&>(component).*member);
+        };
+        property.set = [member](Component& component, const Json& value) -> bool {
+            if (!value.is_number_unsigned() && !value.is_number_integer()) return false;
+            try {
+                if (value.is_number_integer() && value.get<std::int64_t>() < 0) return false;
+                static_cast<T&>(component).*member = value.get<std::uint64_t>();
+                return true;
+            } catch (...) { return false; }
+        };
+        properties.push_back(std::move(property));
+        return true;
+    }
 
     template <typename T>
     bool RegisterVector2Property(const std::string& componentId, std::string propertyId,

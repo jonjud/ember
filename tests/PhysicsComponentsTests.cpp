@@ -162,6 +162,24 @@ int main()
     Check(revolute != nullptr, "Revolute Joint can be created through the registry");
     if (revolute)
     {
+        const auto* revoluteProperties = registry.FindProperties(*revolute);
+        bool hasEntityReference = false;
+        bool canSetEntityReference = false;
+        if (revoluteProperties != nullptr)
+        {
+            for (const auto& property : *revoluteProperties)
+            {
+                if (property.type == ember::ComponentPropertyType::EntityReference)
+                {
+                    hasEntityReference = true;
+                    canSetEntityReference = property.set(*revolute, nlohmann::json(std::uint64_t{42}));
+                }
+            }
+        }
+        Check(hasEntityReference,
+            "Revolute Joint exposes a typed Entity reference Inspector property");
+        Check(canSetEntityReference,
+            "Entity reference Inspector property accepts a stable EntityId");
         revolute->connectedEntity = 42;
         revolute->localAnchorA = {10.0F, 20.0F};
         revolute->enableLimit = true;

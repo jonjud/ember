@@ -175,7 +175,6 @@ inline bool RegisterPhysicsComponents(ComponentRegistry& registry)
             if (!data.is_object() || !data.contains("connected_entity") ||
                 !data.at("connected_entity").is_number_unsigned()) return false;
             const auto target = data.at("connected_entity").get<EntityId>();
-            if (target == 0) return false;
             auto& c = static_cast<RevoluteJoint2D&>(base);
             c.connectedEntity = target;
             return detail::ReadPhysicsVector2(data, "local_anchor_a", c.localAnchorA) &&
@@ -250,6 +249,12 @@ inline bool RegisterPhysicsComponents(ComponentRegistry& registry)
         "Restitution", &CircleCollider2D::restitution) && ok;
     ok = registry.RegisterProperty<CircleCollider2D>("ember.circle_collider_2d", "is_sensor",
         "Is Sensor", &CircleCollider2D::isSensor) && ok;
+
+
+    ok = registry.RegisterEntityReferenceProperty<RevoluteJoint2D>("ember.revolute_joint_2d",
+        "connected_entity", "Connected Entity", &RevoluteJoint2D::connectedEntity) && ok;
+    ok = registry.RegisterEntityReferenceProperty<DistanceJoint2D>("ember.distance_joint_2d",
+        "connected_entity", "Connected Entity", &DistanceJoint2D::connectedEntity) && ok;
 
     ok = registry.RegisterVector2Property<RevoluteJoint2D>("ember.revolute_joint_2d",
         "local_anchor_a", "Local Anchor A", &RevoluteJoint2D::localAnchorA) && ok;

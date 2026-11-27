@@ -559,6 +559,34 @@ void EditorApplication::DrawInspector()
                                     MarkSceneDirty();
                                 break;
                             }
+                            case ComponentPropertyType::EntityReference:
+                            {
+                                const EntityId current = property.get(*component).get<EntityId>();
+                                const Entity* currentTarget = activeScene.FindEntity(current);
+                                const std::string preview = currentTarget == nullptr
+                                    ? "None" : currentTarget->GetName() + " (#" + std::to_string(current) + ")";
+                                if (ImGui::BeginCombo(property.displayName.c_str(), preview.c_str()))
+                                {
+                                    if (ImGui::Selectable("None", current == 0) &&
+                                        property.set(*component, nlohmann::json(std::uint64_t{0})))
+                                        MarkSceneDirty();
+                                    for (const EntityId candidateId : activeScene.GetEntityIds())
+                                    {
+                                        if (candidateId == entity->GetId()) continue;
+                                        const Entity* candidate = activeScene.FindEntity(candidateId);
+                                        if (candidate == nullptr) continue;
+                                        const std::string label = candidate->GetName() +
+                                            " (#" + std::to_string(candidateId) + ")";
+                                        const bool selected = candidateId == current;
+                                        if (ImGui::Selectable(label.c_str(), selected) &&
+                                            property.set(*component, nlohmann::json(candidateId)))
+                                            MarkSceneDirty();
+                                        if (selected) ImGui::SetItemDefaultFocus();
+                                    }
+                                    ImGui::EndCombo();
+                                }
+                                break;
+                            }
                             case ComponentPropertyType::Enumeration:
                             {
                                 const int current = property.get(*component).get<int>();
