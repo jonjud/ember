@@ -11,11 +11,13 @@
 | Active branch | `develop` |
 | Stable branch | `main` |
 | Last code commit | [`d67b96b`](https://github.com/jonjud/ember/commit/d67b96bbd860f945db6332db54c9e26f6e256314) — Multi-collider Physics Debug Overlay |
-| Last verified CI | [Windows CI #170](https://github.com/jonjud/ember/actions/runs/45961198358) — **Success** (Configure, Build, Run engine tests), including multi-collider Debug Overlay |
-| Last completed milestone | Multi-collider Inspector and Debug Overlay passed Windows CI #169 and #170; interactive Windows checklist remains |
+| Last verified CI | [Windows CI #170](https://github.com/jonjud/ember/actions/runs/45961198358) — **Success** (Configure, Build, Run engine tests) |
+| Latest documentation CI | [Windows CI #178](https://github.com/jonjud/ember/actions/runs/45962148407) — **Success** |
+| Last completed milestone | Multiple Colliders per Entity — CI #135/#151/#155/#164/#169/#170 and user-confirmed Windows interactive checklist |
+| Active milestone | Physics Joints — design and API boundary |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
-> CI Success ยืนยัน Windows build และ automated tests ไม่ได้ยืนยันการทดสอบ Editor/Runtime แบบ interactive บนเครื่องจริง
+> CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
 
 ## 2. สิ่งที่เสร็จแล้ว
 
@@ -44,7 +46,7 @@
 - [x] Dynamic body -> Entity Transform2D synchronization; static/kinematic transform -> physics synchronization
 - [x] Scene Stop tears down runtime physics; runtime handles remain transient and are not cloned/serialized
 - [x] Scene physics tests: lifecycle, falling/collision, invalid collider configurations, NaN delta, stop/clone behavior
-- [x] Link PhysicsWorld and Box2D into all Scene-based test targets (CI linker fix)
+- [x] Link PhysicsWorld and Box2D into all Scene-based test targets
 - [x] Validate physics body/collider numeric configuration and keep failed collider creation atomic
 - [x] Test disabled bodies and static/kinematic transform authority
 - [x] Add Editor viewport Physics debug overlay for box/circle collider outlines (CI #113)
@@ -54,10 +56,9 @@
 - [x] Aggregate overlapping shape-pair contact transitions into one Entity-pair Begin/End event (CI #164)
 - [x] Add Inspector list editing for ColliderSet2D: Add Box/Circle, duplicate, remove, edit geometry/material/filter properties (CI #169)
 - [x] Extend Physics Debug Overlay to draw every ColliderSet2D Box/Circle entry, retaining sensor/solid colors and legacy fallback (CI #170)
-- [x] Test query category/mask filtering for raycasts and AABB overlaps
-- [x] Verify raycasts and AABB overlaps include sensor shapes
-- [x] Verify Scene forwards query filters to PhysicsWorld
-- [x] Verify Physics Debug Overlay and Play Mode interactively on Windows (user-confirmed checklist pass; CI #132 also passed)
+- [x] Verify query category/mask filtering, sensor inclusion and Scene forwarding
+- [x] Verify Physics Debug Overlay and Play Mode interactively on Windows for the original single-collider slice (user-confirmed; CI #132)
+- [x] Verify multi-collider Inspector, overlay, persistence/migration and Play Mode interactively on Windows (user-confirmed; checklist: [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md))
 - [x] Collect contact events after each fixed simulation step; Scene exposes the latest Update's events until next Update
 - [x] Wake touching dynamic bodies when a transform-driven static/kinematic body moves so contact separation can be processed
 
@@ -76,9 +77,9 @@
 
 ## 4. Current limitations / next milestone
 
-The Scene-owned 2D physics slice includes the Editor collider debug overlay, Begin/End contact events, closest raycast/AABB overlap queries, query filters and sensor inclusion. Interactive Windows verification of the overlay and Play Mode has now been user-confirmed as passed using [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md). Windows CI #132 also passed Configure, Build and engine tests.
+**Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user also confirmed the full Windows interactive checklist passed.
 
-**Active milestone: Multiple Colliders per Entity.** Model passed CI #135; serialization/migration passed CI #151; multi-shape runtime/query filters passed CI #155; Entity-pair contact aggregation passed CI #164; Inspector list editing passed CI #169; multi-shape Physics Debug Overlay passed CI #170. Only Windows interactive multi-collider verification remains. Joints stay deferred.
+**Active milestone: Physics Joints.** Start with a narrow, engine-owned joint API and serialized authoring components. Keep Box2D joint IDs private/transient; validate entity references and body availability; create/destroy joints with Scene physics lifecycle. Initial scope is Revolute and Distance joints. Defer prismatic, weld, motor and scripting-facing joint controls until the first slice is stable.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -96,14 +97,15 @@ The Scene-owned 2D physics slice includes the Editor collider debug overlay, Beg
 | 2026-11-27 | [PhysicsWorld wrapper, CI #100](https://github.com/jonjud/ember/actions/runs/45925546626) | Success |
 | 2026-11-27 | [Physics component config types, CI #101](https://github.com/jonjud/ember/actions/runs/45929634947) | Success |
 | 2026-11-27 | [Physics registration/Inspector, CI #103](https://github.com/jonjud/ember/actions/runs/45933429501) | Success |
-| 2026-11-27 | [Scene Physics Runtime Integration, CI #109](https://github.com/jonjud/ember/actions/runs/45935434409) | Success; Configure, Build and engine tests all passed |
-| 2026-11-27 | [Physics Debug Overlay, CI #113](https://github.com/jonjud/ember/actions/runs/45937028116) | Success; Windows build and automated tests passed |
-| 2026-11-27 | [Scene Contact Event API, CI run 45939999840](https://github.com/jonjud/ember/actions/runs/45939999840) | Success; Begin/End contact events and EntityId mapping verified by automated tests |
-| 2026-11-27 | [Raycast and Overlap Query API, CI run 45941862568](https://github.com/jonjud/ember/actions/runs/45941862568) | Success; Configure, Build and engine tests passed |
-| 2026-11-27 | [Query filter and sensor coverage, CI run 45945132511](https://github.com/jonjud/ember/actions/runs/45945132511) | Success; query masks/categories and sensor inclusion verified in PhysicsWorld tests |
-| 2026-11-27 | [Multi-collider Inspector editing, CI #169](https://github.com/jonjud/ember/actions/runs/45959345669) | Success; Configure, Build and engine tests passed |
-| 2026-11-27 | [Multi-collider Physics Debug Overlay, CI #170](https://github.com/jonjud/ember/actions/runs/45961198358) | Success; Configure, Build and engine tests passed |
+| 2026-11-27 | [Scene Physics Runtime Integration, CI #109](https://github.com/jonjud/ember/actions/runs/45935434409) | Success |
+| 2026-11-27 | [Physics Debug Overlay, CI #113](https://github.com/jonjud/ember/actions/runs/45937028116) | Success |
+| 2026-11-27 | [Scene Contact Event API, CI run 45939999840](https://github.com/jonjud/ember/actions/runs/45939999840) | Success |
+| 2026-11-27 | [Raycast and Overlap Query API, CI run 45941862568](https://github.com/jonjud/ember/actions/runs/45941862568) | Success |
+| 2026-11-27 | [Query filter and sensor coverage, CI run 45945132511](https://github.com/jonjud/ember/actions/runs/45945132511) | Success |
+| 2026-11-27 | [Multi-collider Inspector editing, CI #169](https://github.com/jonjud/ember/actions/runs/45959345669) | Success |
+| 2026-11-27 | [Multi-collider Physics Debug Overlay, CI #174](https://github.com/jonjud/ember/actions/runs/45961198358) | Success |
+| 2026-11-27 | [Multi-collider docs and verification checklist, CI #175–#178](https://github.com/jonjud/ember/actions/runs/45962148407) | Success |
 
 ---
 
-**Handoff:** Active milestone: Multiple Colliders per Entity. Model passed CI #135; serialization/migration passed CI #151; multi-shape runtime/query tests passed CI #155; Entity-pair contact aggregation passed CI #164; Inspector list editing passed CI #169; multi-shape Debug Overlay passed CI #170 (`d67b96b`). Next, complete the Windows interactive checklist for multi-collider Inspector, overlay, save/load, and Play Mode. Preserve legacy compatibility and keep Box2D types private.
+**Handoff:** Multi-Collider milestone is complete, including user-confirmed Windows interactive verification. Active work is Physics Joints: first finalize the public PhysicsWorld contract and serialized component design for Revolute and Distance joints. Work on `develop` only; do not merge to `main`.
