@@ -105,6 +105,9 @@ bool EditorApplication::Initialize()
         return false;
     }
 
+    if (!m_audio.Initialize())
+        std::cerr << "EMBER Editor: Audio device unavailable; continuing without audio.\\n";
+
     m_window = SDL_CreateWindow("EMBER Editor", kWindowWidth, kWindowHeight, SDL_WINDOW_RESIZABLE);
     if (m_window == nullptr)
     {
@@ -228,6 +231,7 @@ void EditorApplication::UpdatePlayMode()
 
 void EditorApplication::Shutdown()
 {
+    m_audio.Shutdown();
     ClearPreviewTextures();
     if (ImGui::GetCurrentContext() != nullptr)
     {

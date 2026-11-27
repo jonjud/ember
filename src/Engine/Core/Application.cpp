@@ -31,6 +31,9 @@ bool Application::Initialize()
         return false;
     }
 
+    if (!m_audio.Initialize())
+        std::cerr << "EMBER: Audio device unavailable; continuing without audio.\\n";
+
     m_window = SDL_CreateWindow(
         "EMBER Engine",
         kWindowWidth,
@@ -93,6 +96,7 @@ void Application::Run()
 
 void Application::Shutdown()
 {
+    m_audio.Shutdown();
     m_assets.Clear();
     m_renderer.Shutdown();
 

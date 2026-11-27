@@ -10,7 +10,7 @@ Provide a small runtime-facing 2D audio foundation while keeping miniaudio types
 - The Editor remains independent of audio backend objects.
 
 ## Initial vertical slice
-- Initialize and shut down an audio engine with deterministic ownership.
+- Initialize and shut down an audio engine with deterministic ownership. Application and Editor initialize it on startup and release it before SDL shutdown; audio-device failure is non-fatal.
 - Support device-backed runtime initialization and device-less initialization for automated tests/offline processing.
 - Load a sound from a filesystem path, optionally streaming it.
 - Return an engine-owned `AudioSoundHandle` for Play, Stop, IsPlaying, SetVolume, SetLooping and UnloadSound.

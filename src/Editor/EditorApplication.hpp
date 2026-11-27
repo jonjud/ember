@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/Core/Time.hpp"
+#include "Engine/Audio/AudioEngine.hpp"
 #include "Engine/Resources/AssetImportService.hpp"
 #include "Engine/Resources/AssetRegistry.hpp"
 #include "Engine/Renderer/Camera2D.hpp"
@@ -69,6 +70,7 @@ private:
     void ClearPreviewTextures();
 
     SDL_Window* m_window = nullptr;
+    AudioEngine m_audio;
     SDL_Renderer* m_renderer = nullptr;
     std::unordered_map<std::string, SDL_Texture*> m_previewTextures;
     bool m_isRunning = false;

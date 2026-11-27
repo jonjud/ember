@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/Core/Time.hpp"
+#include "Engine/Audio/AudioEngine.hpp"
 #include "Engine/Renderer/Camera2D.hpp"
 #include "Engine/Renderer/Renderer2D.hpp"
 #include "Engine/Resources/AssetManager.hpp"
@@ -31,6 +32,7 @@ private:
 
     SDL_Window* m_window = nullptr;
     Renderer2D m_renderer;
+    AudioEngine m_audio;
     AssetManager m_assets{"assets"};
     Camera2D m_camera;
     Scene m_scene{"Main Scene"};
