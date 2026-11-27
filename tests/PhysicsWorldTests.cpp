@@ -162,14 +162,15 @@ int main()
           std::abs(moved->rotation - 0.25F) < rotationTolerance,
           "PhysicsWorld returns the updated body transform");
 
-    Check(world.GetBodyCount() == 3, "PhysicsWorld tracks its live body count");
+    Check(world.GetBodyCount() == 4, "PhysicsWorld tracks its live body count including a compound body");
     Check(world.DestroyBody(fallingBody), "PhysicsWorld destroys a body");
     Check(!world.DestroyBody(fallingBody), "PhysicsWorld rejects destroying the same handle twice");
     Check(!world.GetBodyTransform(fallingBody).has_value(),
           "Destroyed body handles no longer resolve");
-    Check(world.GetBodyCount() == 2, "PhysicsWorld decrements body count after destruction");
+    Check(world.GetBodyCount() == 3, "PhysicsWorld decrements body count after destruction");
     Check(world.DestroyBody(sensorBody), "PhysicsWorld destroys the sensor body");
-    Check(world.DestroyBody(ground), "PhysicsWorld destroys the remaining body");
+    Check(world.DestroyBody(ground), "PhysicsWorld destroys the ground body");
+    Check(world.DestroyBody(compoundBody), "PhysicsWorld destroys a compound body and all its shapes");
     Check(world.GetBodyCount() == 0, "PhysicsWorld can return to an empty state");
 
     ember::PhysicsWorld movedWorld(std::move(world));
