@@ -60,7 +60,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Collision/contact begin/end event API (engine-owned EntityId results; Windows CI run 45939999840)
 - [x] Closest raycast and AABB overlap query API (engine-owned results, query filters and Scene EntityId mapping; Windows CI #121)
 - [x] Query-filter category/mask and sensor inclusion tests (Windows CI #126)
-- [ ] Multiple colliders per entity (ColliderSet2D value model passed CI #135; canonical serialization and legacy single-collider migration code committed, CI pending)
+- [ ] Multiple colliders per entity (ColliderSet2D model CI #135; serialization/legacy migration CI #151; multi-shape runtime and query filters CI #155; Entity-pair contact aggregation awaiting CI; Inspector and debug overlay still pending)
 - [ ] Joints
 - [ ] Animation
 - [ ] Audio (planned miniaudio backend)
@@ -83,4 +83,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Implement multiple colliders per entity using a serializable collider-set component with stable per-collider IDs, preserving legacy BoxCollider2D/CircleCollider2D scene loading. Keep runtime handles transient and Box2D private. Defer joints until this slice is complete.
+- Finish multiple colliders per entity: verify Entity-pair contact aggregation CI, then add Inspector list editing (Add Box/Circle, duplicate, remove) and multi-shape Physics debug overlay. Keep runtime handles transient and Box2D private; defer joints until this slice is complete.
