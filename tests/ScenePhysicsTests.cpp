@@ -58,6 +58,12 @@ int main()
         "Scene OverlapAABB maps physics overlaps to EntityIds");
     Check(!scene.RaycastClosest({0.0F, 0.0F}, {}).has_value(),
         "Scene RaycastClosest safely rejects a zero-length ray");
+    ember::PhysicsQueryFilter2D rejectAllFilter;
+    rejectAllFilter.maskBits = 0;
+    Check(!scene.RaycastClosest({-100.0F, 0.0F}, {200.0F, 0.0F}, rejectAllFilter).has_value(),
+        "Scene RaycastClosest forwards query filtering to PhysicsWorld");
+    Check(scene.OverlapAABB({-50.0F, -50.0F}, {50.0F, 50.0F}, rejectAllFilter).empty(),
+        "Scene OverlapAABB forwards query filtering to PhysicsWorld");
 
     bool sawBeginContact = false;
     for (int frame = 0; frame < 180; ++frame)
