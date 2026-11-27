@@ -46,6 +46,9 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [ ] Undo / Redo
 - [ ] Multi-selection and hierarchy organization
 - [x] Interactive Editor/runtime verification (Windows manual checklist passed; CI #132)
+- [x] Windows Editor smoke test: launch/layout, hierarchy, Inspector, viewport, Entity/Transform editing, duplicate/delete (user-confirmed 2026-11-27)
+- [x] Windows Physics Inspector workflow: PhysicsBody2D add/edit/remove and ColliderSet2D editing (user-confirmed 2026-11-27)
+- [x] Windows Physics Debug Overlay, scene persistence, and Play/Stop verification (user-confirmed 2026-11-27)
 
 ## Phase 4 — Game Systems
 - [x] General component lifecycle and cloning API
@@ -61,7 +64,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Closest raycast and AABB overlap query API (engine-owned results, query filters and Scene EntityId mapping; Windows CI #121)
 - [x] Query-filter category/mask and sensor inclusion tests (Windows CI #126)
 - [x] Multiple colliders per entity (model #135; serialization/migration #151; runtime/query #155; contact aggregation #164; Inspector #169; overlay #170; Windows interactive checklist user-confirmed passed)
-- [ ] Physics Joints (active: design Revolute and Distance joint APIs/components)
+- [ ] Physics Joints (PhysicsWorld Revolute/Distance API and lifetime tests committed; serialized components, Scene lifecycle, and Inspector integration remain)
 - [ ] Animation
 - [ ] Audio (planned miniaudio backend)
 - [ ] UI system
@@ -83,4 +86,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Define the first Physics Joints slice: engine-owned Revolute and Distance joint descriptors, transient handles, serialized entity-to-entity joint components, validation, and Scene start/stop lifecycle. Keep Box2D IDs private. Defer other joint families until the first two pass CI and interactive verification.
+- Complete the Physics Joints vertical slice: add serialized Entity-to-Entity Revolute/Distance components, validate references/body availability, integrate joint creation and teardown with Scene Play/Stop, expose safe Inspector controls, then add CI and Windows interactive verification. The PhysicsWorld API and initial lifetime tests are already committed. Keep Box2D IDs private; defer other joint families.

@@ -10,11 +10,11 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`d67b96b`](https://github.com/jonjud/ember/commit/d67b96bbd860f945db6332db54c9e26f6e256314) — Multi-collider Physics Debug Overlay |
-| Last verified CI | [Windows CI #170](https://github.com/jonjud/ember/actions/runs/45961198358) — **Success** (Configure, Build, Run engine tests) |
+| Last code commit | [`d8a7061`](https://github.com/jonjud/ember/commit/d8a7061143ea6c1246dd5573713ae1ae1f7db9f5) — Physics Joint API tests |
+| Last verified CI | [Windows CI #178](https://github.com/jonjud/ember/actions/runs/45962148407) — **Success** (latest confirmed run before current HEAD) |
 | Latest documentation CI | [Windows CI #178](https://github.com/jonjud/ember/actions/runs/45962148407) — **Success** |
-| Last completed milestone | Multiple Colliders per Entity — CI #135/#151/#155/#164/#169/#170 and user-confirmed Windows interactive checklist |
-| Active milestone | Physics Joints — design and API boundary |
+| Last completed milestone | Editor + Multi-Collider Physics verification — user-confirmed Windows interactive checklist passed (2026-11-27) |
+| Active milestone | Physics Joints — PhysicsWorld Revolute/Distance API and unit tests landed; serialized components and Scene lifecycle integration remain |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -61,6 +61,8 @@
 - [x] Verify multi-collider Inspector, overlay, persistence/migration and Play Mode interactively on Windows (user-confirmed; checklist: [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md))
 - [x] Collect contact events after each fixed simulation step; Scene exposes the latest Update's events until next Update
 - [x] Wake touching dynamic bodies when a transform-driven static/kinematic body moves so contact separation can be processed
+- [x] Add engine-owned PhysicsJointHandle and Revolute/Distance joint descriptors with create/destroy/count API; keep Box2D joint handles private
+- [x] Add joint validation and lifetime tests: invalid same-body/length/limits, explicit destruction, and automatic cleanup when a body is destroyed
 
 ## 3. Physics decisions to preserve
 - Box2D v3.2.0 is private; Box2D types must not leak into public Scene/Entity/Component/Editor APIs.
@@ -77,9 +79,9 @@
 
 ## 4. Current limitations / next milestone
 
-**Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user also confirmed the full Windows interactive checklist passed.
+**Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user confirmed the Windows Editor checklist passed on 2026-11-27, including Editor launch/layout, Entity and Transform editing, duplicate/delete, PhysicsBody2D Inspector add/edit/remove, ColliderSet2D editing, Physics Debug Overlay, save/reopen persistence, and Play/Stop behavior.
 
-**Active milestone: Physics Joints.** Start with a narrow, engine-owned joint API and serialized authoring components. Keep Box2D joint IDs private/transient; validate entity references and body availability; create/destroy joints with Scene physics lifecycle. Initial scope is Revolute and Distance joints. Defer prismatic, weld, motor and scripting-facing joint controls until the first slice is stable.
+**Active milestone: Physics Joints.** The first PhysicsWorld-level Revolute/Distance API and automated lifetime/validation tests are now committed. The next slice is serialized authoring components, Entity-to-Entity references, Scene start/stop creation and teardown, and Editor Inspector integration. Keep Box2D joint IDs private/transient. Defer prismatic, weld, motor and scripting-facing joint controls.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -105,7 +107,9 @@
 | 2026-11-27 | [Multi-collider Inspector editing, CI #169](https://github.com/jonjud/ember/actions/runs/45959345669) | Success |
 | 2026-11-27 | [Multi-collider Physics Debug Overlay, CI #174](https://github.com/jonjud/ember/actions/runs/45961198358) | Success |
 | 2026-11-27 | [Multi-collider docs and verification checklist, CI #175–#178](https://github.com/jonjud/ember/actions/runs/45962148407) | Success |
+| 2026-11-27 | [Physics Joint API and lifetime tests, `d8a7061`](https://github.com/jonjud/ember/commit/d8a7061143ea6c1246dd5573713ae1ae1f7db9f5) | Committed; CI status not yet confirmed |
+| 2026-11-27 | Windows Editor manual verification | User-confirmed PASS: Editor launch/layout, Entity/Transform, duplicate/delete, PhysicsBody2D Inspector, ColliderSet2D, Debug Overlay, persistence, Play/Stop |
 
 ---
 
-**Handoff:** Multi-Collider milestone is complete, including user-confirmed Windows interactive verification. Active work is Physics Joints: first finalize the public PhysicsWorld contract and serialized component design for Revolute and Distance joints. Work on `develop` only; do not merge to `main`.
+**Handoff:** Windows Editor manual verification for the current Editor + Physics workflow is user-confirmed PASS. PhysicsWorld Revolute/Distance joint API and unit tests are committed; next implement serializable joint components, Scene lifecycle integration, and Inspector authoring. Work on `develop` only; do not merge to `main`.
