@@ -62,6 +62,9 @@ int main()
             return true;
         }), "Legacy generic component migration is registered");
 
+    Check(ember::RegisterPhysicsComponents(registry),
+          "Physics component serializers are registered");
+
     ember::Scene source("Forest Level");
     auto& player = source.CreateEntity("Player");
     player.GetTransform().position = {12.5F, -8.0F};
@@ -101,8 +104,14 @@ int main()
 
     const auto scenePath = root / "scenes" / "forest.emberscene";
     std::string error;
-    Check(ember::SceneSerializer::Save(source, scenePath, &error, &registry),
-          "Scene is saved to a versioned JSON file");
+    const bool saved = ember::SceneSerializer::Save(source, scenePath, &error, &registry);
+    Check(saved, "Scene is saved to a versioned JSON file");
+    if (!saved)
+    {
+        std::cerr << "Scene save error: " << error << '\\n';
+        std::filesystem::remove_all(root, filesystemError);
+        return 1;
+    }
     nlohmann::json savedDocument;
     {
         std::ifstream savedInput(scenePath);
