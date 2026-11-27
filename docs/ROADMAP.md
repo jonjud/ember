@@ -69,7 +69,8 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Audio implementation (miniaudio runtime, AudioSource2D serialization/Inspector and safe Audio-asset picker, Scene asset resolution/playback, Play Mode runtime controls, safe Scene move/Stop lifetime, Editor Asset Browser preview, and edge-case tests; Windows CI #219 Success). Final Windows Editor verification remains: [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md)
 - [x] UI authoring: Canvas/Panel/Text/Button components, serialization, Inspector, reference-resolution layout and Editor viewport preview (Windows CI #223 Success)
 - [x] UI runtime pointer routing: Canvas-aware hit testing, topmost-button selection, pointer capture, hover/press/click state, click event generation and Editor viewport input-capture gating (viewport-aware routing CI #227 Success)
-- [x] Deliver UI Button click events to runtime Component callbacks with end-to-end automated coverage (Windows CI #225/#226 Success)\n- [x] Guard Scene click dispatch: require an active Entity with an enabled, interactable, valid UIButton2D before invoking callbacks (CI #229/#230 pending)
+- [x] Deliver UI Button click events to runtime Component callbacks with end-to-end automated coverage (Windows CI #225/#226 Success)
+- [x] Guard Scene click dispatch: require an active Entity with an enabled, interactable, valid UIButton2D before invoking callbacks (Windows CI #229/#230 Success)
 - [ ] Complete one Windows Editor UI verification session (checklist: [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md))
 - [ ] Runtime input action mapping integration
 - [ ] Scripting interface

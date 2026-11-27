@@ -15,7 +15,7 @@
 | Latest CI | [Windows CI #231](https://github.com/jonjud/ember/actions/runs/46015340975) — **Success** (latest develop HEAD) |
 | Latest documentation CI | [Windows CI #231](https://github.com/jonjud/ember/actions/runs/46015340975) — **Success** (roadmap/status refresh) |
 | Last completed milestone | Audio implementation — Windows CI #219 Success; final interactive Editor checklist remains outstanding |
-| Active milestone | UI System — Canvas/Panel/Text/Button authoring, serialization, Inspector, reference-resolution layout, viewport preview, pointer routing, runtime Component click dispatch and viewport-aware input capture are implemented. CI #226–#228 passed; click-dispatch hardening is in CI #229/#230. Final Windows Editor verification remains. |
+| Active milestone | UI System — Canvas/Panel/Text/Button authoring, serialization, Inspector, reference-resolution layout, viewport preview, pointer routing, runtime Component click dispatch and viewport-aware input capture are implemented. CI #225–#230 passed, including end-to-end callback coverage and guarded click dispatch. Final Windows Editor verification remains. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -132,7 +132,12 @@
 | 2026-11-27 | [Physics Joint API and lifetime tests, `d8a7061`](https://github.com/jonjud/ember/commit/d8a7061143ea6c1246dd5573713ae1ae1f7db9f5) | Committed; CI status not yet confirmed |
 | 2026-11-27 | Windows Editor manual verification | User-confirmed PASS: Editor launch/layout, Entity/Transform, duplicate/delete, PhysicsBody2D Inspector, ColliderSet2D, Debug Overlay, persistence, Play/Stop |
 | 2026-11-27 | [Audio runtime controls and edge-case tests, `a5b23a3`, CI #219](https://github.com/jonjud/ember/actions/runs/46003199338) | Success; final Editor verification checklist prepared |
-| 2026-11-27 | [UI Button click dispatch, `9e2c969`, CI #225](https://github.com/jonjud/ember/actions/runs/46011291135) | Success; runtime Component callback dispatch and initial Editor verification checklist prepared |\n| 2026-11-27 | [UI callback integration tests, `0320a08`, CI #226](https://github.com/jonjud/ember/actions/runs/46013967857) | Success |\n| 2026-11-27 | [Viewport-aware UI input, `600f407`, CI #227](https://github.com/jonjud/ember/actions/runs/46014213385) | Success |\n| 2026-11-27 | [UI status/roadmap refresh, CI #228](https://github.com/jonjud/ember/actions/runs/46014412490) | Success |\n| 2026-11-27 | [Guard UI click dispatch, `79c6ab9`, CI #229](https://github.com/jonjud/ember/actions/runs/46015014246) | In progress |\n| 2026-11-27 | [Test non-Button click rejection, `663d9df`, CI #230](https://github.com/jonjud/ember/actions/runs/46015090528) | In progress |
+| 2026-11-27 | [UI Button click dispatch, `9e2c969`, CI #225](https://github.com/jonjud/ember/actions/runs/46011291135) | Success; runtime Component callback dispatch and initial Editor verification checklist prepared |
+| 2026-11-27 | [UI callback integration tests, `0320a08`, CI #226](https://github.com/jonjud/ember/actions/runs/46013967857) | Success |
+| 2026-11-27 | [Viewport-aware UI input, `600f407`, CI #227](https://github.com/jonjud/ember/actions/runs/46014213385) | Success |
+| 2026-11-27 | [UI status/roadmap refresh, CI #228](https://github.com/jonjud/ember/actions/runs/46014412490) | Success |
+| 2026-11-27 | [Guard UI click dispatch, `79c6ab9`, CI #229](https://github.com/jonjud/ember/actions/runs/46015014246) | Success |
+| 2026-11-27 | [Test non-Button click rejection, `663d9df`, CI #230](https://github.com/jonjud/ember/actions/runs/46015090528) | Success |
 
 ---
 
