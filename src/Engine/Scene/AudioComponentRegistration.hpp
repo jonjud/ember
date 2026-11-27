@@ -48,6 +48,8 @@ inline bool RegisterAudioComponents(ComponentRegistry& registry)
     ok = registry.RegisterProperty<AudioSource2D>("ember.audio_source_2d",
         "play_on_start", "Play On Start", &AudioSource2D::playOnStart) && ok;
     ok = registry.RegisterProperty<AudioSource2D>("ember.audio_source_2d",
+        "streaming", "Streaming", &AudioSource2D::streaming) && ok;
+    ok = registry.RegisterProperty<AudioSource2D>("ember.audio_source_2d",
         "enabled", "Enabled", &AudioSource2D::enabled) && ok;
     return ok;
 }

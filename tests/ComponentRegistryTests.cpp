@@ -204,7 +204,7 @@ int main()
     audioSource.loop = true;
     audioSource.playOnStart = true;
     audioSource.streaming = true;
-    ember::Json audioData;
+    nlohmann::json audioData;
     Check(audioRegistry.Serialize(audioSource, audioData),
         "AudioSource2D configuration serializes");
     auto restoredAudio = audioRegistry.Create("ember.audio_source_2d", audioData);
@@ -214,7 +214,7 @@ int main()
         restoredSource->playOnStart && restoredSource->streaming,
         "AudioSource2D configuration round-trips through the component registry");
     const auto* audioProperties = audioRegistry.FindProperties(audioSource);
-    Check(audioProperties && audioProperties->size() == 5,
+    Check(audioProperties && audioProperties->size() == 6,
         "AudioSource2D exposes all authoring properties to the Inspector");
     if (audioProperties) {
         const auto findAudioProperty = [audioProperties](const std::string& id)
@@ -225,11 +225,14 @@ int main()
         };
         const auto* volume = findAudioProperty("volume");
         const auto* asset = findAudioProperty("audio_asset_id");
+        const auto* streaming = findAudioProperty("streaming");
         Check(volume && volume->set(audioSource, 1.25) && audioSource.volume == 1.25F,
             "AudioSource2D volume can be edited through the Inspector descriptor");
         Check(asset && asset->set(audioSource, "audio/new") &&
             audioSource.audioAssetId == "audio/new",
             "AudioSource2D asset reference can be edited through the Inspector descriptor");
+        Check(streaming && streaming->set(audioSource, false) && !audioSource.streaming,
+            "AudioSource2D streaming mode can be edited through the Inspector descriptor");
     }
     audioSource.volume = 5.0F;
     Check(!audioSource.IsConfigurationValid(),
