@@ -1,6 +1,6 @@
 # EMBER Physics Runtime — Windows Verification Checklist
 
-This checklist verifies the first interactive physics slice in the actual Windows Editor. A successful CI build is not a substitute for these checks.
+This checklist verifies the original single-collider physics slice and the multi-collider Inspector/runtime slice in the actual Windows Editor. A successful CI build is not a substitute for these checks.
 
 ## Preparation
 
@@ -11,12 +11,7 @@ This checklist verifies the first interactive physics slice in the actual Window
 
 ## A. Physics Debug Overlay
 
-Create separate entities with the following configurations using the Inspector:
-
-- **Box solid:** enabled `PhysicsBody2D` + `BoxCollider2D`, sensor off.
-- **Box sensor:** enabled `PhysicsBody2D` + `BoxCollider2D`, sensor on.
-- **Circle solid:** enabled `PhysicsBody2D` + `CircleCollider2D`, sensor off.
-- **Circle sensor:** enabled `PhysicsBody2D` + `CircleCollider2D`, sensor on.
+Create separate entities with `PhysicsBody2D` + `ColliderSet2D`. Include one set containing at least two Boxes and one Circle, with a mix of solid and sensor entries. Also keep a legacy single-collider scene/entity available to verify fallback compatibility.
 
 | ID | Action | Expected result |
 |---|---|---|
@@ -29,11 +24,17 @@ Create separate entities with the following configurations using the Inspector:
 | A7 | Change circle offset and rotate its entity | Circle center follows the rotated local offset; radius remains circular |
 | A8 | Turn off the `Physics` checkbox | All physics outlines disappear without hiding normal entity rendering |
 | A9 | Disable a PhysicsBody2D component | Its collider outline is not drawn |
-| A10 | Configure both BoxCollider2D and CircleCollider2D on one entity | Invalid dual-collider configuration is not drawn |
+| A10 | Create a set containing multiple Boxes and Circles | Every configured shape is drawn; no shape is omitted or duplicated |
+| A11 | Set one entry as Sensor and leave another solid | Sensor outline is cyan; solid outline is orange |
+| A12 | Edit one entry's offset, half-extents/radius, and Box rotation | Only the selected shape's outline updates and matches its Inspector values |
+| A13 | Add Box and Circle entries, duplicate an entry, then remove one | List and overlay update immediately; duplicate receives a new stable ID |
+| A14 | Save, close/reopen, and inspect the scene | Collider order, IDs, geometry, materials, sensor and filter settings persist |
+| A15 | Load a legacy scene with one BoxCollider2D or CircleCollider2D | It migrates to a one-entry ColliderSet2D and remains visible |
+| A16 | Use an entity with a ColliderSet2D and legacy collider data together | Conflicting data is rejected/reported according to migration rules; no silent duplicate rendering |
 
 ## B. Play Mode and Scene Isolation
 
-1. Create a Dynamic body with a collider above a Static body with a collider.
+1. Create a Dynamic body with a ColliderSet2D containing at least two shapes above a Static body with a multi-shape ColliderSet2D.
 2. Save the authoring scene.
 3. Press **F5** to start Play Mode.
 4. Observe the Dynamic body fall and collide with the Static body.
@@ -48,6 +49,8 @@ Create separate entities with the following configurations using the Inspector:
 | B3 | Stop with Shift+F5 | Play Mode stops cleanly |
 | B4 | Inspect authoring Scene after stop | Original entity transforms and component settings are unchanged |
 | B5 | Start and stop Play Mode repeatedly | No crash, stale physics state, or visible duplication |
+| B6 | Run two entities with overlapping multiple shape pairs | Public contact events remain one Entity-pair Begin while any pair touches, then one End after the final pair separates |
+| B7 | Stop Play Mode after physics moves dynamic entities | Authoring transforms and ColliderSet2D settings remain unchanged |
 
 ## Reporting
 
