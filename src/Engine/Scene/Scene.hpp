@@ -7,7 +7,7 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <vector>
+#include <utility>
 #include <vector>
 
 namespace ember
@@ -112,6 +112,9 @@ private:
     std::map<EntityId, PhysicsBodyHandle> m_physicsBodies;
     std::vector<std::string> m_physicsDiagnostics;
     std::vector<SceneContactEvent2D> m_physicsContactEvents;
+    // Counts overlapping shape-pairs for each normalized Entity pair. Public
+    // Begin/End events are emitted only on 0->1 and 1->0 transitions.
+    std::map<std::pair<EntityId, EntityId>, std::size_t> m_activeContactCounts;
     float m_physicsAccumulator = 0.0F;
 };
 } // namespace ember
