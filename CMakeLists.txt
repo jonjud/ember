@@ -98,7 +98,7 @@ FetchContent_MakeAvailable(imgui)
 FetchContent_Declare(
     miniaudio
     GIT_REPOSITORY https://github.com/mackron/miniaudio.git
-    GIT_TAG 0.11.22
+    GIT_TAG 0.11.26
     GIT_SHALLOW TRUE
 )
 FetchContent_GetProperties(miniaudio)
