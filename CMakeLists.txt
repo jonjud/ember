@@ -107,7 +107,7 @@ if(NOT miniaudio_POPULATED)
 endif()
 
 add_library(ember_miniaudio STATIC ${miniaudio_SOURCE_DIR}/miniaudio.c)
-target_include_directories(ember_miniaudio PRIVATE ${miniaudio_SOURCE_DIR})
+target_include_directories(ember_miniaudio PUBLIC ${miniaudio_SOURCE_DIR})
 
 add_library(ember_engine STATIC
     src/Engine/Core/Application.cpp
