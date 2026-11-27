@@ -60,8 +60,8 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Collision/contact begin/end event API (engine-owned EntityId results; Windows CI run 45939999840)
 - [x] Closest raycast and AABB overlap query API (engine-owned results, query filters and Scene EntityId mapping; Windows CI #121)
 - [x] Query-filter category/mask and sensor inclusion tests (Windows CI #126)
-- [ ] Multiple colliders per entity (model CI #135; serialization/legacy migration CI #151; multi-shape runtime/query filters CI #155; Entity-pair contact aggregation CI #164; Inspector list editing CI #169; multi-shape Debug Overlay CI #170; Windows interactive verification pending)
-- [ ] Joints
+- [x] Multiple colliders per entity (model #135; serialization/migration #151; runtime/query #155; contact aggregation #164; Inspector #169; overlay #170; Windows interactive checklist user-confirmed passed)
+- [ ] Physics Joints (active: design Revolute and Distance joint APIs/components)
 - [ ] Animation
 - [ ] Audio (planned miniaudio backend)
 - [ ] UI system
@@ -83,4 +83,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Finish multiple colliders per entity: run the Windows interactive checklist for Inspector list editing, all-shape Physics Debug Overlay, save/load and Play Mode. Inspector passed CI #169 and overlay passed CI #170. Keep runtime handles transient and Box2D private; defer joints until this slice is complete.
+- Define the first Physics Joints slice: engine-owned Revolute and Distance joint descriptors, transient handles, serialized entity-to-entity joint components, validation, and Scene start/stop lifecycle. Keep Box2D IDs private. Defer other joint families until the first two pass CI and interactive verification.
