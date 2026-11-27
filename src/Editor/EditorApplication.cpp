@@ -211,6 +211,7 @@ void EditorApplication::UpdatePlayMode()
         return;
     }
 
+    m_inputMap.Update();
     m_playScene.Update(std::clamp(m_time.DeltaSeconds(), 0.0F, 0.05F));
 
     Entity* entity = m_playScene.FindEntity(m_selectedEntity);

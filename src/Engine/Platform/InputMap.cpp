@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <utility>
+#include <unordered_set>
 
 namespace ember
 {
@@ -81,18 +82,66 @@ bool InputMap::RenameAction(std::string_view oldName, std::string_view newName)
 void InputMap::Clear()
 {
     m_bindings.clear();
+    m_actionStates.clear();
+}
+
+void InputMap::Update()
+{
+    std::vector<SDL_Scancode> downKeys;
+    for (const auto& [action, keys] : m_bindings)
+    {
+        (void)action;
+        for (const SDL_Scancode key : keys)
+        {
+            if (Input::IsKeyDown(key)) downKeys.push_back(key);
+        }
+    }
+    Update(downKeys);
+}
+
+void InputMap::Update(const std::vector<SDL_Scancode>& downKeys)
+{
+    const std::unordered_set<SDL_Scancode> pressedKeys(downKeys.begin(), downKeys.end());
+    for (const auto& [action, keys] : m_bindings)
+    {
+        ActionState& state = m_actionStates[action];
+        state.previousDown = state.currentDown;
+        state.currentDown = std::any_of(keys.begin(), keys.end(),
+            [&pressedKeys](SDL_Scancode key) { return pressedKeys.contains(key); });
+    }
+    for (auto& [action, state] : m_actionStates)
+    {
+        if (!m_bindings.contains(action))
+        {
+            state.previousDown = state.currentDown;
+            state.currentDown = false;
+        }
+    }
 }
 
 bool InputMap::IsActionDown(std::string_view action) const
 {
+    const auto state = m_actionStates.find(std::string(action));
+    if (state != m_actionStates.end()) return state->second.currentDown;
     for (const SDL_Scancode key : GetBindings(action))
     {
-        if (Input::IsKeyDown(key))
-        {
-            return true;
-        }
+        if (Input::IsKeyDown(key)) return true;
     }
     return false;
+}
+
+bool InputMap::WasActionPressed(std::string_view action) const
+{
+    const auto state = m_actionStates.find(std::string(action));
+    return state != m_actionStates.end() && state->second.currentDown &&
+        !state->second.previousDown;
+}
+
+bool InputMap::WasActionReleased(std::string_view action) const
+{
+    const auto state = m_actionStates.find(std::string(action));
+    return state != m_actionStates.end() && !state->second.currentDown &&
+        state->second.previousDown;
 }
 
 const std::vector<SDL_Scancode>& InputMap::GetBindings(std::string_view action) const

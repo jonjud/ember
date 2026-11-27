@@ -63,6 +63,24 @@ int main()
     map.Clear();
     Check(map.GetBindings("Jump").empty(), "All actions can be cleared");
 
+    ember::InputMap frameMap;
+    Check(frameMap.BindAction("Jump", SDL_SCANCODE_SPACE), "Frame map binds Jump");
+    Check(frameMap.BindAction("Interact", SDL_SCANCODE_E), "Frame map binds Interact");
+    frameMap.Update({});
+    Check(!frameMap.IsActionDown("Jump") && !frameMap.WasActionPressed("Jump") &&
+          !frameMap.WasActionReleased("Jump"), "Initial empty frame has no action edges");
+    frameMap.Update({SDL_SCANCODE_SPACE});
+    Check(frameMap.IsActionDown("Jump") && frameMap.WasActionPressed("Jump") &&
+          !frameMap.WasActionReleased("Jump"), "Pressed edge is detected on transition to down");
+    frameMap.Update({SDL_SCANCODE_SPACE});
+    Check(frameMap.IsActionDown("Jump") && !frameMap.WasActionPressed("Jump") &&
+          !frameMap.WasActionReleased("Jump"), "Held action does not repeat pressed edge");
+    frameMap.Update({SDL_SCANCODE_E});
+    Check(!frameMap.IsActionDown("Jump") && frameMap.WasActionReleased("Jump") &&
+          frameMap.WasActionPressed("Interact"), "Release and simultaneous action press are detected");
+    frameMap.Update({});
+    Check(frameMap.WasActionReleased("Interact"), "Interact release edge is detected");
+
     if (g_failures != 0)
     {
         std::cerr << g_failures << " input map test(s) failed.\n";
