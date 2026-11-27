@@ -253,6 +253,13 @@ if(BUILD_TESTING)
     )
     target_include_directories(ember_component_tests PRIVATE src)
     target_link_libraries(ember_component_tests PRIVATE box2d::box2d SDL3::SDL3)
+    # SDL3 is a shared dependency of Input.cpp; place the runtime DLL beside
+    # the test executable so Windows can load it before entering main().
+    add_custom_command(TARGET ember_component_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:SDL3::SDL3>
+            $<TARGET_FILE_DIR:ember_component_tests>
+    )
     add_test(NAME ember_component_tests COMMAND ember_component_tests)
     set_tests_properties(ember_component_tests PROPERTIES TIMEOUT 60)
 
