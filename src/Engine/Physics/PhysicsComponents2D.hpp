@@ -42,7 +42,7 @@ inline bool ReserveColliderId(ColliderId id) noexcept
         if (nextId.compare_exchange_weak(current, desired,
             std::memory_order_relaxed, std::memory_order_relaxed)) return true;
     }
-    return current != 0 || id == std::numeric_limits<ColliderId>::max();
+    return true;
 }
 
 [[nodiscard]] inline ColliderId GenerateColliderId() noexcept
@@ -80,6 +80,13 @@ struct Collider2D
     {
         if (id == 0)
             throw std::overflow_error("Collider ID space exhausted.");
+    }
+
+    Collider2D(ColliderShape2D shapeKind, ColliderId stableId)
+        : id(stableId), shape(shapeKind)
+    {
+        if (id == 0)
+            throw std::invalid_argument("Collider ID must be nonzero.");
     }
 };
 
