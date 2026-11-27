@@ -1,4 +1,5 @@
 #include "Engine/Scene/SceneSerializer.hpp"
+#include "Engine/Physics/PhysicsComponentRegistration.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -84,6 +85,20 @@ int main()
     auto& second = source.CreateEntity("Decoration");
     second.GetTransform().position = {100.0F, 200.0F};
 
+    auto& compound = source.CreateEntity("Compound");
+    auto& colliderSet = compound.AddComponent<ember::ColliderSet2D>();
+    auto& boxEntry = colliderSet.AddBoxCollider();
+    boxEntry.offset = {3.0F, -4.0F};
+    boxEntry.halfExtents = {0.8F, 1.2F};
+    boxEntry.density = 2.0F;
+    boxEntry.categoryBits = 0x0002;
+    const auto boxColliderId = boxEntry.id;
+    auto& circleEntry = colliderSet.AddCircleCollider();
+    circleEntry.radius = 1.75F;
+    circleEntry.isSensor = true;
+    circleEntry.maskBits = 0x0004;
+    const auto circleColliderId = circleEntry.id;
+
     const auto scenePath = root / "scenes" / "forest.emberscene";
     std::string error;
     Check(ember::SceneSerializer::Save(source, scenePath, &error, &registry),
@@ -102,7 +117,18 @@ int main()
     Check(ember::SceneSerializer::Load(loaded, scenePath, &error, &registry),
           "Saved scene can be loaded");
     Check(loaded.GetName() == "Forest Level", "Scene name survives round-trip");
-    Check(loaded.GetEntityCount() == 2, "All entities survive round-trip");
+    Check(loaded.GetEntityCount() == 3, "All entities survive round-trip");
+    const auto* loadedCompound = loaded.FindEntity(compound.GetId());
+    const auto* loadedSet = loadedCompound ? loadedCompound->GetComponent<ember::ColliderSet2D>() : nullptr;
+    Check(loadedSet && loadedSet->colliders.size() == 2 &&
+        loadedSet->colliders[0].id == boxColliderId &&
+        loadedSet->colliders[1].id == circleColliderId &&
+        loadedSet->colliders[0].offset.x == 3.0F &&
+        loadedSet->colliders[0].density == 2.0F &&
+        loadedSet->colliders[0].categoryBits == 0x0002 &&
+        loadedSet->colliders[1].radius == 1.75F &&
+        loadedSet->colliders[1].isSensor && loadedSet->colliders[1].maskBits == 0x0004,
+        "ColliderSet2D survives full Scene serialization with stable IDs and settings");
 
     const auto* loadedPlayer = loaded.FindEntity(player.GetId());
     Check(loadedPlayer != nullptr, "Entity IDs are preserved");
@@ -151,6 +177,44 @@ int main()
         ? legacyPlayer->GetComponent<SerializableTestComponent>() : nullptr;
     Check(legacyComponent != nullptr && legacyComponent->value == 73,
           "Legacy component values survive schema migration");
+
+    const auto legacyColliderPath = root / "legacy_box_collider.emberscene";
+    ember::Scene legacySource("Legacy Box");
+    auto& legacyEntity = legacySource.CreateEntity("Old Box");
+    auto& legacyBox = legacyEntity.AddComponent<ember::BoxCollider2D>();
+    legacyBox.halfExtents = {2.0F, 3.0F};
+    legacyBox.offset = {0.25F, -0.5F};
+    legacyBox.rotation = 0.4F;
+    legacyBox.density = 2.5F;
+    legacyBox.friction = 0.6F;
+    legacyBox.restitution = 0.2F;
+    legacyBox.isSensor = true;
+    Check(ember::SceneSerializer::Save(legacySource, legacyColliderPath, &error, &registry),
+        "Legacy collider fixture is written");
+    ember::Scene migratedScene("Before Migration");
+    Check(ember::SceneSerializer::Load(migratedScene, legacyColliderPath, &error, &registry),
+        "Legacy BoxCollider2D scene loads");
+    const auto* migratedEntity = migratedScene.FindEntity(legacyEntity.GetId());
+    const auto* migratedSet = migratedEntity ? migratedEntity->GetComponent<ember::ColliderSet2D>() : nullptr;
+    Check(migratedSet && migratedSet->colliders.size() == 1 &&
+        migratedSet->colliders[0].shape == ember::ColliderShape2D::Box &&
+        migratedSet->colliders[0].halfExtents.x == 2.0F &&
+        migratedSet->colliders[0].halfExtents.y == 3.0F &&
+        migratedSet->colliders[0].offset.x == 0.25F &&
+        migratedSet->colliders[0].rotation == 0.4F &&
+        migratedSet->colliders[0].density == 2.5F &&
+        migratedSet->colliders[0].friction == 0.6F &&
+        migratedSet->colliders[0].restitution == 0.2F &&
+        migratedSet->colliders[0].isSensor &&
+        !migratedEntity->HasComponent<ember::BoxCollider2D>(),
+        "Legacy BoxCollider2D migrates to ColliderSet2D without losing settings");
+    const auto migratedSavePath = root / "migrated_box.emberscene";
+    Check(ember::SceneSerializer::Save(migratedScene, migratedSavePath, &error, &registry),
+        "Migrated Scene saves");
+    nlohmann::json migratedJson;
+    { std::ifstream migratedInput(migratedSavePath); migratedJson = nlohmann::json::parse(migratedInput); }
+    Check(migratedJson["entities"][0]["components"][0]["type"] == "ember.collider_set_2d",
+        "Saving migrated Scene writes canonical ColliderSet2D data");
 
     const auto futureComponentPath = root / "future_component.emberscene";
     auto futureDocument = savedDocument;
