@@ -8,17 +8,17 @@ class InputMap;
 class InputActionState
 {
 public:
-    [[nodiscard]] bool IsDown(std::string_view action) const noexcept
+    [[nodiscard]] bool IsDown(std::string_view action) const
     {
         const auto it = m_states.find(std::string(action));
         return it != m_states.end() && it->second.currentDown;
     }
-    [[nodiscard]] bool WasPressed(std::string_view action) const noexcept
+    [[nodiscard]] bool WasPressed(std::string_view action) const
     {
         const auto it = m_states.find(std::string(action));
         return it != m_states.end() && it->second.currentDown && !it->second.previousDown;
     }
-    [[nodiscard]] bool WasReleased(std::string_view action) const noexcept
+    [[nodiscard]] bool WasReleased(std::string_view action) const
     {
         const auto it = m_states.find(std::string(action));
         return it != m_states.end() && !it->second.currentDown && it->second.previousDown;
