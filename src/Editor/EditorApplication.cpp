@@ -618,7 +618,10 @@ void EditorApplication::DrawInspector()
                     Collider2D& collider = colliderSet->colliders[index];
                     ImGui::PushID(static_cast<int>(index));
                     const char* shapeName = collider.shape == ColliderShape2D::Box ? "Box" : "Circle";
-                    if (ImGui::TreeNode("Collider %zu (%s)", index + 1, shapeName))
+                    char colliderLabel[64]{};
+                    std::snprintf(colliderLabel, sizeof(colliderLabel),
+                        "Collider %zu (%s)", index + 1, shapeName);
+                    if (ImGui::TreeNode(colliderLabel))
                     {
                         ImGui::Text("Stable ID: %llu",
                             static_cast<unsigned long long>(collider.id));
