@@ -10,12 +10,12 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | `663d9df` — Scene validates UI Button state before dispatching callbacks |
-| Last verified code CI | [Windows CI #230](https://github.com/jonjud/ember/actions/runs/46015090528) — **Success** (`663d9df`; guarded runtime click dispatch) |
-| Latest CI | [Windows CI #231](https://github.com/jonjud/ember/actions/runs/46015340975) — **Success** (latest develop HEAD) |
-| Latest documentation CI | [Windows CI #231](https://github.com/jonjud/ember/actions/runs/46015340975) — **Success** (roadmap/status refresh) |
+| Last code commit | [`e92fe90`](https://github.com/jonjud/ember/commit/e92fe9077b62c0f27c571deebd1a61ec8caea1cc) — stage SDL3 runtime for component tests |
+| Last verified code CI | [Windows CI run 46081947029](https://github.com/jonjud/ember/actions/runs/46081947029) — **Success** (`e92fe90`; all build/tests passed) |
+| Latest CI | [Windows CI run 46081947029](https://github.com/jonjud/ember/actions/runs/46081947029) — **Success** (latest verified code HEAD) |
+| Latest documentation CI | Pending documentation refresh commit |
 | Last completed milestone | UI System v1 + Audio Runtime + Physics Joints — Windows CI passed and combined Windows Editor verification user-confirmed passed |
-| Active milestone | Runtime Input Action Mapping integration — UI System v1, Audio Runtime, and Physics Joints are implemented; final Windows Editor verification is user-confirmed passed. |
+| Active milestone | Runtime Input Action Mapping implementation complete; final Windows Editor verification pending. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -98,6 +98,16 @@
 
 ## 4. Current limitations / next milestone
 
+### Runtime Input Action Mapping — implementation complete; Editor verification pending
+- [x] Named action bindings with multiple SDL physical scancodes, duplicate/unknown-key rejection, bind/unbind/clear/rename and default movement map
+- [x] Per-frame action state with Down / Pressed / Released edges
+- [x] Editor Input Settings: rebind, add secondary key, create/rename/delete custom actions, conflict prevention and reset-to-default
+- [x] Persist input bindings in the project configuration with schema-v1 compatibility and validation
+- [x] Feed the current InputActionState into running Scene Components; Editor Play Mode uses named movement actions
+- [x] Automated coverage: InputMap transitions, project configuration persistence, and Scene-to-Component input forwarding
+- [x] Windows CI run [46081947029](https://github.com/jonjud/ember/actions/runs/46081947029) — Success
+- [ ] Final interactive Windows Editor verification: [INPUT_ACTIONS_VERIFICATION.md](INPUT_ACTIONS_VERIFICATION.md)
+
 **UI System v1 is complete and Windows Editor-verified.** UI Canvas/Panel/Text/Button authoring, serialization, Inspector properties, aspect-preserving layout, Editor viewport preview, viewport-aware pointer routing, pointer capture, click generation and guarded runtime Component callback dispatch are implemented. Windows CI #225–#231 passed, including end-to-end callback coverage and rejection of invalid click targets. The user confirmed the final Windows Editor verification passed.
 
 **Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user confirmed the Windows Editor checklist passed on 2026-11-27, including Editor launch/layout, Entity and Transform editing, duplicate/delete, PhysicsBody2D Inspector add/edit/remove, ColliderSet2D editing, Physics Debug Overlay, save/reopen persistence, and Play/Stop behavior.
@@ -140,7 +150,8 @@
 | 2026-11-27 | [Test non-Button click rejection, `663d9df`, CI #230](https://github.com/jonjud/ember/actions/runs/46015090528) | Success |
 | 2026-11-27 | [Docs refresh, `10ab998` and `4a80448`, CI #232/#233](https://github.com/jonjud/ember/actions/runs/46018916409) | Success |
 | 2026-11-27 | Combined Windows Editor verification: UI System v1, Audio Runtime, Physics Joints | User-confirmed PASS |
+| 2026-11-28 | [SDL3 runtime staging fix, `e92fe90`, CI run 46081947029](https://github.com/jonjud/ember/actions/runs/46081947029) | Success; all build/tests passed; Input Action Mapping Editor verification checklist prepared |
 
 ---
 
-**Handoff:** UI System v1, Audio Runtime, and Physics Joints are complete; CI and combined Windows Editor verification are user-confirmed passed. Next milestone is Runtime Input Action Mapping integration. Continue on `develop`; do not merge to `main`.
+**Handoff:** UI System v1, Audio Runtime, and Physics Joints are complete and Windows Editor-verified. Runtime Input Action Mapping implementation is complete and Windows CI run 46081947029 passed; only the final Editor checklist remains. Continue on `develop`; do not merge to `main`.

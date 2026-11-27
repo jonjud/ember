@@ -72,7 +72,8 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Deliver UI Button click events to runtime Component callbacks with end-to-end automated coverage (Windows CI #225/#226 Success)
 - [x] Guard Scene click dispatch: require an active Entity with an enabled, interactable, valid UIButton2D before invoking callbacks (Windows CI #229/#230 Success)
 - [x] Complete Windows Editor UI verification session (checklist: [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md); user-confirmed passed)
-- [ ] Runtime input action mapping integration
+- [x] Runtime Input Action Mapping implementation: named actions, multiple physical-key bindings, edge states, Editor rebind/custom-action UI, project persistence, and Scene-to-Component input forwarding (Windows CI run 46081947029 Success)
+- [ ] Final Windows Editor verification for Input Action Mapping (checklist: [INPUT_ACTIONS_VERIFICATION.md](INPUT_ACTIONS_VERIFICATION.md))
 - [ ] Scripting interface
 
 ## Phase 5 — Packaging and Quality
