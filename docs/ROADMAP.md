@@ -1,6 +1,6 @@
 # EMBER Engine Roadmap
 
-> Live status, latest commit/CI, active milestone and handoff: [PROJECT_STATUS.md](PROJECT_STATUS.md).  
+> Live status, latest commit/CI and handoff: [PROJECT_STATUS.md](PROJECT_STATUS.md).  
 > Physics design decisions: [PHYSICS_DESIGN.md](PHYSICS_DESIGN.md).
 
 EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, testable vertical slice.
@@ -27,7 +27,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Scene dirty-state tracking and Save / Discard / Cancel prompts
 - [x] Pin Box2D v3.2.0 as private physics backend
 - [x] PhysicsWorld facade, body/collider API and automated tests
-- [ ] Scene-owned Box2D simulation and collision integration
+- [x] Scene-owned physics simulation and transform synchronization
 
 ## Phase 3 — Editor
 - [x] Dear ImGui editor integration isolated from ember_engine
@@ -42,6 +42,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Persistent Input Settings and rebinding
 - [x] Component Inspector: display, add, remove, edit registered components
 - [x] Typed Inspector widgets: bool, int, float, string, Vector2, Enumeration
+- [ ] Physics debug overlay (body and collider outlines)
 - [ ] Undo / Redo
 - [ ] Multi-selection and hierarchy organization
 - [ ] Interactive Editor/runtime verification
@@ -52,9 +53,14 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Generic component serialization and schema migrations
 - [x] PhysicsBody2D, BoxCollider2D and CircleCollider2D configuration components
 - [x] Physics component registration, serialization and Inspector properties
-- [ ] Scene PhysicsWorld ownership and lifecycle integration
-- [ ] Fixed timestep and transform synchronization
-- [ ] Physics collision integration tests and debug visualization
+- [x] Scene PhysicsWorld ownership and lifecycle integration
+- [x] Fixed timestep and transform synchronization
+- [x] Scene physics integration tests: lifecycle, simulation, collision, invalid component combinations and teardown
+- [ ] Numeric physics configuration validation and additional body-mode tests
+- [ ] Collision/contact event API
+- [ ] Raycast and overlap query API
+- [ ] Multiple colliders per entity
+- [ ] Joints
 - [ ] Animation
 - [ ] Audio (planned miniaudio backend)
 - [ ] UI system

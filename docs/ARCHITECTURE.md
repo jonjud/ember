@@ -5,7 +5,7 @@ EMBER is a 2D-first engine written in C++20. It grows through small vertical sli
 ## Current targets
 - `ember_engine`: runtime-facing engine library; no Dear ImGui dependency.
 - `ember_editor` (output executable `ember`): SDL3 + Dear ImGui editor.
-- Focused test executables run through CTest in Windows CI.
+- Focused test executables run through CTest in Windows CI. Scene-based test targets explicitly compile/link the PhysicsWorld implementation and Box2D backend.
 
 ## Source layout
 ```text
@@ -28,6 +28,7 @@ src/
 tests/
 ├── PhysicsWorldTests.cpp
 ├── PhysicsComponentsTests.cpp
+├── ScenePhysicsTests.cpp
 └── (other focused engine tests)
 ```
 
@@ -38,23 +39,25 @@ tests/
 - **Scene / Component:** polymorphic runtime behavior with Clone, OnCreate, OnUpdate and OnDestroy hooks. Components are owned by entities; structural changes are locked while a Scene is running.
 - **Scene / ComponentRegistry:** stable IDs, factories, versioned JSON serializers, schema migrations and UI-agnostic typed property descriptors. Current Inspector types include bool, int, float, string, Vector2 and Enumeration; the Editor maps these descriptors to ImGui controls.
 - **Scene / Entity:** stable 64-bit ID, name, active state, Transform2D, render/movement data and registered runtime components.
-- **Scene / Scene:** owns entities; supports create, duplicate, destroy, lookup, iteration, cloning and Start / Update / Stop lifecycle dispatch.
+- **Scene / Scene:** owns entities; supports create, duplicate, destroy, lookup, iteration, cloning and Start / Update / Stop lifecycle dispatch. While running, it owns one PhysicsWorld, an EntityId-to-PhysicsBodyHandle map, an accumulator and diagnostic messages.
 - **Physics / PhysicsWorld:** EMBER-owned RAII facade around Box2D v3.2.0. Public descriptors and handles are engine-owned; Box2D headers and IDs stay inside the implementation. Supports body creation/destruction, box/circle shapes, transform access, stepping and body count.
 - **Physics / PhysicsComponents2D:** serializable configuration only: PhysicsBody2D, BoxCollider2D and CircleCollider2D. They clone configuration and never store live physics handles.
-- **Physics / Scene integration (next):** a running Scene will own PhysicsWorld and runtime entity-to-body mapping; physics state is built at Start, stepped at fixed timestep and destroyed at Stop. Dynamic transforms will be synchronized back to Entity Transform2D.
+- **Physics / Scene integration:** Scene Start builds bodies and colliders from enabled PhysicsBody2D and collider configuration. Scene Update advances a fixed 1/60 s simulation with bounded accumulator/substeps. Dynamic body transforms are synchronized back to Entity Transform2D; static/kinematic transforms are sent from entities to physics before stepping. Scene Stop destroys runtime physics state.
 - **Scene / SceneSerializer:** versioned JSON persistence of entity/component data; transient renderer and physics handles are never serialized.
 - **Resources:** project-relative asset resolution, stable asset IDs, metadata validation and reference-counted texture lifetime.
 
 ## Scene and Play Mode
-The Editor runs Play Mode on an isolated Scene clone. The authoring Scene remains unchanged when Play Mode stops. Generic components receive lifecycle callbacks through Scene Start / Update / Stop. Physics runtime integration is the next planned layer; Physics components currently represent editable configuration and do not yet simulate.
+The Editor runs Play Mode on an isolated Scene clone. The authoring Scene remains unchanged when Play Mode stops. Generic components receive lifecycle callbacks through Scene Start / Update / Stop. The running clone constructs its own PhysicsWorld at Start; Stop tears it down, leaving the authoring Scene and serialized component configuration unchanged.
 
 ## Physics conventions
-- Box2D v3.2.0 is a private dependency of `ember_engine`.
+- Box2D v3.2.0 is a private dependency behind PhysicsWorld.
 - Physics uses meters; conversion is 100 pixels = 1 meter at the Scene boundary.
 - Positive Y points downward; default gravity is positive Y.
 - Entity Transform2D position maps to body origin; rotation is radians.
 - Collider geometry is explicit and independent of RenderComponent2D.
-- One collider per entity in the first vertical slice; ambiguous multiple collider types should be rejected with diagnostics.
+- One collider per entity in the first vertical slice. Both Box and Circle collider components on one entity are rejected with a diagnostic.
+- A collider without PhysicsBody2D is skipped with a diagnostic.
+- Dynamic bodies are physics-authoritative after stepping; static and kinematic bodies are transform-authoritative before stepping.
 - Physics body handles are transient runtime state, never part of serialization or Component::Clone.
 
 ## Serialization rules
@@ -71,7 +74,8 @@ The Editor runs Play Mode on an isolated Scene clone. The authoring Scene remain
 - miniaudio: planned audio backend.
 
 ## Known gaps
-- PhysicsWorld is implemented and tested, but Scene does not yet create bodies or step simulation.
-- Physics component Inspector supports editable configuration; changes do not affect simulation until Scene runtime integration lands.
-- Interactive runtime behavior still requires manual verification on Windows.
+- Physics runtime integration is covered by automated Scene tests, but interactive Editor/Play Mode behavior still requires manual verification on Windows.
+- Numeric validation for all physics configuration fields and disabled/static/kinematic edge cases need additional coverage.
+- Collision/contact event and raycast/overlap query APIs are not yet exposed to gameplay code.
+- Physics debug drawing is not yet implemented.
 - Runtime Play Mode input actions are not yet wired to persistent InputMap settings.
