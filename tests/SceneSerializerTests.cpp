@@ -88,6 +88,17 @@ int main()
     auto& second = source.CreateEntity("Decoration");
     second.GetTransform().position = {100.0F, 200.0F};
 
+    auto& playerHinge = player.AddComponent<ember::RevoluteJoint2D>();
+    playerHinge.connectedEntity = second.GetId();
+    playerHinge.localAnchorA = {12.0F, 8.0F};
+    playerHinge.enableLimit = true;
+    playerHinge.lowerAngle = -0.25F;
+    playerHinge.upperAngle = 0.75F;
+    auto& decorationRope = second.AddComponent<ember::DistanceJoint2D>();
+    decorationRope.connectedEntity = player.GetId();
+    decorationRope.localAnchorB = {4.0F, 5.0F};
+    decorationRope.length = 180.0F;
+
     auto& compound = source.CreateEntity("Compound");
     auto& colliderSet = compound.AddComponent<ember::ColliderSet2D>();
     auto& boxEntry = colliderSet.AddBoxCollider();
@@ -127,6 +138,19 @@ int main()
           "Saved scene can be loaded");
     Check(loaded.GetName() == "Forest Level", "Scene name survives round-trip");
     Check(loaded.GetEntityCount() == 3, "All entities survive round-trip");
+    const auto* loadedHingeOwner = loaded.FindEntity(player.GetId());
+    const auto* loadedRopeOwner = loaded.FindEntity(second.GetId());
+    const auto* loadedHinge = loadedHingeOwner
+        ? loadedHingeOwner->GetComponent<ember::RevoluteJoint2D>() : nullptr;
+    const auto* loadedRope = loadedRopeOwner
+        ? loadedRopeOwner->GetComponent<ember::DistanceJoint2D>() : nullptr;
+    Check(loadedHinge && loadedHinge->connectedEntity == second.GetId() &&
+        loadedHinge->localAnchorA.x == 12.0F && loadedHinge->enableLimit &&
+        loadedHinge->lowerAngle == -0.25F && loadedHinge->upperAngle == 0.75F,
+        "RevoluteJoint2D reference and configuration survive full Scene serialization");
+    Check(loadedRope && loadedRope->connectedEntity == player.GetId() &&
+        loadedRope->localAnchorB.y == 5.0F && loadedRope->length == 180.0F,
+        "DistanceJoint2D reference and configuration survive full Scene serialization");
     const auto* loadedCompound = loaded.FindEntity(compound.GetId());
     const auto* loadedSet = loadedCompound ? loadedCompound->GetComponent<ember::ColliderSet2D>() : nullptr;
     Check(loadedSet && loadedSet->colliders.size() == 2 &&
