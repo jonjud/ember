@@ -10,7 +10,7 @@
 - Complete: engine-owned Begin/End contact event API in PhysicsWorld and Scene, with EntityId pairs; Windows CI run 45939999840 passed.
 - Complete: engine-owned closest raycast and AABB overlap queries, including category/mask query filters and Scene EntityId mapping; Windows CI run 45941862568 passed.
 - Complete: automated category/mask filter coverage, sensor inclusion in raycast/AABB overlap queries, and Scene filter-forwarding tests; PhysicsWorld query coverage passed Windows CI #126.
-- Active milestone: multiple colliders per entity (design in [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md)).
+- Active milestone: multiple colliders per entity. CI #133 passed for the design docs; the first code slice adds ColliderSet2D, stable ColliderId generation/validation and clone tests, with runtime/serialization integration deferred.
 - Deferred: joints.
 
 ## Dependency boundary
@@ -39,6 +39,7 @@
 - `PhysicsBody2D`: body type (static, kinematic, dynamic), gravity scale, linear/angular damping and enabled flag.
 - `BoxCollider2D`: half extents, local offset/rotation, density, friction, restitution and sensor flag.
 - `CircleCollider2D`: radius, local offset, density, friction, restitution and sensor flag.
+- `ColliderSet2D` (in progress): ordered Box/Circle entries with stable IDs, independent material/sensor/query-filter values; no runtime backend handles.
 - `PhysicsWorld`: gravity, body create/destroy, box/circle collider creation, transform read/write, stepping, consuming Begin/End contact events, closest raycasts, AABB overlap queries and body count.
 - Components store configuration only; runtime handles are owned by Scene.
 - Legacy configuration currently supports one BoxCollider2D or CircleCollider2D per entity. The multi-collider extension will introduce a collider-set component and a compatibility migration; see [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md).

@@ -10,9 +10,9 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`862f774`](https://github.com/jonjud/ember/commit/862f7747f251e6148f8472fec0495e0119a369ab) — Add Windows physics runtime verification checklist |
-| Last verified CI | [Windows CI #132](https://github.com/jonjud/ember/actions/runs/45946247259) — **Success** (Configure, Build, Run engine tests) |
-| Last completed milestone | Interactive Physics Runtime Verification |
+| Last code commit | Pending first Multiple Colliders implementation commit |
+| Last verified CI | [Windows CI #133](https://github.com/jonjud/ember/actions/runs/45946897880) — **Success** (Configure, Build, Run engine tests) |
+| Last completed milestone | Multiple Colliders design approved by CI #133; ColliderSet2D model implementation pending CI |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests ไม่ได้ยืนยันการทดสอบ Editor/Runtime แบบ interactive บนเครื่องจริง
@@ -35,6 +35,7 @@
 - [x] Implement engine-owned PhysicsWorld RAII facade and body/collider API
 - [x] Automated PhysicsWorld tests
 - [x] Add serializable configuration components: PhysicsBody2D, BoxCollider2D, CircleCollider2D
+- [ ] Add ColliderSet2D with stable ColliderId generation, lookup/removal, validation and clone tests (implementation committed; CI pending)
 - [x] Register physics component types, serializers/deserializers and Inspector properties
 - [x] Add Vector2 Inspector controls and enum dropdown support
 - [x] Scene owns PhysicsWorld during runtime and builds bodies/colliders from entity components
@@ -72,7 +73,7 @@
 
 The Scene-owned 2D physics slice includes the Editor collider debug overlay, Begin/End contact events, closest raycast/AABB overlap queries, query filters and sensor inclusion. Interactive Windows verification of the overlay and Play Mode has now been user-confirmed as passed using [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md). Windows CI #132 also passed Configure, Build and engine tests.
 
-**Active milestone: Multiple Colliders per Entity.** The design must preserve legacy scene compatibility, stable collider identity, transient runtime handles, and the private Box2D boundary. Joints remain deferred until the multi-collider slice is stable.
+**Active milestone: Multiple Colliders per Entity.** The design is documented and CI #133 passed. The first implementation slice adds an engine-owned ColliderSet2D value model with nonzero monotonic IDs, lookup/removal, duplicate-ID validation and clone preservation; runtime integration and serialization are intentionally unchanged pending CI. Joints remain deferred until the multi-collider slice is stable.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -98,4 +99,4 @@ The Scene-owned 2D physics slice includes the Editor collider debug overlay, Beg
 
 ---
 
-**Handoff:** Start by checking latest `develop` HEAD and CI. Active milestone: Multiple Colliders per Entity. Read [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md) before implementation; preserve legacy scene compatibility and keep Box2D types private.
+**Handoff:** Active milestone: Multiple Colliders per Entity. First code slice: ColliderSet2D value model and stable ColliderId tests; next check CI, then proceed to serialization/migration. Read [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md) before implementation; preserve legacy scene compatibility and keep Box2D types private.

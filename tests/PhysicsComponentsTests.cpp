@@ -53,6 +53,49 @@ int main()
         "CircleCollider2D clones radius, offset, and material");
 
 
+
+    ember::ColliderSet2D colliderSet;
+    auto& boxEntry = colliderSet.AddBoxCollider();
+    boxEntry.offset = {1.0F, -2.0F};
+    boxEntry.halfExtents = {0.75F, 1.25F};
+    boxEntry.categoryBits = 0x0002;
+    auto& circleEntry = colliderSet.AddCircleCollider();
+    circleEntry.radius = 1.5F;
+    circleEntry.isSensor = true;
+    const ember::ColliderId boxId = boxEntry.id;
+    const ember::ColliderId circleId = circleEntry.id;
+    Check(boxId != 0 && circleId != 0 && boxId != circleId,
+        "Collider IDs are nonzero and unique across generated entries");
+    Check(colliderSet.colliders.size() == 2 &&
+        colliderSet.colliders[0].shape == ember::ColliderShape2D::Box &&
+        colliderSet.colliders[1].shape == ember::ColliderShape2D::Circle,
+        "ColliderSet2D stores ordered Box and Circle entries");
+    Check(colliderSet.HasValidColliderIds(),
+        "ColliderSet2D validates nonzero unique collider IDs");
+    Check(colliderSet.FindCollider(boxId) != nullptr &&
+        colliderSet.FindCollider(boxId)->halfExtents.x == 0.75F &&
+        colliderSet.FindCollider(circleId)->radius == 1.5F,
+        "ColliderSet2D finds entries by stable ID");
+    auto colliderSetCopy = colliderSet.Clone();
+    const auto* copiedSet = dynamic_cast<const ember::ColliderSet2D*>(colliderSetCopy.get());
+    Check(copiedSet && copiedSet->colliders.size() == 2 &&
+        copiedSet->colliders[0].id == boxId && copiedSet->colliders[1].id == circleId &&
+        copiedSet->colliders[0].offset.y == -2.0F &&
+        copiedSet->colliders[1].isSensor,
+        "ColliderSet2D clone preserves IDs and all collider configuration");
+    Check(colliderSet.RemoveCollider(boxId) && colliderSet.FindCollider(boxId) == nullptr &&
+        colliderSet.colliders.size() == 1,
+        "ColliderSet2D removes an entry by stable ID");
+    Check(!colliderSet.RemoveCollider(boxId),
+        "ColliderSet2D reports when a requested ID does not exist");
+    auto& duplicateCheck = colliderSet.AddBoxCollider();
+    duplicateCheck.id = circleId;
+    Check(!colliderSet.HasValidColliderIds(),
+        "ColliderSet2D rejects duplicate IDs");
+    duplicateCheck.id = 0;
+    Check(!colliderSet.HasValidColliderIds(),
+        "ColliderSet2D rejects zero IDs");
+
     ember::ComponentRegistry registry;
     Check(ember::RegisterPhysicsComponents(registry),
         "Physics components register for Editor creation and serialization");
