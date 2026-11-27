@@ -8,6 +8,7 @@
 #include "Engine/Scene/Scene.hpp"
 #include "Engine/Scene/ComponentRegistry.hpp"
 #include "Engine/Platform/InputMap.hpp"
+#include "Engine/UI/UIInputRouter2D.hpp"
 #include "Engine/Project/ProjectConfiguration.hpp"
 
 #include <cstdint>
@@ -80,6 +81,7 @@ private:
     Scene m_scene{"Untitled Scene"};
     ComponentRegistry m_componentRegistry;
     Scene m_playScene{"Play Scene"};
+    UIInputRouter2D m_uiInputRouter;
     bool m_isPlaying = false;
     bool m_sceneDirty = false;
     int m_pendingSceneChange = 0;

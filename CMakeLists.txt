@@ -183,6 +183,15 @@ if(BUILD_TESTING)
     target_link_libraries(ember_ui_components_tests PRIVATE nlohmann_json::nlohmann_json)
     add_test(NAME ember_ui_components_tests COMMAND ember_ui_components_tests)
 
+    add_executable(ember_ui_input_tests
+        tests/UIInputRouterTests.cpp
+        src/Engine/Scene/Scene.cpp
+        src/Engine/Physics/PhysicsWorld.cpp
+    )
+    target_include_directories(ember_ui_input_tests PRIVATE src)
+    target_link_libraries(ember_ui_input_tests PRIVATE nlohmann_json::nlohmann_json box2d::box2d)
+    add_test(NAME ember_ui_input_tests COMMAND ember_ui_input_tests)
+
     add_executable(ember_physics_components_tests
         tests/PhysicsComponentsTests.cpp
     )
@@ -335,6 +344,7 @@ if(BUILD_TESTING)
         ember_scene_tests
         ember_component_tests
         ember_scene_serializer_tests
+        ember_ui_input_tests
     )
         target_sources(${scene_target} PRIVATE
             src/Engine/Audio/AudioEngine.cpp
@@ -353,6 +363,7 @@ if(MSVC)
     target_compile_options(ember_imgui PRIVATE /W4 /permissive-)
     if(BUILD_TESTING)
         target_compile_options(ember_ui_components_tests PRIVATE /W4 /permissive-)
+        target_compile_options(ember_ui_input_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_audio_engine_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_physics_world_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_scene_physics_tests PRIVATE /W4 /permissive-)
@@ -376,6 +387,7 @@ else()
     target_compile_options(ember_imgui PRIVATE -Wall -Wextra -Wpedantic)
     if(BUILD_TESTING)
         target_compile_options(ember_ui_components_tests PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(ember_ui_input_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_audio_engine_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_physics_world_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_physics_components_tests PRIVATE -Wall -Wextra -Wpedantic)

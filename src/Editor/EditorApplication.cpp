@@ -1478,7 +1478,7 @@ void EditorApplication::DrawViewport()
         if (m_isPlaying)
         {
             ImGui::TextColored(ImVec4(0.35F, 0.9F, 0.55F, 1.0F),
-                "PLAY MODE - isolated scene preview (runtime simulation is not connected yet)");
+                "PLAY MODE - isolated scene preview | UI input active");
         }
         ImGui::TextDisabled("Middle-drag: pan | Wheel: zoom | Click: select");
         ImGui::SameLine();
@@ -1989,6 +1989,29 @@ void EditorApplication::DrawViewport()
             if (canvas != nullptr && canvas->enabled && canvas->IsConfigurationValid())
                 activeCanvas = canvas;
         });
+        if (m_isPlaying && activeCanvas != nullptr)
+        {
+            const ImVec2 pointer = ImGui::GetIO().MousePos;
+            m_uiInputRouter.Update(
+                activeScene,
+                activeCanvas,
+                {viewportSize.x, viewportSize.y},
+                {pointer.x - canvasMin.x, pointer.y - canvasMin.y},
+                ImGui::IsMouseDown(ImGuiMouseButton_Left),
+                ImGui::IsMouseClicked(ImGuiMouseButton_Left),
+                ImGui::IsMouseReleased(ImGuiMouseButton_Left));
+            for (const UIButtonClickedEvent2D& event : m_uiInputRouter.GetEvents())
+            {
+                std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                    "UI Button clicked: Entity %llu",
+                    static_cast<unsigned long long>(event.entity));
+            }
+        }
+        else
+        {
+            m_uiInputRouter.Reset();
+        }
+
         if (activeCanvas != nullptr)
         {
             UICanvasLayout2D uiLayout;
@@ -2042,14 +2065,23 @@ void EditorApplication::DrawViewport()
                             canvasMin.y + uiLayout.origin.y + button->position.y * uiLayout.scale};
                         const ImVec2 maximum{minimum.x + button->size.x * uiLayout.scale,
                             minimum.y + button->size.y * uiLayout.scale};
+                        const UIButtonInteractionState2D& interaction =
+                            m_uiInputRouter.GetState(entity.GetId());
+                        const float highlight = interaction.pressed ? 0.16F :
+                            (interaction.hovered ? 0.08F : 0.0F);
                         const ImU32 fill = IM_COL32(
-                            static_cast<int>(std::lround(button->red * 255.0F)),
-                            static_cast<int>(std::lround(button->green * 255.0F)),
-                            static_cast<int>(std::lround(button->blue * 255.0F)),
+                            static_cast<int>(std::lround(std::clamp(button->red + highlight, 0.0F, 1.0F) * 255.0F)),
+                            static_cast<int>(std::lround(std::clamp(button->green + highlight, 0.0F, 1.0F) * 255.0F)),
+                            static_cast<int>(std::lround(std::clamp(button->blue + highlight, 0.0F, 1.0F) * 255.0F)),
                             static_cast<int>(std::lround(button->alpha * 255.0F)));
+                        const ImU32 outline = !button->interactable
+                            ? IM_COL32(130,135,145,180)
+                            : (interaction.pressed ? IM_COL32(255,225,130,255)
+                                : (interaction.hovered ? IM_COL32(120,210,255,255)
+                                    : IM_COL32(235,240,255,230)));
                         drawList->AddRectFilled(minimum, maximum, fill, 5.0F);
-                        drawList->AddRect(minimum, maximum, button->interactable
-                            ? IM_COL32(235,240,255,230) : IM_COL32(130,135,145,180), 5.0F);
+                        drawList->AddRect(minimum, maximum, outline, 5.0F, 0,
+                            interaction.hovered || interaction.pressed ? 2.5F : 1.0F);
                         const ImVec2 textSize=ImGui::CalcTextSize(button->text.c_str());
                         const ImVec2 textPos{minimum.x + (maximum.x-minimum.x-textSize.x)/2.0F,
                             minimum.y + (maximum.y-minimum.y-textSize.y)/2.0F};
@@ -2213,6 +2245,7 @@ void EditorApplication::StartPlayMode()
 {
     if (m_isPlaying) return;
     StopAudioPreview();
+    m_uiInputRouter.Reset();
     m_playScene = m_scene.Clone();
     m_playScene.Start(&m_audio, &m_assetRegistry);
     m_isPlaying = true;
@@ -2224,6 +2257,7 @@ void EditorApplication::StopPlayMode()
 {
     if (!m_isPlaying) return;
     m_playScene.Stop();
+    m_uiInputRouter.Reset();
     m_isPlaying = false;
     m_playScene.Clear();
     if (m_scene.FindEntity(m_selectedEntity) == nullptr) m_selectedEntity = 0;
