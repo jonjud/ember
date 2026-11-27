@@ -11,7 +11,7 @@
 - Complete: engine-owned closest raycast and AABB overlap queries, including category/mask query filters and Scene EntityId mapping; Windows CI run 45941862568 passed.
 - Complete: automated category/mask filter coverage, sensor inclusion in raycast/AABB overlap queries, and Scene filter-forwarding tests; PhysicsWorld query coverage passed Windows CI #126.
 - Active milestone: multiple colliders per entity. ColliderSet2D model and stable IDs passed CI #135. Canonical ColliderSet2D serialization and migration of legacy single Box/Circle components during Scene loading are implemented; runtime multi-shape integration is pending CI.
-- Active milestone: PhysicsJointHandle, Revolute/Distance PhysicsWorld API, serializable RevoluteJoint2D/DistanceJoint2D components, EntityId references, Scene runtime creation/teardown, and Inspector reference/settings controls are implemented; CI and final Windows manual verification remain.
+- Active milestone: PhysicsJointHandle, Revolute/Distance PhysicsWorld API, serializable RevoluteJoint2D/DistanceJoint2D components, EntityId references, Scene runtime creation/teardown, and Inspector reference/settings controls are implemented; Windows CI #191 passed implementation and automated tests; final Windows manual verification remains deferred until the planned test session.
 
 ## Dependency boundary
 - Box2D headers and IDs must not appear in public EMBER Scene, Entity, Component or Editor headers.
@@ -64,7 +64,7 @@
 
 ## Remaining validation work
 - Existing Editor/Play Mode and multi-collider workflows passed the user-run Windows checklist; automated Windows CI #132 and subsequent physics runs passed.
-- Physics Joints automated build/test confirmation is in progress. Defer interactive Windows Editor verification for joints until the full joint authoring/runtime milestone is complete.
+- Physics Joints automated build/test confirmation passed Windows CI #191. Defer interactive Windows Editor verification for joints until the planned final test session.
 
 ## Milestone order
 1. Pin Box2D and establish private dependency boundary. (Complete)

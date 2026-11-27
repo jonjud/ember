@@ -10,11 +10,11 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`c7b5118`](https://github.com/jonjud/ember/commit/c7b51186db2badacc6cd3a94f58e575e0c1d86ef) — joint Scene serialization tests |
-| Last verified CI | [Windows CI #187](https://github.com/jonjud/ember/actions/runs/45972172995) — **Success** for joint components + Scene runtime; CI #188 and #189 pending |
-| Latest documentation CI | [Windows CI #178](https://github.com/jonjud/ember/actions/runs/45962148407) — **Success** (latest confirmed documentation run) |
+| Last code commit | [`9199539`](https://github.com/jonjud/ember/commit/919953944a1fcc80b37546bf1be309a0447749c7) — joint edge-case and restart lifecycle tests |
+| Last verified CI | [Windows CI #191](https://github.com/jonjud/ember/actions/runs/45972968881) — **Success** (joint authoring, Scene lifecycle, Inspector, serialization and edge-case tests) |
+| Latest documentation CI | [Windows CI #191](https://github.com/jonjud/ember/actions/runs/45972968881) — **Success** |
 | Last completed milestone | Editor + Multi-Collider Physics verification — user-confirmed Windows interactive checklist passed (2026-11-27) |
-| Active milestone | Physics Joints — serialized Revolute/Distance components, Entity-reference Inspector controls, Scene runtime creation/teardown, and automated coverage committed; final CI verification pending |
+| Active milestone | Physics Joints — serialized Revolute/Distance components, Entity-reference Inspector controls, Scene runtime creation/teardown, serialization and edge-case tests; Windows CI #191 passed. Final manual Editor checklist is deferred until the planned test session. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -85,7 +85,7 @@
 
 **Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user confirmed the Windows Editor checklist passed on 2026-11-27, including Editor launch/layout, Entity and Transform editing, duplicate/delete, PhysicsBody2D Inspector add/edit/remove, ColliderSet2D editing, Physics Debug Overlay, save/reopen persistence, and Play/Stop behavior.
 
-**Active milestone: Physics Joints.** The serialized authoring components, Entity-to-Entity references, Scene start/stop creation and teardown, and Inspector controls are now implemented. Keep Box2D joint IDs private/transient. Remaining work is CI confirmation, edge-case hardening, and the final deferred Windows Editor checklist after the whole Physics Joints milestone is complete. Defer prismatic, weld, motor and scripting-facing joint controls.
+**Active milestone: Physics Joints.** The serialized authoring components, Entity-to-Entity references, Scene start/stop creation and teardown, and Inspector controls are now implemented. Keep Box2D joint IDs private/transient. Automated Windows CI #191 passed, including invalid/self/disabled references, Scene restart lifecycle, Inspector compilation and Scene serialization. The only remaining verification is the final Windows Editor checklist, intentionally deferred until the planned test session. Defer prismatic, weld, motor and scripting-facing joint controls.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -117,4 +117,4 @@
 
 ---
 
-**Handoff:** Windows Editor manual verification for the current Editor + Physics workflow is user-confirmed PASS. Physics Joints now has serializable authoring components, Entity-reference Inspector controls, Scene runtime lifecycle integration, and automated serialization/runtime coverage. Confirm CI, finish remaining edge cases, and defer manual Windows Editor testing until the full milestone is complete. Work on `develop` only; do not merge to `main`.
+**Handoff:** Windows Editor manual verification for the current Editor + Physics workflow is user-confirmed PASS. Physics Joints now has serializable authoring components, Entity-reference Inspector controls, Scene runtime lifecycle integration, and automated serialization/runtime coverage. Windows CI #191 is green. The only remaining Physics Joints check is the deferred manual Windows Editor checklist; do not ask the user to test intermediate slices. Work on `develop` only; do not merge to `main`.

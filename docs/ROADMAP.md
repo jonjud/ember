@@ -64,7 +64,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Closest raycast and AABB overlap query API (engine-owned results, query filters and Scene EntityId mapping; Windows CI #121)
 - [x] Query-filter category/mask and sensor inclusion tests (Windows CI #126)
 - [x] Multiple colliders per entity (model #135; serialization/migration #151; runtime/query #155; contact aggregation #164; Inspector #169; overlay #170; Windows interactive checklist user-confirmed passed)
-- [ ] Physics Joints (PhysicsWorld API, serializable Revolute/Distance components, Entity-reference Inspector controls, Scene lifecycle integration, and automated tests committed; CI confirmation and final deferred Windows manual checklist remain)
+- [ ] Physics Joints (PhysicsWorld API, serializable Revolute/Distance components, Entity-reference Inspector controls, Scene lifecycle integration, and automated tests passed Windows CI #191; final Windows manual checklist is intentionally deferred)
 - [ ] Animation
 - [ ] Audio (planned miniaudio backend)
 - [ ] UI system
@@ -86,4 +86,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Complete the Physics Joints vertical slice: add serialized Entity-to-Entity Revolute/Distance components, validate references/body availability, integrate joint creation and teardown with Scene Play/Stop, expose safe Inspector controls, then add CI and Windows interactive verification. The PhysicsWorld API, serialized components, Scene lifecycle, Inspector reference picker, and automated runtime/serialization tests are implemented. Keep Box2D IDs private; defer other joint families. Per the agreed workflow, defer manual Windows Editor verification until the full milestone is complete.
+- Complete the Physics Joints vertical slice: add serialized Entity-to-Entity Revolute/Distance components, validate references/body availability, integrate joint creation and teardown with Scene Play/Stop, expose safe Inspector controls, then add CI and Windows interactive verification. The PhysicsWorld API, serialized components, Scene lifecycle, Inspector reference picker, and automated runtime/serialization tests are implemented. Keep Box2D IDs private; defer other joint families. Windows CI #191 passed the implementation and automated tests. Per the agreed workflow, defer manual Windows Editor verification until the planned final test session.
