@@ -492,6 +492,20 @@ void Scene::DestroyAudioSources() noexcept
     m_audioEngine = nullptr;
 }
 
+bool Scene::PlayAudioSource(EntityId entity) noexcept
+{
+    const auto it = m_audioSources.find(entity);
+    return it != m_audioSources.end() && m_audioEngine != nullptr &&
+        m_audioEngine->Play(it->second);
+}
+
+bool Scene::StopAudioSource(EntityId entity) noexcept
+{
+    const auto it = m_audioSources.find(entity);
+    return it != m_audioSources.end() && m_audioEngine != nullptr &&
+        m_audioEngine->Stop(it->second);
+}
+
 bool Scene::IsAudioSourcePlaying(EntityId entity) const noexcept
 {
     const auto it = m_audioSources.find(entity);

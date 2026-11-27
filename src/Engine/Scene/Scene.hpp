@@ -56,6 +56,8 @@ public:
     [[nodiscard]] bool IsStarted() const { return m_started; }
     [[nodiscard]] std::size_t GetPhysicsBodyCount() const { return m_physicsBodies.size(); }
     [[nodiscard]] std::size_t GetAudioSourceCount() const { return m_audioSources.size(); }
+    [[nodiscard]] bool PlayAudioSource(EntityId entity) noexcept;
+    [[nodiscard]] bool StopAudioSource(EntityId entity) noexcept;
     [[nodiscard]] bool IsAudioSourcePlaying(EntityId entity) const noexcept;
     [[nodiscard]] const std::vector<std::string>& GetAudioDiagnostics() const { return m_audioDiagnostics; }
     [[nodiscard]] std::size_t GetPhysicsJointCount() const { return m_physicsWorld ? m_physicsWorld->GetJointCount() : 0; }

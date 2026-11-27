@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <utility>
 
 namespace
 {
@@ -91,6 +92,12 @@ int main()
     assert(scene.GetAudioSourceCount() == 2);
     assert(scene.IsAudioSourcePlaying(ambienceEntity.GetId()));
     assert(!scene.IsAudioSourcePlaying(delayedEntity.GetId()));
+    assert(scene.PlayAudioSource(delayedEntity.GetId()));
+    assert(scene.IsAudioSourcePlaying(delayedEntity.GetId()));
+    assert(scene.StopAudioSource(delayedEntity.GetId()));
+    assert(!scene.IsAudioSourcePlaying(delayedEntity.GetId()));
+    assert(!scene.PlayAudioSource(0));
+    assert(!scene.StopAudioSource(0));
     assert(!scene.IsAudioSourcePlaying(disabledEntity.GetId()));
     assert(scene.GetAudioDiagnostics().empty());
 
@@ -111,6 +118,31 @@ int main()
     assert(missingAssetScene.GetAudioSourceCount() == 0);
     assert(!missingAssetScene.GetAudioDiagnostics().empty());
     missingAssetScene.Stop();
+
+    // Moving a running Scene transfers ownership of its runtime sound handles.
+    ember::Scene moveSource("Move Source");
+    auto& movingEntity = moveSource.CreateEntity("Moving Audio");
+    auto& movingSource = movingEntity.AddComponent<ember::AudioSource2D>();
+    movingSource.audioAssetId = "audio-ambience";
+    movingSource.loop = true;
+    moveSource.Start(&audio, &assets);
+    assert(moveSource.IsAudioSourcePlaying(movingEntity.GetId()));
+
+    ember::Scene moveTarget("Move Target");
+    auto& replacedEntity = moveTarget.CreateEntity("Replaced Audio");
+    auto& replacedSource = replacedEntity.AddComponent<ember::AudioSource2D>();
+    replacedSource.audioAssetId = "audio-ambience";
+    moveTarget.Start(&audio, &assets);
+    assert(moveTarget.IsAudioSourcePlaying(replacedEntity.GetId()));
+
+    moveTarget = std::move(moveSource);
+    assert(!moveSource.IsStarted());
+    assert(moveTarget.IsStarted());
+    assert(moveTarget.GetAudioSourceCount() == 1);
+    assert(moveTarget.IsAudioSourcePlaying(movingEntity.GetId()));
+    assert(!moveTarget.IsAudioSourcePlaying(replacedEntity.GetId()));
+    moveTarget.Stop();
+    assert(!moveTarget.IsAudioSourcePlaying(movingEntity.GetId()));
 
     audio.Shutdown();
     std::filesystem::remove_all(root, error);
