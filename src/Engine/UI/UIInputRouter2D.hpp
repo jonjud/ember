@@ -32,7 +32,8 @@ public:
         Vector2 pointerPosition,
         bool pointerDown,
         bool pointerPressed,
-        bool pointerReleased)
+        bool pointerReleased,
+        bool pointerAvailable = true)
     {
         m_states.clear();
         m_events.clear();
@@ -53,7 +54,7 @@ public:
         const std::vector<EntityId> entityIds = scene.GetEntityIds();
         // Rendering follows ascending EntityId order; reverse hit testing picks
         // the visually topmost button when controls overlap.
-        for (auto it = entityIds.rbegin(); it != entityIds.rend(); ++it)
+        for (auto it = entityIds.rbegin(); pointerAvailable && it != entityIds.rend(); ++it)
         {
             const Entity* entity = scene.FindEntity(*it);
             if (entity == nullptr || !entity->IsActive())

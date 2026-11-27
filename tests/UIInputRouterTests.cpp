@@ -101,6 +101,21 @@ int main()
     Check(router.GetEvents().empty() && !router.GetState(buttonEntity.GetId()).hovered,
         "Reset clears transient interaction state and events");
 
+    router.Update(scene, &canvas, viewport, inside, true, true, false, false);
+    Check(!router.GetState(buttonEntity.GetId()).hovered &&
+        !router.GetState(buttonEntity.GetId()).pressed && router.GetEvents().empty(),
+        "Pointer blocked by another Editor item cannot start UI interaction");
+
+    router.Update(scene, &canvas, viewport, inside, true, true, false, true);
+    router.Update(scene, &canvas, viewport, inside, true, false, false, false);
+    Check(!router.GetState(buttonEntity.GetId()).hovered &&
+        router.GetState(buttonEntity.GetId()).pressed,
+        "Captured Button remains pressed while pointer leaves the interactive viewport");
+    router.Update(scene, &canvas, viewport, inside, false, false, true, false);
+    Check(router.GetEvents().empty() && !router.GetState(buttonEntity.GetId()).pressed,
+        "Release outside the interactive viewport cancels the captured click");
+    router.Reset();
+
     // Exercise the complete path from pointer input through the generated
     // event to the runtime Component callback.
     ember::Scene callbackScene("UI Click Callback Test");

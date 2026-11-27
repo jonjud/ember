@@ -1999,7 +1999,8 @@ void EditorApplication::DrawViewport()
                 {pointer.x - canvasMin.x, pointer.y - canvasMin.y},
                 ImGui::IsMouseDown(ImGuiMouseButton_Left),
                 ImGui::IsMouseClicked(ImGuiMouseButton_Left),
-                ImGui::IsMouseReleased(ImGuiMouseButton_Left));
+                ImGui::IsMouseReleased(ImGuiMouseButton_Left),
+                hovered);
             for (const UIButtonClickedEvent2D& event : m_uiInputRouter.GetEvents())
             {
                 (void)activeScene.DispatchUIButtonClicked(event.entity);
