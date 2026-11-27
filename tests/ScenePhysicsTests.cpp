@@ -147,6 +147,63 @@ int main()
     Check(playClone.GetPhysicsBodyCount() == 0,
         "Cloning a stopped Scene copies configuration but no runtime physics handles");
 
+    // Multiple shape-pairs between the same two entities must be exposed as
+    // one Entity-level Begin and one End transition.
+    ember::Scene compoundContactScene("Compound Contact Aggregation Test");
+    auto& compoundPlatform = compoundContactScene.CreateEntity("Compound Platform");
+    auto& platformBodyConfig = compoundPlatform.AddComponent<ember::PhysicsBody2D>();
+    platformBodyConfig.type = ember::PhysicsBodyType2D::Kinematic;
+    auto& platformSet = compoundPlatform.AddComponent<ember::ColliderSet2D>();
+    auto& platformLeft = platformSet.AddBoxCollider();
+    platformLeft.offset = {-12.0F, 0.0F};
+    platformLeft.halfExtents = {20.0F, 20.0F};
+    platformLeft.density = 0.0F;
+    auto& platformRight = platformSet.AddBoxCollider();
+    platformRight.offset = {12.0F, 0.0F};
+    platformRight.halfExtents = {20.0F, 20.0F};
+    platformRight.density = 0.0F;
+
+    auto& compoundBall = compoundContactScene.CreateEntity("Compound Ball");
+    auto& compoundBallBody = compoundBall.AddComponent<ember::PhysicsBody2D>();
+    compoundBallBody.type = ember::PhysicsBodyType2D::Dynamic;
+    compoundBallBody.gravityScale = 0.0F;
+    auto& ballSet = compoundBall.AddComponent<ember::ColliderSet2D>();
+    auto& ballLeft = ballSet.AddCircleCollider();
+    ballLeft.offset = {-8.0F, 0.0F};
+    ballLeft.radius = 25.0F;
+    auto& ballRight = ballSet.AddCircleCollider();
+    ballRight.offset = {8.0F, 0.0F};
+    ballRight.radius = 25.0F;
+
+    compoundContactScene.Start();
+    std::size_t compoundBeginCount = 0;
+    for (int frame = 0; frame < 5; ++frame)
+    {
+        compoundContactScene.Update(1.0F / 60.0F);
+        for (const auto& event : compoundContactScene.GetPhysicsContactEvents())
+            if (event.type == ember::SceneContactEventType2D::Begin &&
+                event.entityA == std::min(compoundPlatform.GetId(), compoundBall.GetId()) &&
+                event.entityB == std::max(compoundPlatform.GetId(), compoundBall.GetId()))
+                ++compoundBeginCount;
+    }
+    Check(compoundBeginCount == 1,
+        "Multiple overlapping shape-pairs emit only one Entity-level Begin event");
+
+    compoundPlatform.GetTransform().position.x = 500.0F;
+    std::size_t compoundEndCount = 0;
+    for (int frame = 0; frame < 5; ++frame)
+    {
+        compoundContactScene.Update(1.0F / 60.0F);
+        for (const auto& event : compoundContactScene.GetPhysicsContactEvents())
+            if (event.type == ember::SceneContactEventType2D::End &&
+                event.entityA == std::min(compoundPlatform.GetId(), compoundBall.GetId()) &&
+                event.entityB == std::max(compoundPlatform.GetId(), compoundBall.GetId()))
+                ++compoundEndCount;
+    }
+    Check(compoundEndCount == 1,
+        "Entity-level End is emitted only after the final shape-pair separates");
+    compoundContactScene.Stop();
+
     ember::Scene invalidScene("Invalid Physics Test");
     auto& orphan = invalidScene.CreateEntity("Orphan Collider");
     orphan.AddComponent<ember::BoxCollider2D>();
