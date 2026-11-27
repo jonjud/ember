@@ -83,4 +83,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Verify Physics debug overlay and Play Mode interaction manually on Windows; CI does not replace this check.
+- Complete the interactive Windows checklist in [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md); CI does not replace this check. Do not start multiple-collider/joint work until the checklist is recorded.

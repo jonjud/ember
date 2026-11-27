@@ -71,7 +71,7 @@
 
 The Scene-owned 2D physics slice now includes the Editor collider debug overlay, engine-owned Begin/End contact events, and closest raycast/AABB overlap queries. Query tests cover nearest-hit selection, hit normal/fraction, invalid zero-length rays, invalid bounds, category/mask filtering, and sensor inclusion in both raycast and overlap queries. Scene tests also verify that query filters are forwarded correctly and results map to EntityIds. Windows CI #126 passed Configure, Build and engine tests for the PhysicsWorld query-filter/sensor cases; the final Scene filter-forwarding test is included in the current HEAD and will be validated by its CI run.
 
-Next focused task: interactive Editor/Play Mode verification on Windows, then consider multiple colliders and joints. Multiple colliders and joints remain deferred.
+Next focused task: execute the step-by-step interactive Windows checklist in [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md). Record pass/fail for each item before considering multiple colliders or joints. Those features remain deferred.
 
 Interactive Editor/Play Mode verification on a Windows machine is still outstanding; CI success does not replace that manual check.
 
@@ -99,4 +99,4 @@ Interactive Editor/Play Mode verification on a Windows machine is still outstand
 
 ---
 
-**Handoff:** Start by checking latest `develop` HEAD and CI. Next focused task: interactive Windows Editor/Play Mode verification; keep Box2D types private.
+**Handoff:** Start by checking latest `develop` HEAD and CI. Next focused task: execute [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md) on Windows and report each check as pass/fail; keep Box2D types private.

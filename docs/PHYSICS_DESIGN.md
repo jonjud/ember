@@ -56,7 +56,7 @@
 - Non-finite frame delta is ignored safely.
 
 ## Remaining validation work
-- Interactive Editor/Play Mode verification on Windows remains outstanding.
+- Interactive Editor/Play Mode verification on Windows remains outstanding. Use the reproducible checklist in [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md); record any failure before changing implementation.
 
 ## Milestone order
 1. Pin Box2D and establish private dependency boundary. (Complete)
