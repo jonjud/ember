@@ -10,8 +10,8 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`c4abb18`](https://github.com/jonjud/ember/commit/c4abb18f7fd730011c23b21fef01848ab4e926c6) — Multi-collider Inspector editing |
-| Last verified CI | [Windows CI #164](https://github.com/jonjud/ember/actions/runs/45957685519) — **Success** (Configure, Build, Run engine tests), including Entity-pair contact aggregation |
+| Last code commit | [`009723a`](https://github.com/jonjud/ember/commit/009723a7e11d2cf01111668ef33cf98665aa85f5) — Multi-collider Inspector editing fix |
+| Last verified CI | [Windows CI #169](https://github.com/jonjud/ember/actions/runs/45959345669) — **Success** (Configure, Build, Run engine tests), including multi-collider Inspector editing |
 | Last completed milestone | ColliderSet2D serialization and legacy Scene migration passed CI #151 |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
@@ -76,7 +76,7 @@
 
 The Scene-owned 2D physics slice includes the Editor collider debug overlay, Begin/End contact events, closest raycast/AABB overlap queries, query filters and sensor inclusion. Interactive Windows verification of the overlay and Play Mode has now been user-confirmed as passed using [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md). Windows CI #132 also passed Configure, Build and engine tests.
 
-**Active milestone: Multiple Colliders per Entity.** ColliderSet2D model passed CI #135; canonical serialization and legacy migration passed CI #151; multi-shape runtime/query filters passed CI #155; Entity-pair contact aggregation passed CI #164. Inspector list editing (Add Box/Circle, duplicate, remove, edit per-shape properties and filters) is now committed as `c4abb18` and awaiting CI #165. Multi-shape debug overlay and Windows interactive verification remain. Joints stay deferred.
+**Active milestone: Multiple Colliders per Entity.** ColliderSet2D model passed CI #135; canonical serialization and legacy migration passed CI #151; multi-shape runtime/query filters passed CI #155; Entity-pair contact aggregation passed CI #164; Inspector list editing passed Windows CI #169. Multi-shape debug overlay and Windows interactive verification remain. Joints stay deferred.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -99,7 +99,8 @@ The Scene-owned 2D physics slice includes the Editor collider debug overlay, Beg
 | 2026-11-27 | [Scene Contact Event API, CI run 45939999840](https://github.com/jonjud/ember/actions/runs/45939999840) | Success; Begin/End contact events and EntityId mapping verified by automated tests |
 | 2026-11-27 | [Raycast and Overlap Query API, CI run 45941862568](https://github.com/jonjud/ember/actions/runs/45941862568) | Success; Configure, Build and engine tests passed |
 | 2026-11-27 | [Query filter and sensor coverage, CI run 45945132511](https://github.com/jonjud/ember/actions/runs/45945132511) | Success; query masks/categories and sensor inclusion verified in PhysicsWorld tests |
+| 2026-11-27 | [Multi-collider Inspector editing, CI #169](https://github.com/jonjud/ember/actions/runs/45959345669) | Success; Configure, Build and engine tests passed |
 
 ---
 
-**Handoff:** Active milestone: Multiple Colliders per Entity. Model passed CI #135; serialization/migration passed CI #151; multi-shape runtime/query tests passed CI #155; Entity-pair contact aggregation passed CI #164. Inspector list editing is committed as `c4abb18`; CI #165 is running. After it passes, extend the viewport Physics overlay to draw every ColliderSet2D entry, then update the Windows manual verification checklist. Preserve legacy compatibility and keep Box2D types private.
+**Handoff:** Active milestone: Multiple Colliders per Entity. Model passed CI #135; serialization/migration passed CI #151; multi-shape runtime/query tests passed CI #155; Entity-pair contact aggregation passed CI #164; Inspector list editing passed CI #169 (`009723a`). Next, extend the viewport Physics overlay to draw every ColliderSet2D entry, then update the Windows manual verification checklist. Preserve legacy compatibility and keep Box2D types private.
