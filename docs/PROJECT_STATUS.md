@@ -10,7 +10,7 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | Pending first Multiple Colliders implementation commit |
+| Last code commit | [`4539d23`](https://github.com/jonjud/ember/commit/4539d23bea40a88b61be8376b704379f9aa94515) — Add collider set identity model |
 | Last verified CI | [Windows CI #133](https://github.com/jonjud/ember/actions/runs/45946897880) — **Success** (Configure, Build, Run engine tests) |
 | Last completed milestone | Multiple Colliders design approved by CI #133; ColliderSet2D model implementation pending CI |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
