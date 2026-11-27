@@ -10,9 +10,9 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`b8b6bc1`](https://github.com/jonjud/ember/commit/b8b6bc1d1c69a153f72f8bd1dfbd1040e225169f) — Link physics backend in Scene-based test targets |
-| Last verified CI | [Windows CI run 45939999840](https://github.com/jonjud/ember/actions/runs/45939999840) — **Success** (Configure, Build, Run engine tests) |
-| Last completed milestone | Scene Contact Event API |
+| Last code commit | [`a566315`](https://github.com/jonjud/ember/commit/a566315603132a7db48454935b6c1393e05ff476) — Fix contact metadata type after query refactor |
+| Last verified CI | [Windows CI run 45941862568](https://github.com/jonjud/ember/actions/runs/45941862568) — **Success** (Configure, Build, Run engine tests) |
+| Last completed milestone | Raycast and Overlap Query API |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests ไม่ได้ยืนยันการทดสอบ Editor/Runtime แบบ interactive บนเครื่องจริง
@@ -66,7 +66,9 @@
 
 ## 4. Current limitations / next milestone
 
-The Scene-owned 2D physics slice, Editor collider debug overlay, and engine-owned Begin/End contact event API are implemented and pass Windows CI. PhysicsWorld exposes backend-neutral body handles/events; Scene maps them to EntityIds through GetPhysicsContactEvents(). Events are frame-scoped to the most recent Scene::Update and accumulated across all fixed substeps in that update. Moving a transform-driven platform wakes dynamic bodies that were in contact so Box2D can refresh contact state and emit End events. Closest raycast and AABB overlap query APIs are implemented in PhysicsWorld and Scene, including category/mask query filters and pixel-to-meter conversion at the Scene boundary. Multiple colliders and joints remain deferred.
+The Scene-owned 2D physics slice now includes the Editor collider debug overlay, engine-owned Begin/End contact events, and closest raycast/AABB overlap queries. These APIs expose only EMBER-owned handles/results; Scene maps physics bodies to EntityIds and converts pixel-space query inputs to meters. Query filters support category/mask bits, and automated tests cover nearest-hit selection, hit normal/fraction, invalid zero-length rays, overlap results and invalid bounds. The Windows CI run for this milestone (#121) passed Configure, Build and engine tests.
+
+Next focused task: strengthen query-filter and sensor-specific test coverage, then consider a small Editor/runtime interaction verification pass. Multiple colliders and joints remain deferred.
 
 Interactive Editor/Play Mode verification on a Windows machine is still outstanding; CI success does not replace that manual check.
 
@@ -89,7 +91,8 @@ Interactive Editor/Play Mode verification on a Windows machine is still outstand
 | 2026-11-27 | [Scene Physics Runtime Integration, CI #109](https://github.com/jonjud/ember/actions/runs/45935434409) | Success; Configure, Build and engine tests all passed |
 | 2026-11-27 | [Physics Debug Overlay, CI #113](https://github.com/jonjud/ember/actions/runs/45937028116) | Success; Windows build and automated tests passed |
 | 2026-11-27 | [Scene Contact Event API, CI run 45939999840](https://github.com/jonjud/ember/actions/runs/45939999840) | Success; Begin/End contact events and EntityId mapping verified by automated tests |
+| 2026-11-27 | [Raycast and Overlap Query API, CI run 45941862568](https://github.com/jonjud/ember/actions/runs/45941862568) | Success; Configure, Build and engine tests passed |
 
 ---
 
-**Handoff:** Start by checking latest `develop` HEAD and CI. Next focused task: engine-owned Raycast and Overlap query API with EntityId mapping; keep Box2D types private.
+**Handoff:** Start by checking latest `develop` HEAD and CI. Next focused task: strengthen Raycast/Overlap query-filter and sensor-specific test coverage; keep Box2D types private.
