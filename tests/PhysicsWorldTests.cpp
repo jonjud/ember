@@ -100,6 +100,46 @@ int main()
     Check(sensorOverlaps.size() == 1 && sensorOverlaps.front() == sensorBody,
         "OverlapAABB includes sensor shapes in spatial queries");
 
+    ember::PhysicsBodyDefinition2D compoundDefinition;
+    compoundDefinition.type = ember::PhysicsBodyType2D::Static;
+    compoundDefinition.position = {20.0F, 0.0F};
+    const auto compoundBody = world.CreateBody(compoundDefinition);
+    Check(static_cast<bool>(compoundBody),
+        "PhysicsWorld creates one body for multiple collider shapes");
+
+    ember::PhysicsBoxColliderDefinition2D leftBox;
+    leftBox.halfExtents = {0.4F, 0.4F};
+    leftBox.offset = {-1.0F, 0.0F};
+    leftBox.categoryBits = 0x0001;
+    leftBox.maskBits = 0xFFFF;
+    Check(world.AddBoxCollider(compoundBody, leftBox),
+        "PhysicsWorld adds the first independently filtered shape");
+
+    ember::PhysicsCircleColliderDefinition2D rightCircle;
+    rightCircle.radius = 0.4F;
+    rightCircle.offset = {1.0F, 0.0F};
+    rightCircle.categoryBits = 0x0002;
+    rightCircle.maskBits = 0xFFFF;
+    Check(world.AddCircleCollider(compoundBody, rightCircle),
+        "PhysicsWorld adds a second shape to the same body");
+
+    ember::PhysicsQueryFilter2D boxOnlyFilter;
+    boxOnlyFilter.maskBits = 0x0001;
+    const auto boxOnlyHit = world.RaycastClosest({18.0F, 0.0F}, {2.0F, 0.0F}, boxOnlyFilter);
+    Check(boxOnlyHit.has_value() && boxOnlyHit->body == compoundBody &&
+          boxOnlyHit->fraction < 0.7F,
+        "Raycast query filter selects the Box shape on a compound body");
+
+    ember::PhysicsQueryFilter2D circleOnlyFilter;
+    circleOnlyFilter.maskBits = 0x0002;
+    const auto circleOnlyHit = world.RaycastClosest({20.0F, 0.0F}, {2.0F, 0.0F}, circleOnlyFilter);
+    Check(circleOnlyHit.has_value() && circleOnlyHit->body == compoundBody,
+        "Raycast query filter independently selects the Circle shape on the same body");
+
+    const auto compoundOverlaps = world.OverlapAABB({18.5F, -0.5F}, {21.5F, 0.5F});
+    Check(compoundOverlaps.size() == 1 && compoundOverlaps.front() == compoundBody,
+        "OverlapAABB deduplicates multiple shapes belonging to one body");
+
     for (int step = 0; step < 180; ++step)
         Check(world.Step(1.0F / 60.0F), "PhysicsWorld advances a fixed simulation step");
 
