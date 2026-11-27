@@ -50,12 +50,21 @@ int main()
     animation.frameCount = 6;
     animation.Stop();
     animation.Play();
-    scene.Update(0.25F);
-    scene.Update(0.25F);
+    scene.Update(0.2F);
+    scene.Update(0.2F);
     Check(animation.GetCurrentFrame() == 4 &&
         animation.GetSourcePosition().x == 0.0F &&
         animation.GetSourcePosition().y == 24.0F,
         "Sprite-sheet frame coordinates advance to the next row after the final column");
+
+    animation.Stop();
+    animation.Play();
+    scene.Update(0.25F);
+    scene.Update(0.25F);
+    Check(animation.GetCurrentFrame() == 5 &&
+        animation.GetSourcePosition().x == 16.0F &&
+        animation.GetSourcePosition().y == 24.0F,
+        "Fractional frame time is preserved across updates without dropping a frame");
 
     animation.frameCount = 4;
     animation.loop = false;

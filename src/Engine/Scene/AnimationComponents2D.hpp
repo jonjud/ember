@@ -70,9 +70,11 @@ public:
         if (m_currentFrame >= frameCount) m_currentFrame = 0;
         m_elapsedSeconds += std::min(static_cast<double>(deltaSeconds), 0.25);
         const double frameDuration = 1.0 / static_cast<double>(framesPerSecond);
-        const auto framesToAdvance = static_cast<std::size_t>(m_elapsedSeconds / frameDuration);
+        const auto framesToAdvance = static_cast<std::size_t>(
+            std::floor(m_elapsedSeconds / frameDuration + 1.0e-9));
         if (framesToAdvance == 0) return;
-        m_elapsedSeconds -= static_cast<double>(framesToAdvance) * frameDuration;
+        m_elapsedSeconds = std::max(0.0,
+            m_elapsedSeconds - static_cast<double>(framesToAdvance) * frameDuration);
 
         if (loop)
         {
