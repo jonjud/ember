@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/Scene/Component.hpp"
+#include "Engine/Math/Vector2.hpp"
 #include <nlohmann/json.hpp>
 
 #include <cstddef>
@@ -31,7 +32,9 @@ enum class ComponentPropertyType
     Boolean,
     Integer,
     Float,
-    String
+    String,
+    Vector2,
+    Enumeration
 };
 
 struct ComponentPropertyInfo
@@ -39,6 +42,7 @@ struct ComponentPropertyInfo
     std::string id;
     std::string displayName;
     ComponentPropertyType type = ComponentPropertyType::String;
+    std::vector<std::pair<int, std::string>> enumValues;
     std::function<nlohmann::json(const Component&)> get;
     std::function<bool(Component&, const nlohmann::json&)> set;
 };
@@ -175,6 +179,95 @@ public:
             return true;
         };
 
+        properties.push_back(std::move(property));
+        return true;
+    }
+
+
+    template <typename T>
+    bool RegisterVector2Property(const std::string& componentId, std::string propertyId,
+        std::string displayName, Vector2 T::* member)
+    {
+        static_assert(std::is_base_of_v<Component, T>,
+            "Property owner must derive from ember::Component");
+        const auto entryIt = m_types.find(componentId);
+        if (entryIt == m_types.end() || entryIt->second.info.cppType != std::type_index(typeid(T)) ||
+            propertyId.empty() || displayName.empty() || member == nullptr)
+            return false;
+        auto& properties = entryIt->second.properties;
+        for (const auto& property : properties)
+            if (property.id == propertyId) return false;
+
+        ComponentPropertyInfo property;
+        property.id = std::move(propertyId);
+        property.displayName = std::move(displayName);
+        property.type = ComponentPropertyType::Vector2;
+        property.get = [member](const Component& component) -> Json {
+            const Vector2 value = static_cast<const T&>(component).*member;
+            return Json::array({value.x, value.y});
+        };
+        property.set = [member](Component& component, const Json& value) -> bool {
+            if (!value.is_array() || value.size() != 2 ||
+                !value[0].is_number() || !value[1].is_number()) return false;
+            try {
+                const double x = value[0].get<double>();
+                const double y = value[1].get<double>();
+                if (!std::isfinite(x) || !std::isfinite(y) ||
+                    std::abs(x) > std::numeric_limits<float>::max() ||
+                    std::abs(y) > std::numeric_limits<float>::max()) return false;
+                static_cast<T&>(component).*member = Vector2{
+                    static_cast<float>(x), static_cast<float>(y)};
+                return true;
+            } catch (...) { return false; }
+        };
+        properties.push_back(std::move(property));
+        return true;
+    }
+
+    template <typename T, typename Enum>
+    bool RegisterEnumProperty(const std::string& componentId, std::string propertyId,
+        std::string displayName, Enum T::* member,
+        std::vector<std::pair<Enum, std::string>> options)
+    {
+        static_assert(std::is_base_of_v<Component, T>,
+            "Property owner must derive from ember::Component");
+        static_assert(std::is_enum_v<Enum>, "Enumeration properties require an enum member");
+        const auto entryIt = m_types.find(componentId);
+        if (entryIt == m_types.end() || entryIt->second.info.cppType != std::type_index(typeid(T)) ||
+            propertyId.empty() || displayName.empty() || member == nullptr || options.empty())
+            return false;
+        auto& properties = entryIt->second.properties;
+        for (const auto& property : properties)
+            if (property.id == propertyId) return false;
+
+        ComponentPropertyInfo property;
+        property.id = std::move(propertyId);
+        property.displayName = std::move(displayName);
+        property.type = ComponentPropertyType::Enumeration;
+        for (const auto& option : options) {
+            const int value = static_cast<int>(option.first);
+            if (option.second.empty()) return false;
+            for (const auto& existing : property.enumValues)
+                if (existing.first == value) return false;
+            property.enumValues.emplace_back(value, option.second);
+        }
+        property.get = [member](const Component& component) -> Json {
+            return static_cast<int>(static_cast<const T&>(component).*member);
+        };
+        const auto allowedValues = property.enumValues;
+        property.set = [member, allowedValues](Component& component, const Json& value) -> bool {
+            if (!value.is_number_integer()) return false;
+            try {
+                const int selected = value.get<int>();
+                for (const auto& option : allowedValues) {
+                    if (option.first == selected) {
+                        static_cast<T&>(component).*member = static_cast<Enum>(selected);
+                        return true;
+                    }
+                }
+            } catch (...) { return false; }
+            return false;
+        };
         properties.push_back(std::move(property));
         return true;
     }
