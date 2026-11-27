@@ -10,11 +10,11 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`d8a7061`](https://github.com/jonjud/ember/commit/d8a7061143ea6c1246dd5573713ae1ae1f7db9f5) — Physics Joint API tests |
-| Last verified CI | [Windows CI #178](https://github.com/jonjud/ember/actions/runs/45962148407) — **Success** (latest confirmed run before current HEAD) |
-| Latest documentation CI | [Windows CI #178](https://github.com/jonjud/ember/actions/runs/45962148407) — **Success** |
+| Last code commit | [`c7b5118`](https://github.com/jonjud/ember/commit/c7b51186db2badacc6cd3a94f58e575e0c1d86ef) — joint Scene serialization tests |
+| Last verified CI | [Windows CI #187](https://github.com/jonjud/ember/actions/runs/45972172995) — **Success** for joint components + Scene runtime; CI #188 and #189 pending |
+| Latest documentation CI | [Windows CI #178](https://github.com/jonjud/ember/actions/runs/45962148407) — **Success** (latest confirmed documentation run) |
 | Last completed milestone | Editor + Multi-Collider Physics verification — user-confirmed Windows interactive checklist passed (2026-11-27) |
-| Active milestone | Physics Joints — PhysicsWorld Revolute/Distance API and unit tests landed; serialized components and Scene lifecycle integration remain |
+| Active milestone | Physics Joints — serialized Revolute/Distance components, Entity-reference Inspector controls, Scene runtime creation/teardown, and automated coverage committed; final CI verification pending |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -29,7 +29,7 @@
 - [x] Editor hierarchy, Inspector, viewport, gizmos, Play/Stop with isolated Scene clone
 - [x] Generic Component lifecycle, clone, registry, factory, serialization and schema migrations
 - [x] Add/remove registered Components through Editor UI
-- [x] Typed Inspector property descriptors and widgets: bool, int, float, string, Vector2, Enumeration
+- [x] Typed Inspector property descriptors and widgets: bool, int, float, string, Vector2, Enumeration, EntityReference
 
 ### Physics — completed slices
 - [x] Pin Box2D v3.2.0 and isolate it behind private engine implementation
@@ -63,6 +63,10 @@
 - [x] Wake touching dynamic bodies when a transform-driven static/kinematic body moves so contact separation can be processed
 - [x] Add engine-owned PhysicsJointHandle and Revolute/Distance joint descriptors with create/destroy/count API; keep Box2D joint handles private
 - [x] Add joint validation and lifetime tests: invalid same-body/length/limits, explicit destruction, and automatic cleanup when a body is destroyed
+- [x] Add serializable RevoluteJoint2D and DistanceJoint2D authoring components with EntityId references and cloned configuration
+- [x] Create Scene joints after all eligible bodies; validate self/missing/disabled/invalid references and convert pixel anchors/length to physics meters
+- [x] Expose Connected Entity selection and joint settings in the Editor Inspector
+- [x] Add component-registry, Scene lifecycle, and full Scene serialization round-trip tests for joint references
 
 ## 3. Physics decisions to preserve
 - Box2D v3.2.0 is private; Box2D types must not leak into public Scene/Entity/Component/Editor APIs.
@@ -81,7 +85,7 @@
 
 **Multiple Colliders per Entity is complete.** Model, serialization/migration, runtime/query filtering, Entity-pair contact aggregation, Inspector editing and multi-shape Debug Overlay passed their respective Windows CI runs (#135, #151, #155, #164, #169, #170). The user confirmed the Windows Editor checklist passed on 2026-11-27, including Editor launch/layout, Entity and Transform editing, duplicate/delete, PhysicsBody2D Inspector add/edit/remove, ColliderSet2D editing, Physics Debug Overlay, save/reopen persistence, and Play/Stop behavior.
 
-**Active milestone: Physics Joints.** The first PhysicsWorld-level Revolute/Distance API and automated lifetime/validation tests are now committed. The next slice is serialized authoring components, Entity-to-Entity references, Scene start/stop creation and teardown, and Editor Inspector integration. Keep Box2D joint IDs private/transient. Defer prismatic, weld, motor and scripting-facing joint controls.
+**Active milestone: Physics Joints.** The serialized authoring components, Entity-to-Entity references, Scene start/stop creation and teardown, and Inspector controls are now implemented. Keep Box2D joint IDs private/transient. Remaining work is CI confirmation, edge-case hardening, and the final deferred Windows Editor checklist after the whole Physics Joints milestone is complete. Defer prismatic, weld, motor and scripting-facing joint controls.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -91,6 +95,7 @@
 5. Never report CI passed until the workflow is completed with `conclusion: success`.
 6. Distinguish CI build/tests from interactive runtime verification.
 7. If CI fails, inspect logs, fix the root cause, and wait for a successful rerun before closing the milestone.
+8. Defer manual Windows Editor testing until the complete Physics Joints milestone is implemented; run automated CI throughout development.
 
 ## 6. Recent milestone log
 
@@ -112,4 +117,4 @@
 
 ---
 
-**Handoff:** Windows Editor manual verification for the current Editor + Physics workflow is user-confirmed PASS. PhysicsWorld Revolute/Distance joint API and unit tests are committed; next implement serializable joint components, Scene lifecycle integration, and Inspector authoring. Work on `develop` only; do not merge to `main`.
+**Handoff:** Windows Editor manual verification for the current Editor + Physics workflow is user-confirmed PASS. Physics Joints now has serializable authoring components, Entity-reference Inspector controls, Scene runtime lifecycle integration, and automated serialization/runtime coverage. Confirm CI, finish remaining edge cases, and defer manual Windows Editor testing until the full milestone is complete. Work on `develop` only; do not merge to `main`.

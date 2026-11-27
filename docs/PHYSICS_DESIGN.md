@@ -11,7 +11,7 @@
 - Complete: engine-owned closest raycast and AABB overlap queries, including category/mask query filters and Scene EntityId mapping; Windows CI run 45941862568 passed.
 - Complete: automated category/mask filter coverage, sensor inclusion in raycast/AABB overlap queries, and Scene filter-forwarding tests; PhysicsWorld query coverage passed Windows CI #126.
 - Active milestone: multiple colliders per entity. ColliderSet2D model and stable IDs passed CI #135. Canonical ColliderSet2D serialization and migration of legacy single Box/Circle components during Scene loading are implemented; runtime multi-shape integration is pending CI.
-- Deferred: joints.
+- Active milestone: PhysicsJointHandle, Revolute/Distance PhysicsWorld API, serializable RevoluteJoint2D/DistanceJoint2D components, EntityId references, Scene runtime creation/teardown, and Inspector reference/settings controls are implemented; CI and final Windows manual verification remain.
 
 ## Dependency boundary
 - Box2D headers and IDs must not appear in public EMBER Scene, Entity, Component or Editor headers.
@@ -29,6 +29,8 @@
 
 ## Ownership and lifecycle
 - A running Scene owns one PhysicsWorld. Editor Play Mode uses an isolated Scene clone.
+- Scene creates all eligible bodies first, then resolves joint component EntityId references and creates runtime joints. Missing, self, disabled, or otherwise invalid body references are skipped with diagnostics.
+- Joint handles are runtime-only and owned by PhysicsWorld; Scene Stop destroys the PhysicsWorld, which tears down joints and bodies together.
 - PhysicsWorld is created on Scene Start and destroyed on Scene Stop.
 - Body handles and backend IDs are runtime-only; never serialize or clone them.
 - Scene builds bodies/colliders from component configuration at Start, steps the world during Update, then synchronizes simulated transforms.
@@ -40,7 +42,9 @@
 - `BoxCollider2D`: half extents, local offset/rotation, density, friction, restitution and sensor flag.
 - `CircleCollider2D`: radius, local offset, density, friction, restitution and sensor flag.
 - `ColliderSet2D`: canonical ordered Box/Circle entries with stable IDs, independent material/sensor/query-filter values; serialized without runtime backend handles. Legacy BoxCollider2D/CircleCollider2D Scene data migrates to one-entry sets on load.
-- `PhysicsWorld`: gravity, body create/destroy, box/circle collider creation, transform read/write, stepping, consuming Begin/End contact events, closest raycasts, AABB overlap queries and body count.
+- `RevoluteJoint2D`: connected EntityId, local anchors, optional angle limits, optional motor speed/torque and collide-connected flag.
+- `DistanceJoint2D`: connected EntityId, local anchors, authored length in pixels and collide-connected flag.
+- `PhysicsWorld`: gravity, body/joint create/destroy, box/circle collider creation, transform read/write, stepping, consuming Begin/End contact events, closest raycasts, AABB overlap queries and body/joint counts.
 - Components store configuration only; runtime handles are owned by Scene.
 - Scene loading migrates one legacy BoxCollider2D or CircleCollider2D into a canonical ColliderSet2D while preserving geometry/material settings. Entities with both legacy shapes, or a legacy shape plus a set, fail loading with a diagnostic rather than silently dropping data. See [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md).
 
@@ -54,12 +58,13 @@
 - Static and kinematic bodies are transform-authoritative: update their physics transforms from Entity Transform2D before stepping.
 - After each fixed simulation step, Scene consumes contact events and maps PhysicsBodyHandles to EntityId pairs. GetPhysicsContactEvents() provides the events from the latest Update and is cleared at the next Update.
 - When a transform-driven static/kinematic body moves, PhysicsWorld wakes dynamic bodies with active contacts against it so contact separation is processed and an End event can be emitted.
-- Scene Stop clears body handles, destroys PhysicsWorld and resets the accumulator.
+- Scene Stop clears body handles and contact state, destroys PhysicsWorld (including all runtime joints), and resets the accumulator.
+- Joint local anchors and DistanceJoint2D length are authored in pixels and converted to meters at the Scene boundary. Revolute angles and motor speed remain radians-based.
 - Non-finite frame delta is ignored safely.
 
 ## Remaining validation work
-- Interactive Editor/Play Mode verification on Windows passed the user-run checklist; automated Windows CI #132 also passed.
-- Multiple colliders per entity are the active extension milestone. See [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md).
+- Existing Editor/Play Mode and multi-collider workflows passed the user-run Windows checklist; automated Windows CI #132 and subsequent physics runs passed.
+- Physics Joints automated build/test confirmation is in progress. Defer interactive Windows Editor verification for joints until the full joint authoring/runtime milestone is complete.
 
 ## Milestone order
 1. Pin Box2D and establish private dependency boundary. (Complete)
