@@ -1,11 +1,11 @@
 # EMBER Engine Roadmap
 
-> **Current status:** See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the live development state, current HEAD, latest CI result, active/next milestone, and handoff notes. This file tracks the high-level feature checklist.
+> Live status, latest commit/CI, active milestone and handoff: [PROJECT_STATUS.md](PROJECT_STATUS.md).  
+> Physics design decisions: [PHYSICS_DESIGN.md](PHYSICS_DESIGN.md).
 
-EMBER is a 2D-first engine. Each milestone should produce a buildable, testable result before the next layer is added. Physics backend and integration decisions are tracked in [PHYSICS_DESIGN.md](PHYSICS_DESIGN.md).
+EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, testable vertical slice.
 
 ## Phase 1 — Engine Foundation
-
 - [x] Initialize CMake project and integrate SDL3
 - [x] Application entry point, window, and event loop
 - [x] High-resolution frame timing
@@ -16,55 +16,45 @@ EMBER is a 2D-first engine. Each milestone should produce a buildable, testable 
 - [ ] Add logging and diagnostics
 
 ## Phase 2 — 2D Core and Project Assets
-
 - [x] Renderer2D, primitive drawing, and sprite API
 - [x] BMP, PNG, and JPEG texture loading
 - [x] Texture handles and reference-counted texture cache
-- [x] Transform2D and Camera2D (position, scale, rotation, zoom)
+- [x] Transform2D and Camera2D
 - [x] Scene and Entity model with stable IDs
-- [x] RenderComponent2D for rectangles and texture-backed sprites
-- [x] AssetDirectory path resolution and traversal checks
-- [x] AssetManager and stable-ID asset loading
-- [x] Versioned .emberasset metadata and AssetRegistry diagnostics
-- [x] Texture import settings (filtering and premultiplied alpha)
-- [x] Versioned .emberproject configuration (schema v2)
-- [x] Project Settings: name, asset directory, startup scene
-- [x] Startup scene loading and Scene Manager workflow
-- [x] Versioned .emberscene serialization and migration/validation
-- [x] Scene dirty-state tracking with Save / Discard / Cancel prompts
-- [x] Pin Box2D v3.2.0 as the private physics backend dependency
-- [ ] Collision detection and Box2D simulation integration
+- [x] RenderComponent2D
+- [x] AssetDirectory, AssetManager, AssetRegistry and import metadata
+- [x] Versioned project and scene serialization/migration
+- [x] Scene dirty-state tracking and Save / Discard / Cancel prompts
+- [x] Pin Box2D v3.2.0 as private physics backend
+- [x] PhysicsWorld facade, body/collider API and automated tests
+- [ ] Scene-owned Box2D simulation and collision integration
 
 ## Phase 3 — Editor
-
 - [x] Dear ImGui editor integration isolated from ember_engine
 - [x] Main editor layout and menu
 - [x] Scene Hierarchy and Inspector
-- [x] Asset Browser with search, type filtering, refresh, and diagnostics
-- [x] 2D viewport preview, grid, camera pan/zoom, and entity picking
-- [x] Texture previews in viewport
-- [x] Drag entities in viewport
-- [x] Move, Rotate, and Scale gizmos
+- [x] Asset Browser and 2D viewport
+- [x] Entity picking, drag, Move/Rotate/Scale gizmos
 - [x] Transform snapping and Local / World orientation
-- [x] Play / Stop using an isolated Scene clone
+- [x] Play / Stop using isolated Scene clone
 - [x] Play Mode movement with WASD / arrow keys
-- [x] Per-entity MovementComponent2D and Inspector controls
-- [x] Duplicate and delete entities through UI and shortcuts
-- [x] Scene dirty-state prompts before destructive scene operations
-- [x] Persistent Input Settings: named actions, rebinding, custom actions, conflict checks, reset defaults
+- [x] Duplicate/delete entities and dirty-state prompts
+- [x] Persistent Input Settings and rebinding
+- [x] Component Inspector: display, add, remove, edit registered components
+- [x] Typed Inspector widgets: bool, int, float, string, Vector2, Enumeration
 - [ ] Undo / Redo
 - [ ] Multi-selection and hierarchy organization
-- [ ] Editor usability and runtime integration verification
+- [ ] Interactive Editor/runtime verification
 
 ## Phase 4 — Game Systems
-
-- [x] General component update/lifecycle API (typed components, cloning, Start / Update / Stop)
-- [x] Stable component type registry and creation factories
-- [x] Generic component serialization through stable type IDs and registered callbacks
-- [x] Component Inspector: display, add, remove, and edit registered components
-- [x] Typed component property descriptors and generic Inspector widgets (bool, int, float, string)
-- [x] Versioned component payloads with sequential migration callbacks
-- [ ] Collision and physics integration (planned Box2D backend)
+- [x] General component lifecycle and cloning API
+- [x] Stable component type registry and factories
+- [x] Generic component serialization and schema migrations
+- [x] PhysicsBody2D, BoxCollider2D and CircleCollider2D configuration components
+- [x] Physics component registration, serialization and Inspector properties
+- [ ] Scene PhysicsWorld ownership and lifecycle integration
+- [ ] Fixed timestep and transform synchronization
+- [ ] Physics collision integration tests and debug visualization
 - [ ] Animation
 - [ ] Audio (planned miniaudio backend)
 - [ ] UI system
@@ -72,7 +62,6 @@ EMBER is a 2D-first engine. Each milestone should produce a buildable, testable 
 - [ ] Scripting interface
 
 ## Phase 5 — Packaging and Quality
-
 - [ ] Windows game export / runtime executable
 - [ ] Project templates
 - [x] Automated tests executed in CI
@@ -80,10 +69,8 @@ EMBER is a 2D-first engine. Each milestone should produce a buildable, testable 
 - [ ] User documentation and samples
 
 ## Development rules
-
-1. Keep third-party dependencies isolated behind narrow engine-facing interfaces where practical.
-2. Do not add a subsystem before a small use case proves it is needed.
-3. Keep editor code separate from runtime code.
-4. Prefer small, buildable milestones.
-5. Distinguish CI compilation/tests from interactive runtime verification.
-6. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD, or CI status changes.
+1. Keep third-party dependencies behind narrow engine-facing interfaces.
+2. Keep editor code separate from runtime code.
+3. Prefer small, buildable milestones.
+4. Distinguish CI compilation/tests from interactive runtime verification.
+5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.

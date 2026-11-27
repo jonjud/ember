@@ -1,15 +1,13 @@
 # EMBER Engine Architecture
 
-EMBER is a 2D-first engine written in C++20. The architecture grows in small vertical slices and keeps editor-only code separate from the engine library.
+EMBER is a 2D-first engine written in C++20. It grows through small vertical slices and keeps editor-only code separate from the engine library.
 
 ## Current targets
-
 - `ember_engine`: runtime-facing engine library; no Dear ImGui dependency.
-- `ember_editor` (output executable `ember`): SDL3 + Dear ImGui editor application.
-- Test executables: focused unit tests for scene, serialization, assets, project settings, texture cache, and input mapping.
+- `ember_editor` (output executable `ember`): SDL3 + Dear ImGui editor.
+- Focused test executables run through CTest in Windows CI.
 
 ## Source layout
-
 ```text
 src/
 ├── Editor/
@@ -17,80 +15,63 @@ src/
 ├── Engine/
 │   ├── Core/       Application, Time
 │   ├── Math/       Vector2
+│   ├── Physics/    PhysicsWorld, PhysicsComponents2D, registration
 │   ├── Platform/   Input, InputMap
 │   ├── Project/    ProjectConfigurationStore
 │   ├── Renderer/   Renderer2D, Camera2D
 │   ├── Resources/  AssetDirectory, AssetManager, AssetRegistry,
 │   │               AssetMetadataStore, AssetImportService, TextureCache
-│   └── Scene/      Component, Entity, Scene, Transform2D, RenderComponent2D,
-│                   SceneSerializer
+│   └── Scene/      Component, ComponentRegistry, Entity, Scene,
+│                   Transform2D, RenderComponent2D, SceneSerializer
 └── main.cpp
 
 tests/
-├── AssetDirectoryTests.cpp
-├── AssetImportServiceTests.cpp
-├── AssetManagerTests.cpp
-├── AssetMetadataTests.cpp
-├── AssetRegistryTests.cpp
-├── InputMapTests.cpp
-├── ProjectConfigurationTests.cpp
-├── SceneSerializerTests.cpp
-├── SceneTests.cpp
-└── TextureCacheTests.cpp
+├── PhysicsWorldTests.cpp
+├── PhysicsComponentsTests.cpp
+└── (other focused engine tests)
 ```
 
 ## Responsibilities and ownership
-
 - **Core / Application:** runtime window, active Scene, AssetManager, and application event/update/render lifecycle.
-- **Editor / EditorApplication:** editor window, SDL renderer, Dear ImGui lifecycle, panels, viewport, gizmos, scene workflow, and Play Mode.
-- **Core / Time:** high-resolution frame timing and delta time.
-- **Platform / Input:** keyboard state adapter.
-- **Platform / InputMap:** named actions mapped to one or more SDL physical scancodes; default movement map and action management.
-- **Project / ProjectConfigurationStore:** versioned .emberproject data, project-relative asset/startup paths, and persisted input binding settings.
+- **Editor / EditorApplication:** editor panels, viewport, gizmos, scene workflow and Play Mode; editor UI does not own physics backend objects.
 - **Math / Vector2:** engine-owned 2D vector type.
-- **Renderer / Camera2D:** world/screen conversion with camera position, zoom, and rotation.
-- **Renderer / Renderer2D:** SDL-backed primitive/sprite rendering and renderer-owned texture lifetime.
-- **Scene / Component:** polymorphic runtime behavior with Clone, OnCreate, OnUpdate, and OnDestroy hooks. Components are owned by entities and cloned independently. Structural changes are locked while a Scene is running.
-- **Scene / ComponentRegistry:** explicit stable-ID and display-name registration, factories, versioned JSON serialize/deserialize callbacks, sequential per-component schema migrations, and typed property descriptors (bool, int, float, string). Legacy component payloads without a version are interpreted as version 1; future versions and missing migration steps fail safely. Property callbacks are UI-framework agnostic; the Editor renders them with ImGui.
-- **Scene / Entity:** stable 64-bit ID, name, active state, Transform2D, RenderComponent2D, MovementComponent2D, and typed runtime components.
-- **Scene / Scene:** owns entities; supports create, duplicate, destroy, lookup, iteration, independent cloning, and explicit Start / Update / Stop lifecycle dispatch.
-- **Scene / SceneSerializer:** versioned JSON persistence of entity IDs and scene data. Renderer-owned texture handles are not serialized; stable asset IDs are.
-- **Physics (planned):** Box2D is a private implementation dependency behind EMBER-owned APIs. See [PHYSICS_DESIGN.md](PHYSICS_DESIGN.md) for units, ownership, lifecycle, and component boundaries.
-- **Resources / TextureCache:** reference-counted texture sharing keyed by normalized path and import settings. Uses injected load/destroy callbacks.
-- **Resources / AssetDirectory:** resolves project-relative paths and rejects lexical traversal outside the asset root.
-- **Resources / AssetMetadataStore:** versioned .emberasset sidecars with stable IDs, asset type, source path, and texture import settings.
-- **Resources / AssetRegistry:** scans sidecars, indexes stable IDs, and reports malformed metadata, missing files, duplicate IDs, and scan errors.
-- **Resources / AssetManager:** combines validated paths, registry metadata, stable-ID texture loading, and texture-cache lifetime management.
-- **Resources / AssetImportService:** validates and applies editor-facing texture import metadata.
+- **Scene / Component:** polymorphic runtime behavior with Clone, OnCreate, OnUpdate and OnDestroy hooks. Components are owned by entities; structural changes are locked while a Scene is running.
+- **Scene / ComponentRegistry:** stable IDs, factories, versioned JSON serializers, schema migrations and UI-agnostic typed property descriptors. Current Inspector types include bool, int, float, string, Vector2 and Enumeration; the Editor maps these descriptors to ImGui controls.
+- **Scene / Entity:** stable 64-bit ID, name, active state, Transform2D, render/movement data and registered runtime components.
+- **Scene / Scene:** owns entities; supports create, duplicate, destroy, lookup, iteration, cloning and Start / Update / Stop lifecycle dispatch.
+- **Physics / PhysicsWorld:** EMBER-owned RAII facade around Box2D v3.2.0. Public descriptors and handles are engine-owned; Box2D headers and IDs stay inside the implementation. Supports body creation/destruction, box/circle shapes, transform access, stepping and body count.
+- **Physics / PhysicsComponents2D:** serializable configuration only: PhysicsBody2D, BoxCollider2D and CircleCollider2D. They clone configuration and never store live physics handles.
+- **Physics / Scene integration (next):** a running Scene will own PhysicsWorld and runtime entity-to-body mapping; physics state is built at Start, stepped at fixed timestep and destroyed at Stop. Dynamic transforms will be synchronized back to Entity Transform2D.
+- **Scene / SceneSerializer:** versioned JSON persistence of entity/component data; transient renderer and physics handles are never serialized.
+- **Resources:** project-relative asset resolution, stable asset IDs, metadata validation and reference-counted texture lifetime.
 
 ## Scene and Play Mode
+The Editor runs Play Mode on an isolated Scene clone. The authoring Scene remains unchanged when Play Mode stops. Generic components receive lifecycle callbacks through Scene Start / Update / Stop. Physics runtime integration is the next planned layer; Physics components currently represent editable configuration and do not yet simulate.
 
-The editor supports scene creation, loading, saving, startup-scene selection, dirty-state prompts, entity duplication/deletion, and viewport transform editing. Play Mode runs an isolated clone of the authoring scene; stopping discards Play Mode changes.
+## Physics conventions
+- Box2D v3.2.0 is a private dependency of `ember_engine`.
+- Physics uses meters; conversion is 100 pixels = 1 meter at the Scene boundary.
+- Positive Y points downward; default gravity is positive Y.
+- Entity Transform2D position maps to body origin; rotation is radians.
+- Collider geometry is explicit and independent of RenderComponent2D.
+- One collider per entity in the first vertical slice; ambiguous multiple collider types should be rejected with diagnostics.
+- Physics body handles are transient runtime state, never part of serialization or Component::Clone.
 
-The current Play Mode movement proof of concept moves the selected active entity using WASD or arrow keys when its MovementComponent2D is enabled. Movement speed is per entity and frame-rate independent. This is not yet a general component update/lifecycle system or a physics simulation.
-
-## Asset and serialization rules
-
-- Asset paths are project-relative and validated before loading.
-- Stable asset IDs live in .emberasset metadata; runtime texture handles are transient.
-- Texture import options currently include nearest/linear filtering and premultiplied alpha.
-- Scene files use versioned .emberscene JSON and preserve stable entity and asset IDs.
-- Failed scene loads must leave the destination Scene unchanged.
-- Texture handles are non-owning references; release acquired cache/manager references only after scene objects no longer need them.
-- Lexical path validation does not prevent filesystem symlink escapes.
+## Serialization rules
+- Persist stable entity IDs, component type IDs, schema versions and configuration values.
+- Never persist pointers, Box2D IDs, runtime body handles or renderer-owned texture handles.
+- Failed scene loads should leave the destination Scene unchanged.
 
 ## Dependencies
-
-- SDL3: windowing, events, keyboard input, and initial rendering backend.
-- SDL3_image: BMP, PNG, and JPEG decoding.
-- Dear ImGui: editor-only UI dependency.
-- nlohmann/json: project, asset metadata, and scene serialization.
-- Box2D v3.2.0: pinned FetchContent dependency; C API is private to the future Physics adapter. No simulation integration is implemented yet.
+- SDL3: windowing, events, keyboard input and rendering backend.
+- SDL3_image: BMP, PNG and JPEG decoding.
+- Dear ImGui: editor-only UI.
+- nlohmann/json: project, asset metadata and scene serialization.
+- Box2D v3.2.0: private physics backend behind PhysicsWorld.
 - miniaudio: planned audio backend.
 
 ## Known gaps
-
-- Interactive runtime behavior has not yet been independently verified on Windows.
-- The Inspector can add/remove registered generic components and renders registered property descriptors without component-specific UI code. Generic component data is serialized through registered callbacks and per-component schema versions; physics/collision, animation, audio, UI system, and scripting interface are not implemented yet.
-- Runtime Play Mode movement is still a focused proof of concept; editor input-binding persistence is not yet wired into runtime action polling.
-- The Windows workflow currently compiles the project and runs CTest; it does not validate visual editor behavior.
+- PhysicsWorld is implemented and tested, but Scene does not yet create bodies or step simulation.
+- Physics component Inspector supports editable configuration; changes do not affect simulation until Scene runtime integration lands.
+- Interactive runtime behavior still requires manual verification on Windows.
+- Runtime Play Mode input actions are not yet wired to persistent InputMap settings.

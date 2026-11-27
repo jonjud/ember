@@ -1,102 +1,91 @@
 # EMBER Engine — Living Project Status
 
-> **เอกสารสถานะหลักของโปรเจกต์ (Single Source of Truth)**  
-> อัปเดตทุกครั้งที่จบหรือเปลี่ยน milestone เพื่อให้การพัฒนาต่อเนื่องข้ามบทสนทนาได้โดยไม่หลุดเป้าหมาย  
-> Roadmap ภาพรวมอยู่ที่ [ROADMAP.md](ROADMAP.md) และรายละเอียดโครงสร้างอยู่ที่ [ARCHITECTURE.md](ARCHITECTURE.md)
+> เอกสารนี้เป็น Single Source of Truth สำหรับสถานะงานและการส่งต่องานระหว่างบทสนทนา  
+> ดูภาพรวมที่ [ROADMAP.md](ROADMAP.md), โครงสร้างที่ [ARCHITECTURE.md](ARCHITECTURE.md), และ Physics decisions ที่ [PHYSICS_DESIGN.md](PHYSICS_DESIGN.md)
 
 ## 1. สถานะปัจจุบัน
 
 | รายการ | ค่า |
 |---|---|
-| Project | EMBER Engine |
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`b1d7902`](https://github.com/jonjud/ember/commit/b1d79028c1f8184a5543d77ca339d8acd269e8d4) (Box2D dependency integration) |
-| Last verified code CI | [Windows Build #95](https://github.com/jonjud/ember/actions/runs/45922737396) — **Success**; Box2D dependency commit `b1d7902` |
-| Latest CI | [Windows Build #96](https://github.com/jonjud/ember/actions/runs/45922782711) — **Success**; status-document update commit `a78e461` |
-| Last completed milestone | Versioned Component Schema Migration |
-| Current active milestone | Collision Detection & Physics — Stage 2: PhysicsWorld wrapper and tests |
-| Physics backend | Box2D v3.2.0 pinned via FetchContent; integration wrapper not implemented yet |
-| Next planned milestone | Scene lifecycle integration and fixed timestep |
+| Last code commit | [`9c8160e`](https://github.com/jonjud/ember/commit/9c8160e86e0e3a91284a6a24bcff4db5ca593e1b) — Vector2/Enumeration Inspector properties |
+| Last verified CI | [Windows Build #103](https://github.com/jonjud/ember/actions/runs/45933429501) — **Success** (Configure, Build, CTest) |
+| Last completed milestone | Physics Component Configuration + Registry/Inspector integration |
+| Current active milestone | Physics Runtime Integration — Scene lifecycle and fixed timestep |
+| Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
-> CI Success หมายถึงการ Compile และ Automated Tests ผ่านใน Windows workflow เท่านั้น ไม่ได้ยืนยันพฤติกรรม Editor/Runtime แบบ interactive บนเครื่องจริง
+> CI Success ยืนยันเฉพาะ Windows build และ automated tests ไม่ได้ยืนยันการทดสอบ Editor/Runtime แบบ interactive บนเครื่องจริง
 
-## 2. สิ่งที่เพิ่งเสร็จ
+## 2. สิ่งที่เสร็จแล้ว
 
-### Component System — complete
+### Engine / Editor foundations
+- [x] CMake/C++20, SDL3 application loop, timing and input foundation
+- [x] Renderer2D, Transform2D, Camera2D, Scene/Entity
+- [x] AssetDirectory, AssetManager, AssetRegistry, texture cache and import metadata
+- [x] Versioned project/scene/asset serialization and migration
+- [x] Editor hierarchy, Inspector, viewport, gizmos, Play/Stop with isolated Scene clone
+- [x] Generic Component lifecycle, clone, registry, factory, serialization and schema migrations
+- [x] Add/remove registered Components through Editor UI
+- [x] Typed Inspector property descriptors and widgets: bool, int, float, string, Vector2, Enumeration
 
-- [x] Component lifecycle: create, update, destroy, clone
-- [x] Stable Component Registry และ Factory
-- [x] Generic component serialization/deserialization
-- [x] แสดง Component ใน Inspector
-- [x] เพิ่มและลบ registered Component ผ่าน Editor UI
-- [x] Typed Property Descriptors และ generic Inspector widgets: bool, int, float, string
-- [x] Save/Load ค่าของ generic Component
-- [x] Component schema version ต่อชนิด
-- [x] Sequential migration callbacks สำหรับข้อมูล Component รุ่นเก่า
-- [x] รองรับไฟล์ Component รุ่นก่อนที่ไม่มี version โดยตีความเป็น version 1
-- [x] ปฏิเสธ future schema version หรือ migration ที่ขาด/ล้มเหลวอย่างปลอดภัย
-- [x] Unit tests สำหรับ registry, migration และ scene serialization
+### Physics — completed slices
+- [x] Pin Box2D v3.2.0 and isolate it behind private engine implementation
+- [x] Define units, coordinate conversion, ownership and lifecycle rules in [PHYSICS_DESIGN.md](PHYSICS_DESIGN.md)
+- [x] Implement engine-owned PhysicsWorld RAII facade and body/collider API
+- [x] Automated PhysicsWorld tests
+- [x] Add serializable configuration components: PhysicsBody2D, BoxCollider2D, CircleCollider2D
+- [x] Register physics component types, serializers/deserializers and Inspector properties
+- [x] Add Vector2 Inspector controls and enum dropdown support
+- [ ] Create physics bodies from Scene entities and synchronize transforms
+- [ ] Add fixed-step simulation to running Scene
+- [ ] Add Scene-level physics integration tests and debug drawing
 
-**ข้อจำกัดที่ต้องจำ:** เพิ่ม/ลบ Component ที่ลงทะเบียนไว้ได้จาก UI แต่การสร้าง Component type หรือพฤติกรรมใหม่ยังต้องเขียน C++ และ register type/property/serialization callbacks ก่อน
+**Important boundary:** Physics components currently store configuration only. They do not own Box2D IDs or runtime body handles. Scene does not yet create or step a PhysicsWorld.
 
-## 3. ภาพรวม Roadmap
+## 3. Physics decisions to preserve
 
-สถานะนี้เป็นภาพย่อ ไม่แทนรายการย่อยทั้งหมดใน [ROADMAP.md](ROADMAP.md)
+- Box2D v3.2.0 is private; Box2D types must not leak into public Scene/Entity/Component/Editor APIs.
+- A running Scene owns its PhysicsWorld; Editor Play Mode operates on an isolated Scene clone.
+- Physics units are meters; conversion is 100 pixels = 1 meter.
+- EMBER world uses positive Y downward; default gravity points positive Y.
+- Entity Transform2D position maps to body origin; rotation is radians.
+- Collider geometry is explicit, never inferred from sprite/render size.
+- Physics handles are runtime-only and never serialized or cloned as raw backend IDs.
+- Target fixed timestep is 1/60 s with bounded accumulator and substeps.
+- Initial slice supports one collider per entity; if both Box and Circle colliders are present, runtime should reject the ambiguous configuration clearly rather than silently choose one.
 
-| Phase | หัวข้อ | สถานะ |
+## 4. Next milestone — Physics Runtime Integration
+
+1. Add Scene-owned runtime PhysicsWorld and entity-to-body handle mapping.
+2. Build bodies/colliders on Scene Start from PhysicsBody2D and collider configuration.
+3. Define behavior for invalid configurations, missing PhysicsBody2D, disabled bodies and duplicate collider types; surface safe diagnostics.
+4. Advance physics using a fixed 1/60 s timestep with capped frame delta and bounded substeps.
+5. Sync dynamic body transforms back to Entity Transform2D; define static/kinematic authority to prevent feedback loops.
+6. Destroy runtime physics state on Scene Stop before component configuration is released.
+7. Add tests for creation, invalid config, fixed stepping, transform sync, clone/serialization boundaries and teardown.
+
+Do not begin Editor debug drawing, joints, multiple colliders, or 3D physics until this vertical slice is stable.
+
+## 5. Development rules
+
+1. Work on `develop` only. Never merge to `main` without explicit approval.
+2. Inspect latest `develop` HEAD before every implementation change.
+3. Keep milestones small, buildable and testable.
+4. After a milestone, update this file and [ROADMAP.md](ROADMAP.md); update [ARCHITECTURE.md](ARCHITECTURE.md) when behavior/ownership changes.
+5. Never report CI passed until the workflow is completed with `conclusion: success`.
+6. Distinguish CI build/tests from interactive runtime verification.
+7. If CI fails, inspect logs, fix the root cause, and wait for a successful rerun before closing the milestone.
+
+## 6. Recent milestone log
+
+| Date | Commit / CI | Result |
 |---|---|---|
-| 1 | Engine Foundation | Core เสร็จ; ยังมี runtime verification และ logging |
-| 2 | 2D Core and Project Assets | Core เสร็จ; Box2D backend pinned; simulation ยังไม่เริ่ม |
-| 3 | Editor | ฟังก์ชันหลักมีแล้ว; Undo/Redo, Multi-selection และ interactive verification ยังเหลือ |
-| 4 | Game Systems | Component system เสร็จ; Physics integration, Animation, Audio, UI, Runtime InputMap และ Scripting ยังเหลือ |
-| 5 | Packaging and Quality | CI tests มีแล้ว; Export, Templates, Profiler และ User Docs ยังเหลือ |
-
-## 4. งานถัดไปที่ตกลงไว้
-
-### Active milestone: Collision Detection and Physics Integration
-
-**Stage 1 — backend and architecture: complete.** Pin Box2D v3.2.0 และกำหนดขอบเขต interface แล้ว
-
-**Stage 2 — PhysicsWorld wrapper and tests: active.** สร้าง RAII wrapper และ engine-owned body/shape API พร้อม automated tests; ยังไม่ถือว่ามี Scene/Editor integration จนกว่าจะทำขั้นถัดไป
-
-**เป้าหมาย:** วางระบบ Collision/Physics ให้ใช้งานร่วมกับ Entity/Component/Scene และ Play Mode ได้ โดยไม่ผูก physics dependency เข้ากับ Editor UI
-
-ลำดับงานที่เสนอ:
-1. [x] ตรวจ dependency และ pin Box2D v3.2.0; แยก Box2D ไว้หลัง engine-facing interface
-2. [x] กำหนดแนวทาง PhysicsWorld/Scene ownership, coordinate conversion และ body/collider components ใน [PHYSICS_DESIGN.md](PHYSICS_DESIGN.md)
-3. [ ] สร้าง PhysicsWorld wrapper และทดสอบ body/shape lifecycle
-4. [ ] เชื่อม PhysicsWorld กับ Scene Start/Update/Stop และ fixed timestep
-5. [ ] เพิ่ม PhysicsBody2D/Collider2D serialization และ Inspector properties
-6. [ ] เพิ่ม automated tests สำหรับ collision, body lifecycle และ scene round-trip
-7. [ ] เชื่อม debug visualization ใน Editor เมื่อ core ทำงานเสถียรแล้ว
-
-**ขอบเขตปัจจุบัน:** backend และ design ลง repository แล้ว แต่ยังไม่มี simulation wrapper หรือ collision tests จึงยังไม่ถือว่า Physics integration เสร็จ
-
-## 5. กติกาการพัฒนาและการอัปเดตเอกสาร
-
-1. ทำงานบน `develop` เท่านั้น เว้นแต่ผู้ใช้อนุมัติอย่างชัดเจนให้เปลี่ยน branch
-2. ห้าม merge เข้า `main` หากยังไม่ได้รับอนุมัติ
-3. ก่อนแก้โค้ดทุกครั้ง ต้องตรวจ HEAD ล่าสุดของ `develop` ก่อน
-4. ทำเป็น milestone เล็ก ๆ ที่ build และ test ได้
-5. เมื่อจบ milestone ให้:
-   - อัปเดต checkbox ใน `ROADMAP.md` ตามสิ่งที่ทำจริง
-   - อัปเดตไฟล์นี้: last completed, active/next milestone, commit, CI status และ known gaps
-   - อัปเดต `ARCHITECTURE.md` หากโครงสร้างหรือพฤติกรรมระบบเปลี่ยน
-6. ห้ามรายงาน CI ว่าผ่านจนกว่า GitHub Actions จะแสดง `completed` และ `conclusion: success`
-7. แยกสถานะ Build/Automated Tests ออกจากการทดสอบ Editor/Runtime แบบ interactive เสมอ
-8. หาก CI Failed ให้บันทึกสาเหตุ แก้ไข และรอผล CI รอบใหม่ก่อนปิด milestone
-9. อย่าขยาย scope ออกจากเป้าหมายที่ตกลงกันโดยไม่แจ้งผู้ใช้
-
-## 6. บันทึกการเปลี่ยนแปลงล่าสุด
-
-| วันที่ | Commit | รายละเอียด | CI |
-|---|---|---|---|
-| 2026-11-27 | [`60e05ca`](https://github.com/jonjud/ember/commit/60e05ca08af44ec305988ff9dd88ccfee1d5589e) | Versioned component schema migrations; legacy v1 compatibility; migration tests | [Build #92 — Success](https://github.com/jonjud/ember/actions/runs/45921944622) |
-| 2026-11-27 | [`b1d7902`](https://github.com/jonjud/ember/commit/b1d79028c1f8184a5543d77ca339d8acd269e8d4) | Pin Box2D v3.2.0, enable C language, document Physics boundary | [Build #95 — Success](https://github.com/jonjud/ember/actions/runs/45922737396) |
-| 2026-11-27 | [`a78e461`](https://github.com/jonjud/ember/commit/a78e4618f3483c3d3d6be987b704fb9ea466a62d) | Update Physics milestone tracking and design docs | [Build #96 — Success](https://github.com/jonjud/ember/actions/runs/45922782711) |
+| 2026-11-27 | [PhysicsWorld wrapper, CI #100](https://github.com/jonjud/ember/actions/runs/45925546626) | Success |
+| 2026-11-27 | [Physics component config types, CI #101](https://github.com/jonjud/ember/actions/runs/45929634947) | Success |
+| 2026-11-27 | [Physics registration/Inspector, CI #103](https://github.com/jonjud/ember/actions/runs/45933429501) | Success; Vector2 and Enumeration controls included |
 
 ---
 
-**วิธีใช้:** เปิดไฟล์นี้ก่อนเริ่มทำงานทุกครั้ง และแก้ไขไฟล์นี้พร้อม Roadmap เมื่อสถานะเปลี่ยน เพื่อให้เอกสารสะท้อนสถานะจริงของ repository ไม่ใช่ความทรงจำจากบทสนทนา
+**Handoff:** Start by checking the latest `develop` commit and CI, then implement only the Scene runtime integration described above.
