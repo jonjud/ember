@@ -106,7 +106,7 @@ bool EditorApplication::Initialize()
     }
 
     if (!m_audio.Initialize())
-        std::cerr << "EMBER Editor: Audio device unavailable; continuing without audio.\\n";
+        std::cerr << "EMBER Editor: Audio device unavailable; continuing without audio.\n";
 
     m_window = SDL_CreateWindow("EMBER Editor", kWindowWidth, kWindowHeight, SDL_WINDOW_RESIZABLE);
     if (m_window == nullptr)
@@ -160,13 +160,13 @@ bool EditorApplication::Initialize()
 
     if (!RegisterPhysicsComponents(m_componentRegistry))
     {
-        std::cerr << "EMBER Editor: Physics component registration failed.\\n";
+        std::cerr << "EMBER Editor: Physics component registration failed.\n";
         return false;
     }
 
     if (!RegisterAnimationComponents(m_componentRegistry))
     {
-        std::cerr << "EMBER Editor: Animation component registration failed.\\n";
+        std::cerr << "EMBER Editor: Animation component registration failed.\n";
         return false;
     }
 
