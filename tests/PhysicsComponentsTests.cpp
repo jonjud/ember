@@ -59,10 +59,10 @@ int main()
     boxEntry.offset = {1.0F, -2.0F};
     boxEntry.halfExtents = {0.75F, 1.25F};
     boxEntry.categoryBits = 0x0002;
+    const ember::ColliderId boxId = boxEntry.id;
     auto& circleEntry = colliderSet.AddCircleCollider();
     circleEntry.radius = 1.5F;
     circleEntry.isSensor = true;
-    const ember::ColliderId boxId = boxEntry.id;
     const ember::ColliderId circleId = circleEntry.id;
     Check(boxId != 0 && circleId != 0 && boxId != circleId,
         "Collider IDs are nonzero and unique across generated entries");
