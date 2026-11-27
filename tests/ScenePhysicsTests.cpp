@@ -85,6 +85,64 @@ int main()
         "Scene reports both invalid physics configurations");
     invalidScene.Stop();
 
+    ember::Scene validationScene("Physics Validation Test");
+    auto& disabled = validationScene.CreateEntity("Disabled Body");
+    auto& disabledBody = disabled.AddComponent<ember::PhysicsBody2D>();
+    disabledBody.enabled = false;
+    disabled.AddComponent<ember::BoxCollider2D>();
+
+    auto& invalidBodyEntity = validationScene.CreateEntity("Invalid Body");
+    auto& invalidBody = invalidBodyEntity.AddComponent<ember::PhysicsBody2D>();
+    invalidBody.type = ember::PhysicsBodyType2D::Dynamic;
+    invalidBody.gravityScale = -1.0F;
+    invalidBodyEntity.AddComponent<ember::CircleCollider2D>();
+
+    auto& invalidColliderEntity = validationScene.CreateEntity("Invalid Collider");
+    invalidColliderEntity.AddComponent<ember::PhysicsBody2D>();
+    auto& invalidCircle = invalidColliderEntity.AddComponent<ember::CircleCollider2D>();
+    invalidCircle.radius = -10.0F;
+
+    validationScene.Start();
+    Check(validationScene.GetPhysicsBodyCount() == 0,
+        "Disabled bodies and invalid body/collider configurations do not leave runtime bodies");
+    Check(validationScene.GetPhysicsDiagnostics().size() == 2,
+        "Invalid body and collider configurations each produce a diagnostic; disabled bodies are silently skipped");
+    validationScene.Stop();
+
+    const auto checkTransformAuthority = [](ember::PhysicsBodyType2D platformType, const char* label)
+    {
+        ember::Scene authorityScene(label);
+        auto& platform = authorityScene.CreateEntity("Platform");
+        platform.GetTransform().position = {0.0F, 500.0F};
+        auto& platformBody = platform.AddComponent<ember::PhysicsBody2D>();
+        platformBody.type = platformType;
+        auto& platformCollider = platform.AddComponent<ember::BoxCollider2D>();
+        platformCollider.halfExtents = {500.0F, 20.0F};
+        platformCollider.density = 0.0F;
+
+        auto& fallingBody = authorityScene.CreateEntity("Falling Body");
+        fallingBody.GetTransform().position = {0.0F, 0.0F};
+        auto& fallingConfig = fallingBody.AddComponent<ember::PhysicsBody2D>();
+        fallingConfig.type = ember::PhysicsBodyType2D::Dynamic;
+        auto& fallingCollider = fallingBody.AddComponent<ember::CircleCollider2D>();
+        fallingCollider.radius = 20.0F;
+
+        authorityScene.Start();
+        platform.GetTransform().position.y = 250.0F;
+        for (int frame = 0; frame < 180; ++frame)
+            authorityScene.Update(1.0F / 60.0F);
+
+        const float restingY = fallingBody.GetTransform().position.y;
+        const bool followsMovedPlatform = restingY > 185.0F && restingY < 235.0F;
+        authorityScene.Stop();
+        return followsMovedPlatform;
+    };
+
+    Check(checkTransformAuthority(ember::PhysicsBodyType2D::Static, "Static Transform Authority"),
+        "Static physics bodies follow Entity Transform2D changes before simulation steps");
+    Check(checkTransformAuthority(ember::PhysicsBodyType2D::Kinematic, "Kinematic Transform Authority"),
+        "Kinematic physics bodies follow Entity Transform2D changes before simulation steps");
+
     if (failures != 0)
     {
         std::cerr << failures << " scene physics test(s) failed.\n";
