@@ -20,6 +20,9 @@ class MarkerComponent final : public ember::Component
 {
 public:
     int value = 42;
+    bool enabled = true;
+    float speed = 1.5F;
+    std::string label = "initial";
     [[nodiscard]] std::unique_ptr<ember::Component> Clone() const override
     {
         return std::make_unique<MarkerComponent>(*this);
@@ -29,6 +32,7 @@ public:
 class OtherComponent final : public ember::Component
 {
 public:
+    int otherValue = 0;
     [[nodiscard]] std::unique_ptr<ember::Component> Clone() const override
     {
         return std::make_unique<OtherComponent>(*this);
@@ -75,27 +79,59 @@ int main()
 
     Check(registry.RegisterProperty<MarkerComponent>(
         "example.marker", "value", "Value", &MarkerComponent::value),
-        "Registered component properties can be described");
+        "Integer component property can be registered");
+    Check(registry.RegisterProperty<MarkerComponent>(
+        "example.marker", "enabled", "Enabled", &MarkerComponent::enabled),
+        "Boolean component property can be registered");
+    Check(registry.RegisterProperty<MarkerComponent>(
+        "example.marker", "speed", "Speed", &MarkerComponent::speed),
+        "Float component property can be registered");
+    Check(registry.RegisterProperty<MarkerComponent>(
+        "example.marker", "label", "Label", &MarkerComponent::label),
+        "String component property can be registered");
     Check(!registry.RegisterProperty<MarkerComponent>(
         "example.marker", "value", "Duplicate", &MarkerComponent::value),
         "Duplicate property IDs are rejected");
     Check(!registry.RegisterProperty<OtherComponent>(
-        "example.marker", "wrong-owner", "Wrong Owner", nullptr),
+        "example.marker", "wrong-owner", "Wrong Owner", &OtherComponent::otherValue),
         "Properties cannot be registered against a different component type");
     const auto* markerProperties = registry.FindProperties(source);
-    Check(markerProperties != nullptr && markerProperties->size() == 1 &&
-        markerProperties->front().type == ember::ComponentPropertyType::Integer,
+    Check(markerProperties != nullptr && markerProperties->size() == 4,
         "Property metadata can be queried by component instance");
-    if (markerProperties != nullptr && !markerProperties->empty())
+    if (markerProperties != nullptr)
     {
-        Check(markerProperties->front().get(source).get<int>() == 42,
-            "Property descriptor reads the current component value");
-        Check(markerProperties->front().set(source, 73) && source.value == 73,
-            "Property descriptor updates the component value");
-        Check(!markerProperties->front().set(source, "not an integer") && source.value == 73,
-            "Property descriptor rejects values with the wrong type");
-        Check(!markerProperties->front().set(source, 999999999999LL) && source.value == 73,
-            "Integer property rejects values outside the supported range");
+        const auto findProperty = [markerProperties](const std::string& id)
+            -> const ember::ComponentPropertyInfo*
+        {
+            for (const auto& property : *markerProperties)
+                if (property.id == id) return &property;
+            return nullptr;
+        };
+        const auto* integer = findProperty("value");
+        const auto* boolean = findProperty("enabled");
+        const auto* floating = findProperty("speed");
+        const auto* string = findProperty("label");
+        Check(integer && integer->type == ember::ComponentPropertyType::Integer &&
+            integer->get(source).get<int>() == 42,
+            "Integer descriptor reads component values");
+        Check(integer && integer->set(source, 73) && source.value == 73,
+            "Integer descriptor updates component values");
+        Check(integer && !integer->set(source, "not an integer") && source.value == 73,
+            "Integer descriptor rejects values with the wrong type");
+        Check(integer && !integer->set(source, 999999999999LL) && source.value == 73,
+            "Integer descriptor rejects values outside the supported range");
+        Check(boolean && boolean->type == ember::ComponentPropertyType::Boolean &&
+            boolean->set(source, false) && !source.enabled,
+            "Boolean descriptor reads and updates component values");
+        Check(floating && floating->type == ember::ComponentPropertyType::Float &&
+            floating->set(source, 2.75) && source.speed == 2.75F,
+            "Float descriptor reads and updates component values");
+        Check(string && string->type == ember::ComponentPropertyType::String &&
+            string->set(source, "updated") && source.label == "updated",
+            "String descriptor reads and updates component values");
+        Check(string && !string->set(source, std::string(4097, 'x')) &&
+            source.label == "updated",
+            "String descriptor rejects values exceeding the editor buffer limit");
     }
 
     if (failures != 0)
