@@ -10,9 +10,9 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`4539d23`](https://github.com/jonjud/ember/commit/4539d23bea40a88b61be8376b704379f9aa94515) — Add collider set identity model |
-| Last verified CI | [Windows CI #133](https://github.com/jonjud/ember/actions/runs/45946897880) — **Success** (Configure, Build, Run engine tests) |
-| Last completed milestone | Multiple Colliders design approved by CI #133; ColliderSet2D model implementation pending CI |
+| Last code commit | [`7d70f28`](https://github.com/jonjud/ember/commit/7d70f28d31a2c0481c27a95fb25a30978fa4926c) — Test collider scene serialization and legacy migration |
+| Last verified CI | [Windows CI #135](https://github.com/jonjud/ember/actions/runs/45948659696) — **Success** (Configure, Build, Run engine tests); collider serialization/migration CI pending |
+| Last completed milestone | ColliderSet2D value model and stable ID tests passed CI #135 |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests ไม่ได้ยืนยันการทดสอบ Editor/Runtime แบบ interactive บนเครื่องจริง
@@ -35,7 +35,8 @@
 - [x] Implement engine-owned PhysicsWorld RAII facade and body/collider API
 - [x] Automated PhysicsWorld tests
 - [x] Add serializable configuration components: PhysicsBody2D, BoxCollider2D, CircleCollider2D
-- [ ] Add ColliderSet2D with stable ColliderId generation, lookup/removal, validation and clone tests (implementation committed; CI pending)
+- [x] Add ColliderSet2D with stable ColliderId generation, lookup/removal, validation and clone tests (CI #135)
+- [ ] Add canonical ColliderSet2D serialization and legacy Box/Circle Scene migration (code committed; CI pending)
 - [x] Register physics component types, serializers/deserializers and Inspector properties
 - [x] Add Vector2 Inspector controls and enum dropdown support
 - [x] Scene owns PhysicsWorld during runtime and builds bodies/colliders from entity components
@@ -99,4 +100,4 @@ The Scene-owned 2D physics slice includes the Editor collider debug overlay, Beg
 
 ---
 
-**Handoff:** Active milestone: Multiple Colliders per Entity. First code slice: ColliderSet2D value model and stable ColliderId tests; next check CI, then proceed to serialization/migration. Read [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md) before implementation; preserve legacy scene compatibility and keep Box2D types private.
+**Handoff:** Active milestone: Multiple Colliders per Entity. ColliderSet2D model passed CI #135. Current slice: canonical serialization and legacy Box/Circle Scene migration; next extend PhysicsWorld and Scene runtime to create multiple shapes per body. Read [MULTIPLE_COLLIDERS_DESIGN.md](MULTIPLE_COLLIDERS_DESIGN.md) before implementation; preserve legacy scene compatibility and keep Box2D types private.
