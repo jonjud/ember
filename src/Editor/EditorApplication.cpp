@@ -1,6 +1,7 @@
 #include "Editor/EditorApplication.hpp"
 
 #include "Engine/Scene/SceneSerializer.hpp"
+#include "Engine/Physics/PhysicsComponentRegistration.hpp"
 #include "Engine/Platform/Input.hpp"
 #include "Engine/Project/ProjectConfigurationStore.hpp"
 
@@ -150,6 +151,12 @@ bool EditorApplication::Initialize()
         });
     (void)m_componentRegistry.RegisterProperty<EditorNoteComponent>(
         "ember.note", "text", "Text", &EditorNoteComponent::text);
+
+    if (!RegisterPhysicsComponents(m_componentRegistry))
+    {
+        std::cerr << "EMBER Editor: Physics component registration failed.\\n";
+        return false;
+    }
 
     LoadInputSettings();
     RefreshAssets();
@@ -540,6 +547,35 @@ void EditorApplication::DrawInspector()
                                     sizeof(value), ImVec2(-1.0F, 72.0F)) &&
                                     property.set(*component, nlohmann::json(value)))
                                     MarkSceneDirty();
+                                break;
+                            }
+                            case ComponentPropertyType::Vector2:
+                            {
+                                const auto current = property.get(*component);
+                                float value[2]{current.at(0).get<float>(), current.at(1).get<float>()};
+                                if (ImGui::DragFloat2(property.displayName.c_str(), value, 0.05F) &&
+                                    property.set(*component, nlohmann::json::array({value[0], value[1]})))
+                                    MarkSceneDirty();
+                                break;
+                            }
+                            case ComponentPropertyType::Enumeration:
+                            {
+                                const int current = property.get(*component).get<int>();
+                                const char* preview = "Unknown";
+                                for (const auto& option : property.enumValues)
+                                    if (option.first == current) preview = option.second.c_str();
+                                if (ImGui::BeginCombo(property.displayName.c_str(), preview))
+                                {
+                                    for (const auto& option : property.enumValues)
+                                    {
+                                        const bool selected = option.first == current;
+                                        if (ImGui::Selectable(option.second.c_str(), selected) &&
+                                            property.set(*component, nlohmann::json(option.first)))
+                                            MarkSceneDirty();
+                                        if (selected) ImGui::SetItemDefaultFocus();
+                                    }
+                                    ImGui::EndCombo();
+                                }
                                 break;
                             }
                             }

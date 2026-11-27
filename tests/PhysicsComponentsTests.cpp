@@ -1,4 +1,5 @@
 #include "Engine/Physics/PhysicsComponents2D.hpp"
+#include "Engine/Physics/PhysicsComponentRegistration.hpp"
 
 #include <iostream>
 
@@ -50,6 +51,41 @@ int main()
     Check(copiedCircle && copiedCircle->radius == 1.75F &&
         copiedCircle->offset.x == 0.25F && copiedCircle->restitution == 0.8F,
         "CircleCollider2D clones radius, offset, and material");
+
+
+    ember::ComponentRegistry registry;
+    Check(ember::RegisterPhysicsComponents(registry),
+        "Physics components register for Editor creation and serialization");
+    Check(registry.Size() == 3, "All three physics component types are registered");
+
+    auto registeredBody = registry.Create("ember.physics_body_2d");
+    auto* editableBody = dynamic_cast<ember::PhysicsBody2D*>(registeredBody.get());
+    Check(editableBody != nullptr, "Physics Body can be created through the registry");
+    if (editableBody)
+    {
+        const auto* properties = registry.FindProperties(*editableBody);
+        Check(properties != nullptr && properties->size() == 5,
+            "Physics Body exposes editable Inspector properties");
+        nlohmann::json bodyData;
+        editableBody->type = ember::PhysicsBodyType2D::Dynamic;
+        editableBody->gravityScale = 1.5F;
+        Check(registry.Serialize(*editableBody, bodyData),
+            "Physics Body configuration serializes");
+        auto restored = registry.Create("ember.physics_body_2d", bodyData);
+        const auto* restoredBody = dynamic_cast<const ember::PhysicsBody2D*>(restored.get());
+        Check(restoredBody && restoredBody->type == ember::PhysicsBodyType2D::Dynamic &&
+            restoredBody->gravityScale == 1.5F,
+            "Physics Body configuration deserializes");
+    }
+
+    auto registeredBox = registry.Create("ember.box_collider_2d");
+    auto* editableBox = dynamic_cast<ember::BoxCollider2D*>(registeredBox.get());
+    Check(editableBox != nullptr && registry.FindProperties(*editableBox)->size() == 7,
+        "Box Collider exposes geometry and material properties");
+    auto registeredCircle = registry.Create("ember.circle_collider_2d");
+    auto* editableCircle = dynamic_cast<ember::CircleCollider2D*>(registeredCircle.get());
+    Check(editableCircle != nullptr && registry.FindProperties(*editableCircle)->size() == 6,
+        "Circle Collider exposes radius, offset, and material properties");
 
     return failures == 0 ? 0 : 1;
 }

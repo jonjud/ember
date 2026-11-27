@@ -142,6 +142,7 @@ if(BUILD_TESTING)
         tests/PhysicsComponentsTests.cpp
     )
     target_include_directories(ember_physics_components_tests PRIVATE src)
+    target_link_libraries(ember_physics_components_tests PRIVATE nlohmann_json::nlohmann_json)
     add_test(NAME ember_physics_components_tests COMMAND ember_physics_components_tests)
 
     add_executable(ember_physics_world_tests
