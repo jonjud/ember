@@ -43,13 +43,14 @@ The existing `BoxCollider2D` and `CircleCollider2D` remain supported as legacy a
 
 ## Implementation sequence
 
-1. Add ColliderSet2D value model, stable ColliderId generation/validation, Clone behavior and unit tests. No runtime behavior changes in this step.
-2. Add canonical serialization and legacy scene migration fixtures.
-3. Extend PhysicsWorld shape creation to accept per-shape query filters and preserve backend privacy.
-4. Build multiple shapes per body in Scene; aggregate contact begin/end transitions at Entity-pair level.
-5. Update raycast/overlap mapping and tests for multi-shape deduplication.
-6. Add Inspector list editing and draw all shapes in the debug overlay.
-7. Run Windows CI and the interactive runtime checklist.
+1. [x] Add ColliderSet2D value model, stable ColliderId generation/validation, Clone behavior and unit tests (CI #135).
+2. [x] Add canonical serialization and legacy Scene migration fixtures (CI #151).
+3. [x] Extend PhysicsWorld shape creation to accept per-shape query filters and preserve backend privacy (CI #155).
+4. [x] Build multiple shapes per body in Scene; create each ColliderSet2D entry as a shape on one body.
+5. [x] Keep raycast/overlap mapping Entity-level and deduplicate multi-shape results.
+6. [ ] Aggregate shape-pair contact transitions into one Entity-pair Begin/End (implementation and regression test committed; CI verification pending).
+7. [ ] Add Inspector list editing and draw all shapes in the debug overlay.
+8. [ ] Run Windows CI and the interactive multi-collider runtime checklist.
 
 ## Non-goals
 
