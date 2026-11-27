@@ -42,7 +42,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Persistent Input Settings and rebinding
 - [x] Component Inspector: display, add, remove, edit registered components
 - [x] Typed Inspector widgets: bool, int, float, string, Vector2, Enumeration
-- [ ] Physics debug overlay (body and collider outlines)
+- [x] Physics debug overlay (box/circle collider outlines; Windows CI #113)
 - [ ] Undo / Redo
 - [ ] Multi-selection and hierarchy organization
 - [ ] Interactive Editor/runtime verification
@@ -56,8 +56,8 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Scene PhysicsWorld ownership and lifecycle integration
 - [x] Fixed timestep and transform synchronization
 - [x] Scene physics integration tests: lifecycle, simulation, collision, invalid component combinations and teardown
-- [ ] Numeric physics configuration validation and additional body-mode tests
-- [ ] Collision/contact event API
+- [x] Numeric physics configuration validation and disabled/static/kinematic body-mode tests
+- [ ] Collision/contact begin/end event API (engine-owned EntityId results)
 - [ ] Raycast and overlap query API
 - [ ] Multiple colliders per entity
 - [ ] Joints

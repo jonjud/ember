@@ -34,7 +34,7 @@ tests/
 
 ## Responsibilities and ownership
 - **Core / Application:** runtime window, active Scene, AssetManager, and application event/update/render lifecycle.
-- **Editor / EditorApplication:** editor panels, viewport, gizmos, scene workflow and Play Mode; editor UI does not own physics backend objects.
+- **Editor / EditorApplication:** editor panels, viewport, gizmos, scene workflow and Play Mode; editor UI does not own physics backend objects. The viewport Physics toggle draws configured box/circle collider outlines using engine component data only.
 - **Math / Vector2:** engine-owned 2D vector type.
 - **Scene / Component:** polymorphic runtime behavior with Clone, OnCreate, OnUpdate and OnDestroy hooks. Components are owned by entities; structural changes are locked while a Scene is running.
 - **Scene / ComponentRegistry:** stable IDs, factories, versioned JSON serializers, schema migrations and UI-agnostic typed property descriptors. Current Inspector types include bool, int, float, string, Vector2 and Enumeration; the Editor maps these descriptors to ImGui controls.
@@ -59,6 +59,7 @@ The Editor runs Play Mode on an isolated Scene clone. The authoring Scene remain
 - A collider without PhysicsBody2D is skipped with a diagnostic.
 - Dynamic bodies are physics-authoritative after stepping; static and kinematic bodies are transform-authoritative before stepping.
 - Physics body handles are transient runtime state, never part of serialization or Component::Clone.
+- Editor physics debug overlay visualizes configured collider geometry (orange solids, cyan sensors) without querying or exposing Box2D objects.
 
 ## Serialization rules
 - Persist stable entity IDs, component type IDs, schema versions and configuration values.
@@ -75,7 +76,6 @@ The Editor runs Play Mode on an isolated Scene clone. The authoring Scene remain
 
 ## Known gaps
 - Physics runtime integration is covered by automated Scene tests, but interactive Editor/Play Mode behavior still requires manual verification on Windows.
-- Numeric validation for all physics configuration fields and disabled/static/kinematic edge cases need additional coverage.
+- Numeric body/collider configuration validation and disabled/static/kinematic transform-authority tests are implemented.
 - Collision/contact event and raycast/overlap query APIs are not yet exposed to gameplay code.
-- Physics debug drawing is not yet implemented.
 - Runtime Play Mode input actions are not yet wired to persistent InputMap settings.

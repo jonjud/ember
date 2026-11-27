@@ -10,9 +10,9 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`bdc7c02`](https://github.com/jonjud/ember/commit/bdc7c02930ff68dbd1888bccb213670c825a7785) — Link physics backend in Scene-based test targets |
-| Last verified CI | [Windows Build #109](https://github.com/jonjud/ember/actions/runs/45935434409) — **Success** (Configure, Build, Run engine tests) |
-| Last completed milestone | Scene Physics Runtime Integration |
+| Last code commit | [`b8b6bc1`](https://github.com/jonjud/ember/commit/b8b6bc1d1c69a153f72f8bd1dfbd1040e225169f) — Link physics backend in Scene-based test targets |
+| Last verified CI | [Windows Build #113](https://github.com/jonjud/ember/actions/runs/45937028116) — **Success** (Configure, Build, Run engine tests) |
+| Last completed milestone | Physics Debug Overlay |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests ไม่ได้ยืนยันการทดสอบ Editor/Runtime แบบ interactive บนเครื่องจริง
@@ -43,6 +43,9 @@
 - [x] Scene Stop tears down runtime physics; runtime handles remain transient and are not cloned/serialized
 - [x] Scene physics tests: lifecycle, falling/collision, invalid collider configurations, NaN delta, stop/clone behavior
 - [x] Link PhysicsWorld and Box2D into all Scene-based test targets (CI linker fix)
+- [x] Validate physics body/collider numeric configuration and keep failed collider creation atomic
+- [x] Test disabled bodies and static/kinematic transform authority
+- [x] Add Editor viewport Physics debug overlay for box/circle collider outlines (CI #113)
 
 ## 3. Physics decisions to preserve
 - Box2D v3.2.0 is private; Box2D types must not leak into public Scene/Entity/Component/Editor APIs.
@@ -59,13 +62,9 @@
 
 ## 4. Current limitations / next milestone
 
-Physics simulation is now integrated into Scene lifecycle and covered by CI tests. The next milestone should harden runtime validation and expose useful debugging tools:
-1. Validate numeric body/collider configuration (non-finite values, invalid dimensions/material parameters) and ensure failed creation leaves no partial runtime state.
-2. Add tests for disabled bodies and static/kinematic transform authority.
-3. Add a minimal Editor physics debug overlay (body outlines and collider geometry) without leaking Box2D types into Editor.
-4. Later: collision/contact events, raycasts/queries, multiple colliders and joints.
+The first Scene-owned 2D physics slice and Editor collider debug overlay are implemented and pass Windows CI. The next milestone is an engine-owned collision/contact event API that reports entity IDs and begin/end contact transitions without exposing Box2D types. After that, add raycast/overlap queries. Multiple colliders and joints remain deferred until these core APIs are stable.
 
-Do not begin joints, multiple colliders, or 3D physics until the 2D runtime slice is stable.
+Interactive Editor/Play Mode verification on a Windows machine is still outstanding; CI success does not replace that manual check.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -84,7 +83,8 @@ Do not begin joints, multiple colliders, or 3D physics until the 2D runtime slic
 | 2026-11-27 | [Physics component config types, CI #101](https://github.com/jonjud/ember/actions/runs/45929634947) | Success |
 | 2026-11-27 | [Physics registration/Inspector, CI #103](https://github.com/jonjud/ember/actions/runs/45933429501) | Success |
 | 2026-11-27 | [Scene Physics Runtime Integration, CI #109](https://github.com/jonjud/ember/actions/runs/45935434409) | Success; Configure, Build and engine tests all passed |
+| 2026-11-27 | [Physics Debug Overlay, CI #113](https://github.com/jonjud/ember/actions/runs/45937028116) | Success; Windows build and automated tests passed |
 
 ---
 
-**Handoff:** Start by checking the latest `develop` commit and CI. The next focused task is physics configuration validation plus static/kinematic/disabled-body tests, then Editor debug drawing.
+**Handoff:** Start by checking latest `develop` HEAD and CI. Next focused task: engine-owned collision/contact begin/end event API, with EntityId mapping and tests; do not expose Box2D types.
