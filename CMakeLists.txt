@@ -175,15 +175,19 @@ if(BUILD_TESTING)
     add_executable(ember_scene_tests
         tests/SceneTests.cpp
         src/Engine/Scene/Scene.cpp
+        src/Engine/Physics/PhysicsWorld.cpp
     )
     target_include_directories(ember_scene_tests PRIVATE src)
+    target_link_libraries(ember_scene_tests PRIVATE box2d::box2d)
     add_test(NAME ember_scene_tests COMMAND ember_scene_tests)
 
     add_executable(ember_component_tests
         tests/ComponentTests.cpp
         src/Engine/Scene/Scene.cpp
+        src/Engine/Physics/PhysicsWorld.cpp
     )
     target_include_directories(ember_component_tests PRIVATE src)
+    target_link_libraries(ember_component_tests PRIVATE box2d::box2d)
     add_test(NAME ember_component_tests COMMAND ember_component_tests)
 
     add_executable(ember_component_registry_tests
@@ -210,10 +214,11 @@ if(BUILD_TESTING)
     add_executable(ember_scene_serializer_tests
         tests/SceneSerializerTests.cpp
         src/Engine/Scene/Scene.cpp
+        src/Engine/Physics/PhysicsWorld.cpp
         src/Engine/Scene/SceneSerializer.cpp
     )
     target_include_directories(ember_scene_serializer_tests PRIVATE src)
-    target_link_libraries(ember_scene_serializer_tests PRIVATE nlohmann_json::nlohmann_json)
+    target_link_libraries(ember_scene_serializer_tests PRIVATE nlohmann_json::nlohmann_json box2d::box2d)
     add_test(NAME ember_scene_serializer_tests COMMAND ember_scene_serializer_tests)
 
     add_executable(ember_asset_metadata_tests
