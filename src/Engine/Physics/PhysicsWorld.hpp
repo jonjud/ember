@@ -1,0 +1,101 @@
+#pragma once
+
+#include "Engine/Math/Vector2.hpp"
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <optional>
+
+namespace ember
+{
+enum class PhysicsBodyType2D
+{
+    Static,
+    Kinematic,
+    Dynamic
+};
+
+struct PhysicsWorldDefinition
+{
+    Vector2 gravity{0.0F, 9.8F};
+};
+
+struct PhysicsBodyDefinition2D
+{
+    PhysicsBodyType2D type = PhysicsBodyType2D::Static;
+    Vector2 position{}; // meters
+    float rotation = 0.0F; // radians
+    Vector2 linearVelocity{}; // meters per second
+    float angularVelocity = 0.0F; // radians per second
+    float gravityScale = 1.0F;
+    float linearDamping = 0.0F;
+    float angularDamping = 0.0F;
+};
+
+struct PhysicsBoxColliderDefinition2D
+{
+    Vector2 halfExtents{0.5F, 0.5F}; // meters
+    Vector2 offset{}; // meters, in body-local space
+    float rotation = 0.0F; // radians, in body-local space
+    float density = 1.0F;
+    float friction = 0.3F;
+    float restitution = 0.0F;
+    bool isSensor = false;
+};
+
+struct PhysicsCircleColliderDefinition2D
+{
+    float radius = 0.5F; // meters
+    Vector2 offset{}; // meters, in body-local space
+    float density = 1.0F;
+    float friction = 0.3F;
+    float restitution = 0.0F;
+    bool isSensor = false;
+};
+
+struct PhysicsBodyHandle
+{
+    std::uint64_t value = 0;
+
+    [[nodiscard]] explicit operator bool() const { return value != 0; }
+    friend bool operator==(PhysicsBodyHandle, PhysicsBodyHandle) = default;
+};
+
+struct PhysicsTransform2D
+{
+    Vector2 position{}; // meters
+    float rotation = 0.0F; // radians
+};
+
+// Engine-owned facade. Box2D types and handles are intentionally hidden in the
+// implementation so Scene, Entity, Components, and Editor stay backend-agnostic.
+class PhysicsWorld
+{
+public:
+    explicit PhysicsWorld(const PhysicsWorldDefinition& definition = {});
+    ~PhysicsWorld();
+
+    PhysicsWorld(const PhysicsWorld&) = delete;
+    PhysicsWorld& operator=(const PhysicsWorld&) = delete;
+    PhysicsWorld(PhysicsWorld&&) noexcept;
+    PhysicsWorld& operator=(PhysicsWorld&&) noexcept;
+
+    [[nodiscard]] bool IsValid() const;
+    [[nodiscard]] bool SetGravity(Vector2 gravity);
+    [[nodiscard]] PhysicsBodyHandle CreateBody(const PhysicsBodyDefinition2D& definition);
+    [[nodiscard]] bool DestroyBody(PhysicsBodyHandle handle);
+    [[nodiscard]] bool AddBoxCollider(
+        PhysicsBodyHandle handle, const PhysicsBoxColliderDefinition2D& definition = {});
+    [[nodiscard]] bool AddCircleCollider(
+        PhysicsBodyHandle handle, const PhysicsCircleColliderDefinition2D& definition = {});
+    [[nodiscard]] std::optional<PhysicsTransform2D> GetBodyTransform(PhysicsBodyHandle handle) const;
+    [[nodiscard]] bool SetBodyTransform(PhysicsBodyHandle handle, const PhysicsTransform2D& transform);
+    [[nodiscard]] bool Step(float timeStep, int subStepCount = 4);
+    [[nodiscard]] std::size_t GetBodyCount() const;
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> m_impl;
+};
+} // namespace ember

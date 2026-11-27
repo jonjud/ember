@@ -105,6 +105,7 @@ add_library(ember_engine STATIC
     src/Engine/Project/ProjectConfigurationStore.cpp
     src/Engine/Resources/TextureCache.cpp
     src/Engine/Scene/Scene.cpp
+    src/Engine/Physics/PhysicsWorld.cpp
     src/Engine/Scene/SceneSerializer.cpp
     src/Engine/Renderer/Camera2D.cpp
     src/Engine/Platform/Input.cpp
@@ -137,6 +138,14 @@ target_include_directories(ember_editor PRIVATE src)
 target_link_libraries(ember_editor PRIVATE ember_engine ember_imgui SDL3::SDL3)
 
 if(BUILD_TESTING)
+    add_executable(ember_physics_world_tests
+        tests/PhysicsWorldTests.cpp
+        src/Engine/Physics/PhysicsWorld.cpp
+    )
+    target_include_directories(ember_physics_world_tests PRIVATE src)
+    target_link_libraries(ember_physics_world_tests PRIVATE box2d::box2d)
+    add_test(NAME ember_physics_world_tests COMMAND ember_physics_world_tests)
+
     add_executable(ember_input_map_tests
         tests/InputMapTests.cpp
         src/Engine/Platform/InputMap.cpp
@@ -246,6 +255,7 @@ if(MSVC)
     target_compile_options(ember_editor PRIVATE /W4 /permissive-)
     target_compile_options(ember_imgui PRIVATE /W4 /permissive-)
     if(BUILD_TESTING)
+        target_compile_options(ember_physics_world_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_input_map_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_scene_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_component_tests PRIVATE /W4 /permissive-)
@@ -264,6 +274,7 @@ else()
     target_compile_options(ember_editor PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(ember_imgui PRIVATE -Wall -Wextra -Wpedantic)
     if(BUILD_TESTING)
+        target_compile_options(ember_physics_world_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_input_map_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_scene_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_component_tests PRIVATE -Wall -Wextra -Wpedantic)
