@@ -138,6 +138,12 @@ target_include_directories(ember_editor PRIVATE src)
 target_link_libraries(ember_editor PRIVATE ember_engine ember_imgui SDL3::SDL3)
 
 if(BUILD_TESTING)
+    add_executable(ember_physics_components_tests
+        tests/PhysicsComponentsTests.cpp
+    )
+    target_include_directories(ember_physics_components_tests PRIVATE src)
+    add_test(NAME ember_physics_components_tests COMMAND ember_physics_components_tests)
+
     add_executable(ember_physics_world_tests
         tests/PhysicsWorldTests.cpp
         src/Engine/Physics/PhysicsWorld.cpp
@@ -256,6 +262,7 @@ if(MSVC)
     target_compile_options(ember_imgui PRIVATE /W4 /permissive-)
     if(BUILD_TESTING)
         target_compile_options(ember_physics_world_tests PRIVATE /W4 /permissive-)
+        target_compile_options(ember_physics_components_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_input_map_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_scene_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_component_tests PRIVATE /W4 /permissive-)
@@ -275,6 +282,7 @@ else()
     target_compile_options(ember_imgui PRIVATE -Wall -Wextra -Wpedantic)
     if(BUILD_TESTING)
         target_compile_options(ember_physics_world_tests PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(ember_physics_components_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_input_map_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_scene_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_component_tests PRIVATE -Wall -Wextra -Wpedantic)
