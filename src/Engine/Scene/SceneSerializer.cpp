@@ -1,4 +1,5 @@
 #include "Engine/Scene/SceneSerializer.hpp"
+#include "Engine/Physics/PhysicsComponents2D.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -99,6 +100,35 @@ bool ReadEntityId(const Json& value, EntityId& result)
     }
 
     result = static_cast<EntityId>(signedId);
+    return true;
+}
+
+bool MigrateLegacyColliders(Entity& entity, std::string* error)
+{
+    auto* box = entity.GetComponent<BoxCollider2D>();
+    auto* circle = entity.GetComponent<CircleCollider2D>();
+    auto* setExisting = entity.GetComponent<ColliderSet2D>();
+    if (box && circle)
+        return Fail(error, "Entity has both legacy Box and Circle colliders; resolve the conflict before migration.");
+    if ((box || circle) && setExisting)
+        return Fail(error, "Entity has both ColliderSet2D and a legacy collider; resolve the conflict before migration.");
+    if (!box && !circle) return true;
+
+    auto set = std::make_unique<ColliderSet2D>();
+    if (box) {
+        auto& c = set->AddBoxCollider();
+        c.halfExtents = box->halfExtents; c.offset = box->offset; c.rotation = box->rotation;
+        c.density = box->density; c.friction = box->friction;
+        c.restitution = box->restitution; c.isSensor = box->isSensor;
+        entity.RemoveComponent(box);
+    } else {
+        auto& c = set->AddCircleCollider();
+        c.radius = circle->radius; c.offset = circle->offset;
+        c.density = circle->density; c.friction = circle->friction;
+        c.restitution = circle->restitution; c.isSensor = circle->isSensor;
+        entity.RemoveComponent(circle);
+    }
+    entity.AddComponent(std::move(set));
     return true;
 }
 
@@ -330,6 +360,8 @@ bool SceneSerializer::Load(
                     entity->AddComponent(std::move(component));
                 }
             }
+
+            if (!MigrateLegacyColliders(*entity, error)) return false;
 
             loadedScene.m_entities.emplace(id, std::move(entity));
             if (id > maxId)
