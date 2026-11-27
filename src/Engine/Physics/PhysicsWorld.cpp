@@ -183,6 +183,7 @@ bool PhysicsWorld::AddCircleCollider(
     shapeDefinition.material.friction = definition.friction;
     shapeDefinition.material.restitution = definition.restitution;
     shapeDefinition.isSensor = definition.isSensor;
+    shapeDefinition.enableContactEvents = !definition.isSensor;
 
     const b2Circle circle{{definition.offset.x, definition.offset.y}, definition.radius};
     return b2Shape_IsValid(b2CreateCircleShape(it->second, &shapeDefinition, &circle));

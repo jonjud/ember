@@ -69,14 +69,19 @@ int main()
         "Fixed-step physics moves the dynamic entity and resolves its ground collision");
 
     ground.GetTransform().position.x = 2000.0F;
-    scene.Update(1.0F / 60.0F);
     bool sawEndContact = false;
-    for (const auto& event : scene.GetPhysicsContactEvents())
+    // Box2D may defer broad-phase pair removal until the next fixed step after a
+    // static-body transform update. Keep collecting the frame-scoped event buffer.
+    for (int frame = 0; frame < 3; ++frame)
     {
-        if (event.type == ember::SceneContactEventType2D::End &&
-            ((event.entityA == ground.GetId() && event.entityB == ball.GetId()) ||
-             (event.entityA == ball.GetId() && event.entityB == ground.GetId())))
-            sawEndContact = true;
+        scene.Update(1.0F / 60.0F);
+        for (const auto& event : scene.GetPhysicsContactEvents())
+        {
+            if (event.type == ember::SceneContactEventType2D::End &&
+                ((event.entityA == ground.GetId() && event.entityB == ball.GetId()) ||
+                 (event.entityA == ball.GetId() && event.entityB == ground.GetId())))
+                sawEndContact = true;
+        }
     }
     Check(sawEndContact, "Moving a collider apart reports an end-contact event");
 
