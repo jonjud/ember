@@ -1,5 +1,6 @@
 #include "Engine/Scene/ComponentRegistry.hpp"
 #include "Engine/Scene/AudioComponentRegistration.hpp"
+#include "Editor/MultiEdit.hpp"
 
 #include <iostream>
 #include <memory>
@@ -88,6 +89,29 @@ int main()
           types[1].id == "example.other",
           "Registered types are listed in deterministic ID order");
     Check(registry.Size() == 2, "Registry reports its type count");
+
+    Check(ember::editor::HasMixedValues({1, 1, 1}) == false,
+        "Multi-edit detects uniform property values");
+    Check(ember::editor::HasMixedValues({1, 2}) == true,
+        "Multi-edit detects mixed property values");
+    MarkerComponent first;
+    MarkerComponent second;
+    first.value = 10;
+    second.value = 20;
+    const auto* editableProperties = registry.FindProperties(first);
+    const ember::ComponentPropertyInfo* editableValue = nullptr;
+    if (editableProperties != nullptr)
+        for (const auto& property : *editableProperties)
+            if (property.id == "value") editableValue = &property;
+    std::vector<ember::Component*> multiComponents{&first, &second};
+    Check(editableValue != nullptr &&
+          ember::editor::ApplyComponentPropertyAtomically(multiComponents, *editableValue, 77) &&
+          first.value == 77 && second.value == 77,
+          "Multi-edit applies a shared property value to every selected component");
+    Check(editableValue != nullptr &&
+          !ember::editor::ApplyComponentPropertyAtomically(multiComponents, *editableValue, "invalid") &&
+          first.value == 77 && second.value == 77,
+          "Multi-edit rejects invalid values without partially changing components");
 
     Check(registry.RegisterProperty<MarkerComponent>(
         "example.marker", "value", "Value", &MarkerComponent::value),

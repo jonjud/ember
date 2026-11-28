@@ -15,6 +15,7 @@
 #include "Engine/Scripting/ScriptRuntime.hpp"
 #include "Editor/SceneUndoHistory.hpp"
 #include "Editor/EntitySelection.hpp"
+#include "Editor/MultiEdit.hpp"
 
 #include <array>
 #include <cstddef>
