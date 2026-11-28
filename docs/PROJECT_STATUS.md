@@ -10,13 +10,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`1089bd1`](https://github.com/jonjud/ember/commit/1089bd102727fc5fdff9c4f7ae07e9a00e08e0fe) — Script Source Editor external-change protection |
+| Last code commit | [`414bce5`](https://github.com/jonjud/ember/commit/414bce55243350f1faab8c82b49f973017975821) — Script Source Editor syntax validation and external-change protection |
 | Latest repository HEAD | [`1089bd1`](https://github.com/jonjud/ember/commit/1089bd102727fc5fdff9c4f7ae07e9a00e08e0fe) on `develop` |
-| Last verified code CI | [Windows CI run 46104170651](https://github.com/jonjud/ember/actions/runs/46104170651) — **Success**; external-change guard and safe reload build/tests passed |
+| Last verified code CI | [Windows CI run 46105064345](https://github.com/jonjud/ember/actions/runs/46105064345) — **Success**; external-change guard and safe reload build/tests passed |
 | Latest CI | [Windows CI run 46104170651](https://github.com/jonjud/ember/actions/runs/46104170651) — **Success** |
 | Latest documentation CI | [Windows CI run 46101797386](https://github.com/jonjud/ember/actions/runs/46101797386) — **Success** |
 | Last completed milestone | Script Source Editor external-change protection, safe reload, dirty-state and close protection — Windows CI run 46104170651 Success; combined manual Editor verification remains pending |
-| Active milestone | Script authoring conveniences and validation: syntax preflight, actionable line/column diagnostics and safer authoring feedback. C++20 remains primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
+| Active milestone | Harden Script Source Editor file I/O: failure-safe reload and atomic save replacement; then close remaining authoring workflow gaps. C++20 remains primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -24,6 +24,7 @@
 ## 2. สิ่งที่เสร็จแล้ว
 
 ### Scripting authoring
+- [x] Lua Script syntax preflight with actionable line/column diagnostics and validation-state reset on open/reload/discard (Windows CI run 46105064345 Success)
 - [x] Lua 5.5.1 gameplay scripting backend; C++20 remains the primary Engine/Editor implementation language
 - [x] Script Diagnostics window with Entity-aware fault messages (Windows CI #269 Success)
 - [x] Initial Script Source Editor workflow (Windows CI #270 Success)
@@ -187,4 +188,4 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 
 ---
 
-**Handoff:** Script Source Editor now protects dirty buffers, detects external file changes before save, and supports safe reload when the buffer is clean. Windows CI run 46104170651 passed. The Lua backend exposes Entity/Transform/Input operations through a narrow host API, enforces VM memory/instruction budgets, blocks binary chunks and prevents pcall/xpcall from swallowing budget violations. Next: improve script authoring with syntax preflight and actionable line/column diagnostics; after that, complete the combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
+**Handoff:** Script Source Editor now protects dirty buffers, detects external file changes before save, and supports safe reload when the buffer is clean. Windows CI run 46104170651 passed. The Lua backend exposes Entity/Transform/Input operations through a narrow host API, enforces VM memory/instruction budgets, blocks binary chunks and prevents pcall/xpcall from swallowing budget violations. Next: harden Script Source Editor file I/O with failure-safe reload and atomic replacement save; then complete combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.

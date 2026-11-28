@@ -29,6 +29,13 @@
 #include <vector>
 #include <string>
 
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 namespace
 {
 class EditorNoteComponent final : public ember::Component
@@ -96,6 +103,41 @@ std::string FindConflictingAction(
         if (std::find(keys.begin(), keys.end(), key) != keys.end()) return action;
     }
     return {};
+}
+
+bool WriteFileAtomically(const std::filesystem::path& destination, std::string_view contents)
+{
+    std::filesystem::path temporary = destination;
+    temporary += ".ember-tmp";
+
+    {
+        std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
+        if (!output) return false;
+        output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
+        output.flush();
+        if (!output)
+        {
+            output.close();
+            std::error_code ignored;
+            std::filesystem::remove(temporary, ignored);
+            return false;
+        }
+    }
+
+#ifdef _WIN32
+    const bool replaced = MoveFileExW(temporary.c_str(), destination.c_str(),
+        MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+    std::error_code replaceError;
+    std::filesystem::rename(temporary, destination, replaceError);
+    const bool replaced = !replaceError;
+#endif
+    if (!replaced)
+    {
+        std::error_code ignored;
+        std::filesystem::remove(temporary, ignored);
+    }
+    return replaced;
 }
 }
 
@@ -2776,15 +2818,16 @@ void EditorApplication::ReloadScriptSourceFromDisk()
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Could not open Script source");
         return;
     }
-    source.read(m_scriptSourceBuffer.data(), static_cast<std::streamsize>(sourceSize));
-    if (source.gcount() != static_cast<std::streamsize>(sourceSize))
+    std::array<char, 65536> reloadedBuffer{};
+    source.read(reloadedBuffer.data(), static_cast<std::streamsize>(sourceSize));
+    if (source.gcount() != static_cast<std::streamsize>(sourceSize) || source.bad())
     {
-        m_scriptSourceBuffer.fill('\0');
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Could not read complete Script source");
         return;
     }
-    m_scriptSourceBuffer[static_cast<std::size_t>(sourceSize)] = '\0';
-    m_scriptSourceOriginal.assign(m_scriptSourceBuffer.data(), static_cast<std::size_t>(sourceSize));
+    reloadedBuffer[static_cast<std::size_t>(sourceSize)] = '\0';
+    m_scriptSourceBuffer = reloadedBuffer;
+    m_scriptSourceOriginal.assign(reloadedBuffer.data(), static_cast<std::size_t>(sourceSize));
     m_hasScriptValidationResult = false;
     m_scriptValidationMessage.clear();
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
@@ -2885,21 +2928,15 @@ void EditorApplication::SaveScriptSource()
     }
 
     const std::size_t sourceLength = std::char_traits<char>::length(m_scriptSourceBuffer.data());
-    std::ofstream destination(*resolved, std::ios::binary | std::ios::trunc);
-    if (!destination)
+    const std::string_view editedSource(m_scriptSourceBuffer.data(), sourceLength);
+    if (!WriteFileAtomically(*resolved, editedSource))
     {
-        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Could not write Script source");
-        return;
-    }
-    destination.write(m_scriptSourceBuffer.data(), static_cast<std::streamsize>(sourceLength));
-    destination.flush();
-    if (!destination)
-    {
-        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Script source write failed");
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Could not atomically replace Script source; original file was preserved");
         return;
     }
 
-    m_scriptSourceOriginal.assign(m_scriptSourceBuffer.data(), sourceLength);
+    m_scriptSourceOriginal.assign(editedSource);
     m_scriptSourceDirty = false;
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Saved Script source: %.180s", m_scriptSourceAssetId.c_str());

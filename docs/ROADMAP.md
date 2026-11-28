@@ -82,7 +82,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Expose minimal Entity/Transform/Input API to Lua without leaking Lua types into Engine interfaces (CI run 46097066791 Success)
 - [x] Integrate Lua backend with Editor Play Mode and add lifecycle/error/isolation/sandbox tests (instruction and memory budgets, protected initialization, pcall/xpcall budget enforcement, text-only loading; CI run 46097066791 Success)
 - [x] Add Script Diagnostics window with Entity-aware diagnostics and scrollable message list (CI run 46101206269 Success)
-- [x] Add built-in Script Source Editor for text Script assets, with 64 KiB limit, explicit save/discard, dirty-state protection, external-file conflict detection, safe reload from disk and Play Mode write guard (Windows CI run 46104170651 Success)
+- [x] Add built-in Script Source Editor for text Script assets, with 64 KiB limit, explicit save/discard, dirty-state protection, external-file conflict detection, failure-safe reload, atomic save replacement and Play Mode write guard (Windows CI run 46104170651 Success; atomic IO follow-up in current milestone)
 
 ## Phase 5 — Packaging and Quality
 - [ ] Windows game export / runtime executable
