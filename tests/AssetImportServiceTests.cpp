@@ -30,6 +30,7 @@ int main()
     std::ofstream(root / "sprites" / "player.png") << "image";
     std::ofstream(root / "audio.ogg") << "audio";
     std::ofstream(root / "scripts" / "player_logic.any") << "print('hello');";
+    std::ofstream(root / "scripts" / "player_logic.lua") << "print('hello from lua');";
 
     ember::AssetMetadata texture;
     texture.assetId = "asset-player";
@@ -89,8 +90,19 @@ int main()
     }
     Check(scriptAsset != nullptr, "Imported Script appears in the asset registry");
     if (scriptAsset != nullptr)
-        Check(scriptAsset->source == std::filesystem::path("scripts/player_logic.any"),
-              "Script metadata retains its project-relative source path");
+        Check(scriptAsset->source == std::filesystem::path("scripts/player_logic.any") &&
+              scriptAsset->scriptLanguage.empty(),
+              "Other text scripts remain language-neutral until a backend is available");
+    Check(importer.ImportScript("scripts/player_logic.lua", &error),
+          "Lua source can be imported");
+    const ember::AssetMetadata* luaAsset = nullptr;
+    for (const auto& [id, asset] : importer.GetRegistry().GetAssets())
+    {
+        (void)id;
+        if (asset.source == std::filesystem::path("scripts/player_logic.lua")) luaAsset = &asset;
+    }
+    Check(luaAsset != nullptr && luaAsset->scriptLanguage == "lua",
+          "Lua extension is tagged with the lua language identifier");
     Check(!importer.ImportScript("scripts/player_logic.any", &error),
           "Duplicate Script import is rejected");
     Check(!importer.ImportScript("../outside.any", &error),

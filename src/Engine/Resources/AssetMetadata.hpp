@@ -37,5 +37,7 @@ struct AssetMetadata
     AssetType type = AssetType::Texture;
     std::filesystem::path source;
     TextureImportSettings texture;
+    // Empty for language-neutral/unassigned Script assets; e.g. .lua imports use "lua".
+    std::string scriptLanguage;
 };
 } // namespace ember

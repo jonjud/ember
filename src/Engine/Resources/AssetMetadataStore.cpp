@@ -2,6 +2,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <fstream>
 #include <system_error>
 
@@ -42,6 +43,18 @@ const char* ToString(TextureFilter filter)
     return nullptr;
 }
 
+bool IsValidScriptLanguage(const std::string& language)
+{
+    if (language.empty()) return true;
+    if (language.size() > 32U) return false;
+    return std::all_of(language.begin(), language.end(), [](unsigned char character)
+    {
+        return (character >= 'a' && character <= 'z') ||
+               (character >= '0' && character <= '9') ||
+               character == '-' || character == '_';
+    });
+}
+
 bool Fail(std::string* error, const std::string& message)
 {
     if (error != nullptr) *error = message;
@@ -66,6 +79,10 @@ bool AssetMetadataStore::Save(
     const char* type = ToString(metadata.type);
     if (type == nullptr)
         return Fail(error, "Asset type is invalid.");
+    if (!IsValidScriptLanguage(metadata.scriptLanguage))
+        return Fail(error, "Script language must be a lowercase identifier of at most 32 characters.");
+    if (metadata.type != AssetType::Script && !metadata.scriptLanguage.empty())
+        return Fail(error, "Only Script assets may declare a script language.");
 
     Json document{
         {"schema_version", metadata.schemaVersion},
@@ -73,6 +90,9 @@ bool AssetMetadataStore::Save(
         {"type", type},
         {"source", metadata.source.generic_string()}
     };
+
+    if (metadata.type == AssetType::Script && !metadata.scriptLanguage.empty())
+        document["script_language"] = metadata.scriptLanguage;
 
     if (metadata.type == AssetType::Texture)
     {
@@ -149,6 +169,18 @@ std::optional<AssetMetadata> AssetMetadataStore::Load(
         else
         {
             if (error != nullptr) *error = "Unknown asset type.";
+            return std::nullopt;
+        }
+
+        metadata.scriptLanguage = document.value("script_language", std::string{});
+        if (!IsValidScriptLanguage(metadata.scriptLanguage))
+        {
+            if (error != nullptr) *error = "Script metadata contains an invalid language identifier.";
+            return std::nullopt;
+        }
+        if (metadata.type != AssetType::Script && !metadata.scriptLanguage.empty())
+        {
+            if (error != nullptr) *error = "Only Script assets may declare a script language.";
             return std::nullopt;
         }
 

@@ -1384,7 +1384,7 @@ void EditorApplication::DrawAssetBrowser()
             }
         }
         ImGui::EndDisabled();
-        ImGui::TextDisabled("Use a path relative to the asset root. The Script type is language-neutral; no VM is selected here.");
+        ImGui::TextDisabled("Use a path relative to the asset root. .lua files are tagged for Lua 5.5.1; other text formats remain unassigned until a matching backend is available.");
 
         if (ImGui::CollapsingHeader("Import / Scan Diagnostics"))
         {

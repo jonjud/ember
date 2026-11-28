@@ -391,6 +391,11 @@ std::optional<ScriptInstanceHandle> LuaScriptRuntime::CreateInstance(
         Fail(error, "Script asset ID was not found or does not refer to a Script asset.");
         return std::nullopt;
     }
+    if (metadata->scriptLanguage != "lua")
+    {
+        Fail(error, "Lua backend only executes Script assets tagged with language 'lua'.");
+        return std::nullopt;
+    }
     const auto sourcePath = m_assets.GetDirectory().Resolve(metadata->source);
     if (!sourcePath)
     {

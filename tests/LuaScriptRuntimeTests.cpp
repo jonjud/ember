@@ -74,6 +74,7 @@ end
     ember::AssetMetadata moveMetadata;
     moveMetadata.assetId = "script-move";
     moveMetadata.type = ember::AssetType::Script;
+    moveMetadata.scriptLanguage = "lua";
     moveMetadata.source = "scripts/move.lua";
     Check(ember::AssetMetadataStore::Save(
         root / "scripts" / "move.lua.emberasset", moveMetadata), "Move script metadata saved");
@@ -81,6 +82,7 @@ end
     ember::AssetMetadata loopMetadata;
     loopMetadata.assetId = "script-loop";
     loopMetadata.type = ember::AssetType::Script;
+    loopMetadata.scriptLanguage = "lua";
     loopMetadata.source = "scripts/loop.lua";
     Check(ember::AssetMetadataStore::Save(
         root / "scripts" / "loop.lua.emberasset", loopMetadata), "Loop script metadata saved");
@@ -88,6 +90,7 @@ end
     ember::AssetMetadata xloopMetadata;
     xloopMetadata.assetId = "script-xloop";
     xloopMetadata.type = ember::AssetType::Script;
+    xloopMetadata.scriptLanguage = "lua";
     xloopMetadata.source = "scripts/xloop.lua";
     Check(ember::AssetMetadataStore::Save(
         root / "scripts" / "xloop.lua.emberasset", xloopMetadata), "xpcall loop metadata saved");
@@ -95,9 +98,20 @@ end
     ember::AssetMetadata invalidMetadata;
     invalidMetadata.assetId = "script-invalid";
     invalidMetadata.type = ember::AssetType::Script;
+    invalidMetadata.scriptLanguage = "lua";
     invalidMetadata.source = "scripts/invalid.lua";
     Check(ember::AssetMetadataStore::Save(
         root / "scripts" / "invalid.lua.emberasset", invalidMetadata), "Invalid script metadata saved");
+
+    ember::AssetMetadata pythonMetadata;
+    pythonMetadata.assetId = "script-python";
+    pythonMetadata.type = ember::AssetType::Script;
+    pythonMetadata.source = "scripts/other.py";
+    pythonMetadata.scriptLanguage = "python";
+    Check(ember::AssetMetadataStore::Save(
+        root / "scripts" / "other.py.emberasset", pythonMetadata), "Python metadata fixture saved");
+
+    std::ofstream(root / "scripts" / "other.py") << "print('not lua')";
 
     ember::AssetRegistry assets(root);
     Check(assets.Scan(), "Script asset registry scans successfully");
@@ -115,6 +129,10 @@ end
     auto& xloopScript = xloopActor.AddComponent<ember::ScriptComponent>();
     xloopScript.scriptAssetId = "script-xloop";
 
+    auto& pythonActor = scene.CreateEntity("Python");
+    auto& pythonScript = pythonActor.AddComponent<ember::ScriptComponent>();
+    pythonScript.scriptAssetId = "script-python";
+
     auto& invalidActor = scene.CreateEntity("Invalid");
     auto& invalidScript = invalidActor.AddComponent<ember::ScriptComponent>();
     invalidScript.scriptAssetId = "script-invalid";
@@ -122,7 +140,9 @@ end
     ember::LuaScriptRuntime runtime(assets);
     scene.Start(nullptr, &assets, &runtime);
     Check(scene.GetScriptInstanceCount() == 3,
-        "Lua creates independent instances and rejects invalid source during setup");
+        "Lua creates independent instances and rejects invalid source and mismatched languages");
+    Check(pythonActor.GetTransform().position.x == 0.0F,
+        "Lua backend refuses assets tagged for a different scripting language");
     Check(actor.GetTransform().position.x == 10.0F &&
           actor.GetTransform().position.y == 20.0F,
         "OnCreate can read and modify its owning Entity Transform");

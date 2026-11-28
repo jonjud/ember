@@ -2,6 +2,8 @@
 
 #include "Engine/Resources/AssetMetadataStore.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <fstream>
 #include <iomanip>
@@ -83,6 +85,11 @@ bool AssetImportService::ImportScript(
     metadata.assetId = id.str();
     metadata.type = AssetType::Script;
     metadata.source = relativeSource.lexically_normal();
+    std::string extension = metadata.source.extension().string();
+    std::transform(extension.begin(), extension.end(), extension.begin(),
+        [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+    if (extension == ".lua")
+        metadata.scriptLanguage = "lua";
     if (!AssetMetadataStore::Save(metadataPath, metadata, error))
         return false;
 
