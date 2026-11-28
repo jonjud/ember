@@ -29,6 +29,8 @@
 #include <optional>
 #include <vector>
 #include <string>
+#include <filesystem>
+#include <system_error>
 
 #ifdef _WIN32
 #ifndef NOMINMAX
@@ -118,6 +120,31 @@ EditorApplication::~EditorApplication()
 bool EditorApplication::Initialize()
 {
     m_logger.AddSink(std::make_shared<ConsoleLogSink>());
+
+    std::error_code logDirectoryError;
+    const auto workingDirectory = std::filesystem::current_path(logDirectoryError);
+    if (!logDirectoryError)
+    {
+        const auto logDirectory = workingDirectory / "logs";
+        std::filesystem::create_directories(logDirectory, logDirectoryError);
+        if (!logDirectoryError)
+        {
+            auto fileSink = std::make_shared<FileLogSink>(logDirectory / "ember-editor.log");
+            if (fileSink->IsOpen())
+                m_logger.AddSink(std::move(fileSink));
+            else
+                m_logger.Warning("Logging", "Could not open logs/ember-editor.log; console logging remains active");
+        }
+        else
+        {
+            m_logger.Warning("Logging", "Could not create the logs directory; console logging remains active");
+        }
+    }
+    else
+    {
+        m_logger.Warning("Logging", "Could not resolve the working directory; console logging remains active");
+    }
+
     m_logger.Info("Editor", "Initializing EMBER Editor");
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
