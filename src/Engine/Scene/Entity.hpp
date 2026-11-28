@@ -69,6 +69,7 @@ public:
 
     [[nodiscard]] std::vector<std::unique_ptr<Component>>& GetComponents() { return m_components; }
     [[nodiscard]] const std::vector<std::unique_ptr<Component>>& GetComponents() const { return m_components; }
+    [[nodiscard]] bool CanModifyComponents() const { return !m_componentsStarted; }
 
     bool RemoveComponent(const Component* component)
     {
