@@ -202,6 +202,14 @@ add_executable(ember_editor
 target_include_directories(ember_editor PRIVATE src)
 target_link_libraries(ember_editor PRIVATE ember_engine ember_imgui SDL3::SDL3)
 
+# Standalone game runtime: intentionally excludes Dear ImGui and all Editor code.
+add_executable(ember_runtime
+    src/Runtime/main.cpp
+    src/Runtime/RuntimeApplication.cpp
+)
+target_include_directories(ember_runtime PRIVATE src)
+target_link_libraries(ember_runtime PRIVATE ember_engine SDL3::SDL3)
+
 if(BUILD_TESTING)
     add_executable(ember_logging_tests
         tests/LoggingTests.cpp
