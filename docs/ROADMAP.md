@@ -14,6 +14,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Windows CI build
 - [x] Verify interactive runtime behavior on Windows (manual checklist passed)
 - [x] Complete structured logging foundation: bounded thread-safe Engine Logger, Editor Log Window, console/file sinks, and Scene Physics/Audio/Scripting diagnostic forwarding with duplicate-suppression tests (Windows CI #303–#315 Success)
+- [x] Complete Log Window usability and operations: severity/text filters, per-user log directory, 5 MiB file rotation with one backup, and separate Editor/game-runtime log files (Windows CI #317–#318 Success)
 
 ## Phase 2 — 2D Core and Project Assets
 - [x] Renderer2D, primitive drawing, and sprite API
@@ -125,5 +126,5 @@ These are strategic goals after the core engine, scripting workflow and packagin
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- The scripting + Input Action Mapping milestone is complete and Windows Editor-verified. Structured Logging & Diagnostics foundation is also complete: Engine Logger API, Editor Log Window, Console/File sinks, and Scene Physics/Audio/Scripting diagnostic forwarding with automated coverage passed Windows CI #303–#315. Next focused milestone: improve log usability and operational diagnostics—severity/category filtering, safe log-file location/rotation policy, and clear distinction between Editor and game-runtime logs—without introducing Editor dependencies into `ember_engine`. C++20 remains the primary language for Engine and Editor; Lua is an optional gameplay scripting language.
+- The scripting + Input Action Mapping milestone is complete and Windows Editor-verified. Structured Logging & Diagnostics is now complete through Windows CI #318: bounded Logger, Editor Log Window with severity/text filters, Console/File sinks, per-user log storage, 5 MiB rotation with one backup, separate Editor/game-runtime files, and Scene diagnostic forwarding. Next focused milestone: Windows game export/runtime packaging, keeping the runtime independent from Editor-only dependencies. C++20 remains the primary language for Engine and Editor; Lua is an optional gameplay scripting language.
 - After the scripting and packaging foundations are stable, begin the planned Phase 6 extensibility work: Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions.

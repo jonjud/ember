@@ -10,13 +10,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`0057a6b`](https://github.com/jonjud/ember/commit/0057a6be33e892b5818ddf9b1dc6293e2efb1190) — Scene diagnostic Logger tests |
-| Latest repository HEAD | [`0057a6b`](https://github.com/jonjud/ember/commit/0057a6be33e892b5818ddf9b1dc6293e2efb1190) — Scene diagnostic Logger tests |
-| Last verified code CI | [Windows CI run 46130841060](https://github.com/jonjud/ember/actions/runs/46130841060) — **Success**; Windows build and all engine tests passed |
-| Latest CI | [Windows CI run 46130841060](https://github.com/jonjud/ember/actions/runs/46130841060) — **Success** |
+| Last code commit | [`25b8fc2`](https://github.com/jonjud/ember/commit/25b8fc2d44f44432bd0391f118b6ddf3896d5cac) — log rotation and runtime log separation |
+| Latest repository HEAD | [`25b8fc2`](https://github.com/jonjud/ember/commit/25b8fc2d44f44432bd0391f118b6ddf3896d5cac) — log rotation and runtime log separation |
+| Last verified code CI | [Windows CI #318](https://github.com/jonjud/ember/actions/runs/46132259115) — **Success**; Windows build and all engine tests passed |
+| Latest CI | [Windows CI #318](https://github.com/jonjud/ember/actions/runs/46132259115) — **Success** |
 | Latest documentation CI | Windows CI #288 — **Success** |
 | Last completed milestone | Scripting + Input Action Mapping: Lua authoring/Play Mode, diagnostics, input rebinding, validation/save/reload and unsaved-work protection; combined Windows Editor checklist user-confirmed passed 2026-11-28 and CI #288 Success |
-| Active milestone | Improve log usability and operational diagnostics: severity/category filtering, safe log-file location/rotation policy, and separation of Editor vs game-runtime logs. Structured Logging foundation (Logger, Log Window, Console/File sinks, Scene diagnostic forwarding) passed CI #303–#315. |
+| Active milestone | Windows game export/runtime packaging. Structured Logging & Diagnostics is complete through CI #318, including filters, per-user log directory, rotation and separate Editor/runtime log files. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -29,7 +29,10 @@
 - [x] Add ConsoleLogSink and FileLogSink; sink callbacks execute outside Logger history lock and sink exceptions are isolated (Windows CI #306 and follow-up #314 Success)
 - [x] Forward Scene Physics, Audio and Scripting diagnostics into Engine Logger with severity/category metadata and duplicate-forward suppression (Windows CI #315 Success)
 - [x] Add isolated tests for history, recording sink, file sink, zero-capacity sink and concurrent writers (Windows CI #303–#315 Success)
-- [ ] Improve log usability and operational diagnostics: severity/category filtering, safe log-file location/rotation policy, and separation of Editor vs game-runtime logs
+- [x] Improve Log Window usability with severity/text filtering (Windows CI #317 Success)
+- [x] Store Editor/runtime logs in the SDL per-user preference directory; rotate at 5 MiB and retain one `.1` backup (Windows CI #318 Success)
+- [x] Separate Editor and game-runtime Logger/file outputs; Play Mode Scene diagnostics go to the runtime logger (Windows CI #318 Success)
+- [x] Add automated file-rotation coverage (Windows CI #318 Success)
 
 
 ### Scripting authoring
@@ -171,6 +174,8 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 | 2026-11-28 | [Engine Logger API, `2d05980`, CI #303](https://github.com/jonjud/ember/actions/runs/46117251072) | Success; bounded thread-safe Logger and automated tests |
 | 2026-11-28 | [Editor Log Window, `a1533a7`, CI #304](https://github.com/jonjud/ember/actions/runs/46117795488) | Success; Windows build and engine tests passed |
 | 2026-11-28 | [Logger sinks and Scene diagnostics, `0057a6b`, CI #315](https://github.com/jonjud/ember/actions/runs/46130841060) | Success; Console/File sinks and Physics/Audio/Scripting diagnostic forwarding verified |
+| 2026-11-28 | [Log filters, `2ddf473`, CI #317](https://github.com/jonjud/ember/actions/runs/46131695550) | Success; severity and text filtering in the Editor Log Window |
+| 2026-11-28 | [Log rotation and runtime separation, `25b8fc2`, CI #318](https://github.com/jonjud/ember/actions/runs/46132259115) | Success; per-user logs, bounded rotation and separate Editor/runtime output |
 
 
 | Date | Commit / CI | Result |
@@ -207,4 +212,4 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 
 ---
 
-**Handoff:** Scripting + Input Action Mapping is complete and Windows Editor-verified. Structured Logging foundation is complete and CI-verified through #315: bounded thread-safe Logger, Editor Log Window, Console/File sinks, and Scene Physics/Audio/Scripting diagnostic forwarding. Next: improve log usability and operational diagnostics (filtering, file location/rotation, and Editor-vs-game log separation). Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
+**Handoff:** Scripting + Input Action Mapping is complete and Windows Editor-verified. Structured Logging & Diagnostics is complete and CI-verified through #318: bounded Logger, filtered Editor Log Window, Console/File sinks, per-user log storage, 5 MiB rotation with one backup, separate Editor/game-runtime files, and Scene diagnostic forwarding. Next: Windows game export/runtime packaging. Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
