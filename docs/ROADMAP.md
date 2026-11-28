@@ -76,11 +76,11 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [ ] Final Windows Editor verification for Input Action Mapping (checklist: [INPUT_ACTIONS_VERIFICATION.md](INPUT_ACTIONS_VERIFICATION.md))
 - [x] Scripting foundation: language-neutral ScriptRuntime host contract and serializable ScriptComponent
 - [x] Scene scripting lifecycle integration: runtime initialization, per-Entity ScriptComponent instance ownership, OnCreate/OnUpdate/OnDestroy, fault isolation and diagnostics (Windows CI run 46091385853 Success)
-- [ ] Script asset type/import pipeline and Editor assignment workflow
+- [x] Script asset type/import pipeline and Editor assignment workflow (language-neutral Script type, Editor assignment, `.lua` language tagging; CI runs 46092542143 and 46097066791 Success)
 - [x] Evaluate embedded scripting runtime candidates; select Lua 5.5.1 as the first optional backend while preserving the language-neutral host contract
-- [ ] Implement Lua 5.5.1 backend: per-instance VM state, lifecycle callbacks, safe asset resolution and diagnostics
-- [ ] Expose a minimal, documented Entity/Transform/Input API to Lua without leaking Lua types into Engine interfaces
-- [ ] Integrate Lua backend with Editor Play Mode and add lifecycle/error/isolation tests
+- [x] Implement Lua 5.5.1 backend: per-instance VM state, lifecycle callbacks, safe asset resolution and diagnostics (Windows CI run 46097066791 Success)
+- [x] Expose minimal Entity/Transform/Input API to Lua without leaking Lua types into Engine interfaces (CI run 46097066791 Success)
+- [x] Integrate Lua backend with Editor Play Mode and add lifecycle/error/isolation/sandbox tests (instruction and memory budgets, protected initialization, pcall/xpcall budget enforcement, text-only loading; CI run 46097066791 Success)
 
 ## Phase 5 — Packaging and Quality
 - [ ] Windows game export / runtime executable
@@ -122,5 +122,5 @@ These are strategic goals after the core engine, scripting workflow and packagin
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Scene scripting lifecycle integration is complete and passes Windows CI. Script asset import and Editor assignment are implemented and pass Windows CI. Candidate evaluation is complete: Lua 5.5.1 is selected as the first optional embedded backend; next implement and test the backend behind the existing language-neutral ScriptRuntime contract. Keep C++20 primary and keep Lua VM types private. Input Action Mapping implementation is complete; its final Editor checklist is deferred to the combined manual verification session. Keep VM types private and editor-only code out of `ember_engine`.
+- The language-neutral scripting foundation, Scene lifecycle, Script Asset import/Editor assignment, Lua 5.5.1 backend, Entity/Transform/Input bindings, Editor Play Mode integration and automated sandbox/lifecycle tests are complete (Windows CI run 46097066791 Success). Next: complete the combined Windows Editor verification checklist for Input Action Mapping and Lua scripting, then continue with scripting usability (language-aware asset workflow, diagnostics and source editing). Keep C++20 primary and keep editor-only code out of `ember_engine`.
 - After the scripting and packaging foundations are stable, begin the planned Phase 6 extensibility work: Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions.

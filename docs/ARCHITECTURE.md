@@ -76,7 +76,13 @@ The Editor runs Play Mode on an isolated Scene clone. The authoring Scene remain
 - nlohmann/json: project, asset metadata and scene serialization.
 - Box2D v3.2.0: private physics backend behind PhysicsWorld.
 - miniaudio 0.11.26: private audio backend behind AudioEngine.
-- Lua 5.5.1: selected first optional scripting backend; integration/dependency not yet added. Keep Lua types private to the backend.
+- Lua 5.5.1: statically embedded first optional scripting backend behind ScriptRuntime. Per-instance VM state, lifecycle callbacks, Entity/Transform/Input host API, memory/instruction budgets and text-only loading are implemented; Lua types remain private to the backend.
+
+## Scripting runtime
+- Script assets remain language-neutral at the asset-type level; optional `script_language` metadata identifies the matching backend. Legacy metadata without the field remains compatible.
+- The importer tags `.lua` sources as `lua`; LuaScriptRuntime rejects assets assigned to another language.
+- Editor Play Mode creates and owns the Lua runtime for the running Scene. ScriptRuntime remains the engine-facing abstraction; Lua VM types do not cross that boundary.
+- The initial host API exposes Entity identity/name, Transform access and named Input Action state. Physics/audio/rendering/UI bindings, source editing/debugging and additional backends are deferred.
 
 ## Known gaps
 - Interactive Editor/Play Mode physics verification has been completed manually on Windows; see [PHYSICS_RUNTIME_VERIFICATION.md](PHYSICS_RUNTIME_VERIFICATION.md). Multiple colliders per entity remain the active physics extension.

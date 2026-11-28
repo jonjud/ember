@@ -10,13 +10,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | Script Asset import + Editor assignment (`cd36dd1`) |
-| Latest repository HEAD | [`cd36dd1`](https://github.com/jonjud/ember/commit/cd36dd112fa847fd10b0b9f541783d61e7949e63) on `develop` |
-| Last verified code CI | [Windows CI run 46092542143](https://github.com/jonjud/ember/actions/runs/46092542143) — **Success**; Script Asset import and Editor assignment build/tests passed |
-| Latest CI | [Windows CI run 46092542143](https://github.com/jonjud/ember/actions/runs/46092542143) — **Success** (`cd36dd1`) |
-| Latest documentation CI | [Windows CI run 46092542143](https://github.com/jonjud/ember/actions/runs/46092542143) — **Success** |
-| Last completed milestone | UI System v1 + Audio Runtime + Physics Joints — Windows CI passed and combined Windows Editor verification user-confirmed passed |
-| Active milestone | Initial Lua 5.5.1 backend behind the language-neutral ScriptRuntime contract. Script Asset import and Editor assignment are complete and Windows CI passed. C++20 remains primary; Input Action Mapping Editor verification remains deferred to the combined manual test session. |
+| Last code commit | Language-tagged Script Assets (`41f5ac3`) |
+| Latest repository HEAD | [`41f5ac3`](https://github.com/jonjud/ember/commit/41f5ac3a035d9bf2c63045bbedc4a8bbec250037) on `develop` |
+| Last verified code CI | [Windows CI run 46097066791](https://github.com/jonjud/ember/actions/runs/46097066791) — **Success**; Lua backend, script-language metadata, Editor Play Mode integration and automated tests passed |
+| Latest CI | [Windows CI run 46097066791](https://github.com/jonjud/ember/actions/runs/46097066791) — **Success** (`41f5ac3`) |
+| Latest documentation CI | [Windows CI run 46097066791](https://github.com/jonjud/ember/actions/runs/46097066791) — **Success** |
+| Last completed milestone | Lua 5.5.1 scripting backend — Windows CI passed; combined manual Editor verification remains pending |
+| Active milestone | Scripting foundation + Lua 5.5.1 backend are implemented and pass Windows CI. Next: combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains primary. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -122,17 +122,17 @@
 - [x] Evaluate Lua, Wren, ChaiScript and AngelScript; select Lua 5.5.1 as first optional backend after reviewing embedding model, portability, license and C++ integration
 - [ ] C++ native game-code build workflow and optional language workflows
 
-### Scripting foundation — first slice implemented
-- [x] Language-neutral ScriptRuntime interface: Initialize/Shutdown, instance creation and lifecycle invocation contract
-- [x] Opaque ScriptInstanceHandle; backend/VM pointers remain private
-- [x] ScriptExecutionContext carries Entity, delta time and InputActionState
-- [x] Serializable ScriptComponent with script asset ID and enabled state
-- [x] ComponentRegistry registration and typed Inspector properties
-- [x] Automated ScriptComponent clone, validation and registry serialization tests
-- [x] Scene lifecycle integration: runtime initialization, instance ownership, lifecycle dispatch, fault isolation and diagnostics (Windows CI run 46091385853 Success)
-- [x] Script asset metadata/import, Asset Browser listing/filter and ScriptComponent Inspector assignment (Windows CI run 46092542143 Success)
-- [x] Select Lua 5.5.1 as the first optional embedded backend; keep its implementation private behind ScriptRuntime
-- [ ] Implement Lua backend, minimal host API and Editor Play Mode integration
+### Scripting foundation and Lua backend — implementation complete (Windows CI passed)
+- [x] Language-neutral ScriptRuntime interface and opaque ScriptInstanceHandle; VM pointers remain private
+- [x] Serializable ScriptComponent, ComponentRegistry registration and typed Inspector assignment
+- [x] Scene lifecycle integration: runtime initialization, per-Entity instance ownership, OnCreate/OnUpdate/OnDestroy, fault isolation and diagnostics (CI run 46091385853 Success)
+- [x] Script Asset import, Asset Browser listing/filter and Editor assignment workflow (CI run 46092542143 Success)
+- [x] Language-aware Script metadata: optional `script_language` identifier; legacy sidecars remain compatible; `.lua` imports are tagged `lua`; non-Script assets cannot declare a language
+- [x] Lua 5.5.1 static embedded backend with per-instance VM state and Editor Play Mode integration
+- [x] Minimal Entity/Transform/Input API without exposing Lua types through public Engine interfaces
+- [x] Runtime limits and sandbox hardening: memory/instruction budgets, protected initialization, budget enforcement through pcall/xpcall, text-only load and no string.dump
+- [x] Automated lifecycle, transform/input, syntax-error, isolation, language-mismatch and sandbox tests (Windows CI run 46097066791 Success)
+- [ ] Combined Windows Editor verification for Lua Play Mode and Input Action Mapping (deferred until the scripting workflow milestone is ready)
 
 See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy, candidate evaluation, selected Lua version, backend boundaries and deferred decisions.
 
@@ -175,7 +175,8 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 | 2026-11-28 | [SDL3 runtime staging fix, `e92fe90`, CI run 46081947029](https://github.com/jonjud/ember/actions/runs/46081947029) | Success; all build/tests passed; Input Action Mapping Editor verification checklist prepared |
 | 2026-11-28 | [Scene scripting lifecycle + SDL3 runtime staging, `25f613d`, CI run 46091385853](https://github.com/jonjud/ember/actions/runs/46091385853) | Success; Scene script lifecycle automated tests passed |
 | 2026-11-28 | [Language-neutral Script Asset import and Editor assignment, `cd36dd1`, CI run 46092542143](https://github.com/jonjud/ember/actions/runs/46092542143) | Success; Script metadata/import tests and Editor build passed |
+| 2026-11-28 | [Lua backend + language-tagged Script Assets, `41f5ac3`, CI run 46097066791](https://github.com/jonjud/ember/actions/runs/46097066791) | Success; Lua runtime, Editor Play Mode integration, script language tagging and automated sandbox/lifecycle tests passed |
 
 ---
 
-**Handoff:** Scene scripting lifecycle, Script Asset import and Editor assignment are implemented; Windows CI run 46092542143 passed. Candidate evaluation selected Lua 5.5.1 as the first optional embedded backend, behind the language-neutral ScriptRuntime contract. Next: implement the Lua backend and its minimal safe Entity/Transform/Input bindings. C++20 remains primary. Long-term planned direction is documented in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, multi-language backends, Extension API/SDK and studio-custom Engine distributions. Input Action Mapping's final Editor checklist remains deferred to the combined manual verification session. Continue on `develop`; do not merge to `main`.
+**Handoff:** Language-neutral ScriptRuntime, Scene lifecycle, Script Asset import/Editor assignment, language-aware metadata and Lua 5.5.1 backend are implemented. Windows CI run 46097066791 passed. The Lua backend exposes Entity/Transform/Input operations through a narrow host API, enforces VM memory/instruction budgets, blocks binary chunks and prevents pcall/xpcall from swallowing budget violations. Next: complete the combined Windows Editor verification for Lua Play Mode and Input Action Mapping, then improve scripting usability (language-aware diagnostics/source workflow). C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.

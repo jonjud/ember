@@ -62,11 +62,25 @@ This is a first backend, not a commitment to Lua-only scripting. Other languages
 
 The Scene does not own VM implementation details. A backend owns source compilation/loading, VM state, instance memory, native bindings and exception translation. Native C++ game code may use a separate native build/load path, but should integrate with the same engine-owned lifecycle and diagnostics concepts where appropriate.
 
-## Scene host integration status\n- Scene accepts a non-owning `ScriptRuntime*` at Start; the caller must keep the backend alive until Scene Stop.\n- Scene initializes and shuts down the backend, owns opaque live handles, and invokes lifecycle callbacks.\n- Only active Entities with enabled, assigned ScriptComponents create instances. Empty IDs are treated as unassigned Editor state.\n- Failed setup/update calls are recorded as Scene diagnostics; failed update instances are faulted to prevent repeated calls.\n- Runtime handles and backend pointers are transient and are not cloned or serialized.\n\n## Deliberately deferred
-- Concrete optional scripting language and VM dependency selection.
-- Native C++ game-code project build pipeline and hot-reload strategy.
-- Built-in source editor, language-aware validation and debugging.
-- Native API bindings, Entity/Transform/physics/audio access policy and sandbox/security limits.
-- Hot reload, debugging, breakpoints and packaging selected script runtimes with exported games.
+## Script asset language metadata
+- Script remains the language-neutral asset type. `script_language` is an optional lowercase identifier stored in the metadata sidecar; old sidecars without it remain valid and load as unassigned.
+- Importing a `.lua` source tags it as `lua`. Other supported text-source imports remain language-neutral until a matching backend is available.
+- A backend must reject Script assets tagged for a different language. The Lua backend only executes assets tagged `lua`.
 
-These decisions are intentionally staged. Scene lifecycle and Script Asset workflows are complete. Lua 5.5.1 is selected for the first backend, but its dependency and implementation must remain behind the language-neutral host contract. Do not expose Lua types in public Engine, Scene, Component or Editor-facing contracts.
+## Lua 5.5.1 backend — implemented
+- Lua is statically embedded and private to `LuaScriptRuntime`; public Engine/Scene/Component/Editor contracts use only the engine-owned ScriptRuntime abstraction.
+- Each ScriptComponent instance owns an independent Lua VM state.
+- Lifecycle callbacks: `OnCreate()`, `OnUpdate(deltaSeconds)` and `OnDestroy()`.
+- Host API: `entity.id`, `entity.name`, Entity name/Transform getters and setters, and named `input.is_down`, `input.was_pressed` and `input.was_released` actions.
+- The backend opens only approved standard libraries; filesystem/process/package/debug/coroutine access is not exposed. `string.dump` is removed and `load` is forced to text mode.
+- Each instance has a memory cap and each callback has an instruction budget. Protected initialization and pcall/xpcall wrappers prevent script-level protected calls from swallowing instruction-budget failures.
+- Runtime diagnostics isolate faulty instances. These controls are defense-in-depth, not a claim of a fully secure sandbox.
+
+## Deliberately deferred
+- Native C++ game-code project build pipeline and hot-reload strategy.
+- Built-in source editor, language-aware validation, debugging, breakpoints and hot reload.
+- Additional optional scripting backends and the runtime packaging workflow for exported games.
+- Broader gameplay API policy for physics, audio, rendering, resources and UI.
+- Combined Windows Editor manual verification for Lua Play Mode and Input Action Mapping.
+
+Scene lifecycle, Script Asset workflow and the first Lua backend are implemented and pass Windows CI. Do not expose Lua types in public Engine, Scene, Component or Editor-facing contracts.
