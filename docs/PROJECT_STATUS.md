@@ -10,18 +10,25 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`3416971`](https://github.com/jonjud/ember/commit/3416971973437431fe8f35cc0777001f38f8c11e) — bound external Script Source conflict reads |
-| Latest repository HEAD | [`d60aa4f`](https://github.com/jonjud/ember/commit/d60aa4f8a11288061dfab244a084079a21317b77) — combined scripting/input verification checklist |
-| Last verified code CI | [Windows CI run 46112250378](https://github.com/jonjud/ember/actions/runs/46112250378) — **Success**; Windows build and engine tests passed |
-| Latest CI | [Windows CI run 46112250378](https://github.com/jonjud/ember/actions/runs/46112250378) — **Success** |
+| Last code commit | [`a1533a7`](https://github.com/jonjud/ember/commit/a1533a722d2736da5b70fa8971ba25d00f0a9b72) — Engine Log Window |
+| Latest repository HEAD | [`a1533a7`](https://github.com/jonjud/ember/commit/a1533a722d2736da5b70fa8971ba25d00f0a9b72) — Engine Log Window |
+| Last verified code CI | [Windows CI run 46117795488](https://github.com/jonjud/ember/actions/runs/46117795488) — **Success**; Windows build and engine tests passed |
+| Latest CI | [Windows CI run 46117795488](https://github.com/jonjud/ember/actions/runs/46117795488) — **Success** |
 | Latest documentation CI | Windows CI #288 — **Success** |
 | Last completed milestone | Scripting + Input Action Mapping: Lua authoring/Play Mode, diagnostics, input rebinding, validation/save/reload and unsaved-work protection; combined Windows Editor checklist user-confirmed passed 2026-11-28 and CI #288 Success |
-| Active milestone | Add structured logging and diagnostics, beginning with a small engine-owned logging API and automated tests. Keep C++20 primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
+| Active milestone | Complete structured logging and diagnostics. Engine Logger API and Editor Log Window are implemented; next add console/file sinks and forward Engine diagnostics. Keep C++20 primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
 
 ## 2. สิ่งที่เสร็จแล้ว
+
+### Structured Logging & Diagnostics — in progress
+- [x] Add bounded, thread-safe Engine Logger API with severity filtering, sequence/timestamp/thread metadata, snapshots, clear and concurrent-writer tests (Windows CI #303 Success)
+- [x] Add Editor Log Window with severity/category/message display, filtering colors, clear action and bounded-entry counter; log key Editor lifecycle, Play Mode, Scene save and Asset scan events (Windows CI #304 Success)
+- [ ] Add console and file logging sinks
+- [ ] Forward Engine-owned diagnostics into the Logger without introducing Editor dependencies into `ember_engine`
+
 
 ### Scripting authoring
 - [x] Lua Script syntax preflight with actionable line/column diagnostics and validation-state reset on open/reload/discard (Windows CI run 46105064345 Success)
@@ -159,6 +166,10 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 
 ## 6. Recent milestone log
 
+| 2026-11-28 | [Engine Logger API, `2d05980`, CI #303](https://github.com/jonjud/ember/actions/runs/46117251072) | Success; bounded thread-safe Logger and automated tests |
+| 2026-11-28 | [Editor Log Window, `a1533a7`, CI #304](https://github.com/jonjud/ember/actions/runs/46117795488) | Success; Windows build and engine tests passed |
+
+
 | Date | Commit / CI | Result |
 |---|---|---|
 | 2026-11-27 | [PhysicsWorld wrapper, CI #100](https://github.com/jonjud/ember/actions/runs/45925546626) | Success |
@@ -193,4 +204,4 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 
 ---
 
-**Handoff:** Scripting + Input Action Mapping is complete. The combined Windows Editor checklist [SCRIPTING_RUNTIME_VERIFICATION.md](SCRIPTING_RUNTIME_VERIFICATION.md) was user-confirmed passed on 2026-11-28; Windows CI #288 ([run 46112250378](https://github.com/jonjud/ember/actions/runs/46112250378)) passed Configure, Build and Engine Tests. Lua authoring, runtime diagnostics, syntax validation, external-change handling, atomic save and unsaved Scene/Script exit protection are verified. Next milestone: structured logging and diagnostics, beginning with an engine-owned logging API and automated tests. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
+**Handoff:** Scripting + Input Action Mapping is complete. The combined Windows Editor checklist [SCRIPTING_RUNTIME_VERIFICATION.md](SCRIPTING_RUNTIME_VERIFICATION.md) was user-confirmed passed on 2026-11-28; Windows CI #288 passed. Structured Logging & Diagnostics is active: the bounded, thread-safe Engine Logger API (CI #303) and Editor Log Window (CI #304) are implemented and CI-verified. Next: add console/file sinks and route Engine diagnostics into the Logger while keeping Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
