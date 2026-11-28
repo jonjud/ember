@@ -35,7 +35,7 @@ function OnCreate()
     assert(string.dump == nil, "string.dump must be unavailable")
     local textChunk = load("return 42", "text-only", "b")
     assert(textChunk ~= nil and textChunk() == 42, "load must force text mode")
-    local binaryChunk = load("\\27Lua")
+    local binaryChunk = load("\27Lua")
     assert(binaryChunk == nil, "load must reject binary chunks")
 end
 
