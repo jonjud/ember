@@ -2683,8 +2683,8 @@ void EditorApplication::RequestExit()
 void EditorApplication::DrawUnsavedScriptExitModal()
 {
     if (!m_pendingScriptExit) return;
-    ImGui::OpenPopup("Unsaved Script Changes");
-    if (ImGui::BeginPopupModal("Unsaved Script Changes", nullptr,
+    ImGui::OpenPopup("Unsaved Changes");
+    if (ImGui::BeginPopupModal("Unsaved Changes", nullptr,
         ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::TextUnformatted("EMBER has unsaved changes.");
