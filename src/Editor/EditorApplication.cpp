@@ -1151,35 +1151,53 @@ void EditorApplication::DrawInspector()
                     MarkSceneDirty();
                 }
 
-                ImGui::SeparatorText("Shared Components");
-                Entity& primary = *selectedEntities.front();
-                for (const auto& component : primary.GetComponents())
+                ImGui::SeparatorText("Components on Selection");
+                const auto registeredTypes = m_componentRegistry.GetRegisteredTypes();
+                for (const auto& type : registeredTypes)
                 {
-                    const auto* type = m_componentRegistry.Find(*component);
-                    if (type == nullptr) continue;
                     std::vector<Component*> matchingComponents;
-                    bool common = true;
+                    matchingComponents.reserve(selectedEntities.size());
                     for (Entity* selected : selectedEntities)
                     {
                         Component* match = nullptr;
                         for (const auto& candidate : selected->GetComponents())
                         {
                             const auto* candidateType = m_componentRegistry.Find(*candidate);
-                            if (candidateType != nullptr && candidateType->id == type->id)
+                            if (candidateType != nullptr && candidateType->id == type.id)
                             {
                                 match = candidate.get();
                                 break;
                             }
                         }
-                        if (match == nullptr) { common = false; break; }
-                        matchingComponents.push_back(match);
+                        if (match != nullptr) matchingComponents.push_back(match);
                     }
-                    if (!common) continue;
+                    const std::size_t presentCount = matchingComponents.size();
+                    if (presentCount == 0) continue;
 
-                    ImGui::PushID(type->id.c_str());
-                    if (ImGui::TreeNode(type->displayName.c_str()))
+                    ImGui::PushID(type.id.c_str());
+                    ImGui::Text("%s (%zu/%zu)", type.displayName.c_str(),
+                        presentCount, selectedEntities.size());
+                    if (presentCount < selectedEntities.size())
                     {
-                        const auto* properties = m_componentRegistry.FindProperties(*component);
+                        ImGui::SameLine();
+                        if (ImGui::SmallButton("Add to Missing"))
+                        {
+                            if (editor::AddComponentToEntities(selectedEntities, m_componentRegistry, type.id))
+                                MarkSceneDirty();
+                        }
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::SmallButton("Remove from Selection"))
+                    {
+                        if (editor::RemoveComponentFromEntities(selectedEntities, m_componentRegistry, type.id))
+                            MarkSceneDirty();
+                        ImGui::PopID();
+                        continue;
+                    }
+
+                    if (presentCount == selectedEntities.size() && ImGui::TreeNode("Properties"))
+                    {
+                        const auto* properties = m_componentRegistry.FindProperties(*matchingComponents.front());
                         if (properties != nullptr)
                         {
                             for (const auto& property : *properties)
@@ -1241,7 +1259,7 @@ void EditorApplication::DrawInspector()
                                 }
                                 case ComponentPropertyType::String:
                                 {
-                                    std::string current = values.front().get<std::string>();
+                                    const std::string current = values.front().get<std::string>();
                                     char editedValue[4097]{};
                                     if (!mixed) std::snprintf(editedValue, sizeof(editedValue), "%s", current.c_str());
                                     showMixed(mixed);
@@ -1323,9 +1341,13 @@ void EditorApplication::DrawInspector()
                         }
                         ImGui::TreePop();
                     }
+                    else if (presentCount < selectedEntities.size())
+                    {
+                        ImGui::TextDisabled("Add this Component to the missing Entities to edit shared properties.");
+                    }
                     ImGui::PopID();
                 }
-                ImGui::TextDisabled("Only components present on every selected Entity are shown.");
+                ImGui::TextDisabled("Registered Components can be added to missing Entities or removed from the selection.");
             }
         }
         else if (entity == nullptr)

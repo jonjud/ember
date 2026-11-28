@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Engine/Scene/ComponentRegistry.hpp"
+#include "Engine/Scene/Entity.hpp"
 
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace ember::editor
@@ -51,4 +54,100 @@ namespace ember::editor
     }
     return false;
 }
+
+// Add a registered component to every selected Entity that does not already
+// contain it. Factories and capacity reservations run before any live mutation.
+[[nodiscard]] inline bool AddComponentToEntities(
+    const std::vector<Entity*>& entities,
+    const ComponentRegistry& registry,
+    const std::string& componentId)
+{
+    if (entities.empty() || componentId.empty()) return false;
+
+    struct PendingComponent
+    {
+        Entity* entity = nullptr;
+        std::unique_ptr<Component> component;
+    };
+    std::vector<PendingComponent> pending;
+    pending.reserve(entities.size());
+
+    for (Entity* entity : entities)
+    {
+        if (entity == nullptr) return false;
+        bool alreadyPresent = false;
+        for (const auto& existing : entity->GetComponents())
+        {
+            const auto* info = registry.Find(*existing);
+            if (info != nullptr && info->id == componentId)
+            {
+                alreadyPresent = true;
+                break;
+            }
+        }
+        if (alreadyPresent) continue;
+        auto component = registry.Create(componentId);
+        if (!component) return false;
+        pending.push_back({entity, std::move(component)});
+    }
+
+    if (pending.empty()) return false;
+    try
+    {
+        for (auto& item : pending)
+            item.entity->GetComponents().reserve(item.entity->GetComponents().size() + 1);
+    }
+    catch (...) { return false; }
+
+    std::vector<std::pair<Entity*, Component*>> added;
+    added.reserve(pending.size());
+    try
+    {
+        for (auto& item : pending)
+        {
+            Component* raw = item.component.get();
+            (void)item.entity->AddComponent(std::move(item.component));
+            added.emplace_back(item.entity, raw);
+        }
+    }
+    catch (...)
+    {
+        for (auto it = added.rbegin(); it != added.rend(); ++it)
+            (void)it->first->RemoveComponent(it->second);
+        return false;
+    }
+    return true;
+}
+
+[[nodiscard]] inline bool RemoveComponentFromEntities(
+    const std::vector<Entity*>& entities,
+    const ComponentRegistry& registry,
+    const std::string& componentId)
+{
+    if (entities.empty() || componentId.empty()) return false;
+    bool removedAny = false;
+    for (Entity* entity : entities)
+    {
+        if (entity == nullptr) return false;
+        Component* match = nullptr;
+        for (const auto& component : entity->GetComponents())
+        {
+            const auto* info = registry.Find(*component);
+            if (info != nullptr && info->id == componentId)
+            {
+                match = component.get();
+                break;
+            }
+        }
+        if (match == nullptr) continue;
+        try
+        {
+            if (!entity->RemoveComponent(match)) return false;
+        }
+        catch (...) { return false; }
+        removedAny = true;
+    }
+    return removedAny;
+}
+
 } // namespace ember::editor

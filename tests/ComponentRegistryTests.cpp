@@ -1,5 +1,6 @@
 #include "Engine/Scene/ComponentRegistry.hpp"
 #include "Engine/Scene/AudioComponentRegistration.hpp"
+#include "Engine/Scene/Scene.hpp"
 #include "Editor/MultiEdit.hpp"
 
 #include <iostream>
@@ -171,6 +172,21 @@ int main()
             source.label == "updated",
             "String descriptor rejects values exceeding the editor buffer limit");
     }
+
+
+    ember::Scene multiScene("Multi-edit Component Presence");
+    ember::Entity& firstEntity = multiScene.CreateEntity("First");
+    ember::Entity& secondEntity = multiScene.CreateEntity("Second");
+    (void)firstEntity.AddComponent<MarkerComponent>();
+    std::vector<ember::Entity*> selectedEntities{&firstEntity, &secondEntity};
+    Check(ember::editor::AddComponentToEntities(selectedEntities, registry, "example.marker") &&
+        firstEntity.GetComponents().size() == 1 && secondEntity.GetComponents().size() == 1,
+        "Multi-edit adds a registered Component only to Entities missing it");
+    Check(!ember::editor::AddComponentToEntities(selectedEntities, registry, "example.marker"),
+        "Multi-edit does not duplicate an existing Component type");
+    Check(ember::editor::RemoveComponentFromEntities(selectedEntities, registry, "example.marker") &&
+        firstEntity.GetComponents().empty() && secondEntity.GetComponents().empty(),
+        "Multi-edit removes a registered Component from every selected Entity");
 
     Check(registry.Register<MigratingComponent>("example.migrating", "Migrating",
         [](const ember::Component& component) -> nlohmann::json {
