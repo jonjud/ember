@@ -105,6 +105,7 @@ private:
     InputMap m_inputMap = InputMap::CreateDefaultMovementMap();
     ProjectConfiguration m_projectConfiguration;
     std::filesystem::path m_projectFilePath{"ember.emberproject"};
+    bool m_projectLoadFailed = false;
     std::vector<std::string> m_customInputActions;
     std::string m_rebindAction;
     bool m_replaceActionOnRebind = true;

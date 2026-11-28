@@ -141,6 +141,8 @@ bool EditorApplication::Initialize()
         return false;
     }
 
+    (void)SDL_SetRenderVSync(m_renderer, 1);
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
@@ -365,7 +367,12 @@ void EditorApplication::ProcessEvents()
             const ImGuiIO& io = ImGui::GetIO();
             if (!io.WantCaptureKeyboard && !io.WantTextInput)
             {
-                if (event.key.key == SDLK_F5 && (event.key.mod & SDL_KMOD_SHIFT) != 0)
+                if (!m_isPlaying && event.key.key == SDLK_S &&
+                    (event.key.mod & SDL_KMOD_CTRL) != 0)
+                {
+                    (void)SaveScene();
+                }
+                else if (event.key.key == SDLK_F5 && (event.key.mod & SDL_KMOD_SHIFT) != 0)
                 {
                     StopPlayMode();
                 }
@@ -699,9 +706,8 @@ void EditorApplication::DrawInspector()
                                             });
                                         for (const AssetMetadata* metadata : audioAssets)
                                         {
-                                            const std::string label = metadata->source.generic_string() + " [" +
-                                                (metadata->scriptLanguage.empty() ? "Unassigned" : metadata->scriptLanguage) +
-                                                "] (" + metadata->assetId + ")##" + metadata->assetId;
+                                            const std::string label = metadata->source.generic_string() + " (" +
+                                                metadata->assetId + ")##" + metadata->assetId;
                                             const bool selected = metadata->assetId == current;
                                             if (ImGui::Selectable(label.c_str(), selected) &&
                                                 property.set(*component, nlohmann::json(metadata->assetId)))
@@ -2566,8 +2572,7 @@ void EditorApplication::RequestNewScene(const std::filesystem::path& path)
     if (m_isPlaying) return;
     m_pendingSceneChange = 1;
     m_pendingScenePath = path;
-    if (m_sceneDirty) ImGui::OpenPopup("Unsaved Scene Changes");
-    else ApplyPendingSceneChange();
+    if (!m_sceneDirty) ApplyPendingSceneChange();
 }
 
 void EditorApplication::RequestLoadScene(const std::filesystem::path& path)
@@ -2575,8 +2580,7 @@ void EditorApplication::RequestLoadScene(const std::filesystem::path& path)
     if (m_isPlaying) return;
     m_pendingSceneChange = 2;
     m_pendingScenePath = path;
-    if (m_sceneDirty) ImGui::OpenPopup("Unsaved Scene Changes");
-    else ApplyPendingSceneChange();
+    if (!m_sceneDirty) ApplyPendingSceneChange();
 }
 
 void EditorApplication::ApplyPendingSceneChange()
@@ -2604,6 +2608,7 @@ void EditorApplication::ApplyPendingSceneChange()
 void EditorApplication::DrawUnsavedChangesModal()
 {
     if (m_pendingSceneChange == 0) return;
+    ImGui::OpenPopup("Unsaved Scene Changes");
     if (ImGui::BeginPopupModal("Unsaved Scene Changes", nullptr,
         ImGuiWindowFlags_AlwaysAutoResize))
     {
@@ -2793,6 +2798,14 @@ void EditorApplication::OpenSelectedScriptSource()
     if (source.gcount() != static_cast<std::streamsize>(sourceSize) || source.bad())
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Could not read complete Script source");
+        return;
+    }
+    const auto sourceEnd = openedBuffer.begin() +
+        static_cast<std::ptrdiff_t>(sourceSize);
+    if (std::find(openedBuffer.begin(), sourceEnd, '\0') != sourceEnd)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script source contains a NUL byte and cannot be opened as text");
         return;
     }
     openedBuffer[static_cast<std::size_t>(sourceSize)] = '\0';
@@ -3110,6 +3123,7 @@ void EditorApplication::RefreshAssets()
 
 void EditorApplication::LoadInputSettings()
 {
+    m_projectLoadFailed = false;
     std::string error;
     auto loaded = ProjectConfigurationStore::Load(m_projectFilePath, &error);
     if (!loaded)
@@ -3118,8 +3132,10 @@ void EditorApplication::LoadInputSettings()
         // preserved so the editor never silently overwrites user data.
         if (std::filesystem::exists(m_projectFilePath))
         {
+            m_projectLoadFailed = true;
             std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-                "Input settings not loaded: %.190s", error.c_str());
+                "Project settings could not be loaded; saving is disabled: %.160s",
+                error.c_str());
             return;
         }
 
@@ -3186,6 +3202,12 @@ void EditorApplication::LoadInputSettings()
 
 bool EditorApplication::SaveInputSettings()
 {
+    if (m_projectLoadFailed)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Project save blocked because the existing project file failed to load");
+        return false;
+    }
     m_projectConfiguration.inputBindings.clear();
     m_projectConfiguration.inputBindingsConfigured = true;
     for (const auto& [action, keys] : m_inputMap.GetAllBindings())
@@ -3214,6 +3236,12 @@ bool EditorApplication::SaveInputSettings()
 
 bool EditorApplication::SaveProjectSettings()
 {
+    if (m_projectLoadFailed)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Project save blocked; restore or repair the project file first");
+        return false;
+    }
     const std::string name = m_projectName;
     const std::filesystem::path assetDirectory = m_assetDirectory;
     const std::filesystem::path startupScene = m_startupScenePath;
@@ -3263,7 +3291,7 @@ bool EditorApplication::SaveProjectSettings()
         if (resolvedStartupScene)
         {
             std::snprintf(m_scenePath, sizeof(m_scenePath), "%s",
-                resolvedStartupScene->string().c_str());
+                m_projectConfiguration.startupScene.generic_string().c_str());
         }
     }
     RefreshAssets();
