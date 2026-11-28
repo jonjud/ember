@@ -10,13 +10,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`e92fe90`](https://github.com/jonjud/ember/commit/e92fe9077b62c0f27c571deebd1a61ec8caea1cc) — stage SDL3 runtime for component tests |
-| Latest repository HEAD | [`95254a4`](https://github.com/jonjud/ember/commit/95254a43d9246d49ee5ab8a4896362c31f99eb27) — roadmap handoff to Scripting |
-| Last verified code CI | [Windows CI run 46081947029](https://github.com/jonjud/ember/actions/runs/46081947029) — **Success** (`e92fe90`; all build/tests passed) |
-| Latest CI | [Windows CI run 46084251955](https://github.com/jonjud/ember/actions/runs/46084251955) — **Success** (documentation HEAD `95254a4`) |
-| Latest documentation CI | [Windows CI run 46084251955](https://github.com/jonjud/ember/actions/runs/46084251955) — **Success** |
+| Last code commit | [`02d6fb7`](https://github.com/jonjud/ember/commit/02d6fb78f948cad0ffc2f94b4a6e3baa35c3b9ca) — correct scripting test character literals |
+| Latest repository HEAD | [`02d6fb7`](https://github.com/jonjud/ember/commit/02d6fb78f948cad0ffc2f94b4a6e3baa35c3b9ca) — scripting foundation fix |
+| Last verified code CI | [Windows CI run 46085926100](https://github.com/jonjud/ember/actions/runs/46085926100) — **Success** (`02d6fb7`; all build/tests passed) |
+| Latest CI | [Windows CI run 46085926100](https://github.com/jonjud/ember/actions/runs/46085926100) — **Success** (`02d6fb7`) |
+| Latest documentation CI | [Windows CI run 46085926100](https://github.com/jonjud/ember/actions/runs/46085926100) — **Success** |
 | Last completed milestone | UI System v1 + Audio Runtime + Physics Joints — Windows CI passed and combined Windows Editor verification user-confirmed passed |
-| Active milestone | Scripting foundation: language-neutral runtime contract and serializable ScriptComponent. Input Action Mapping Editor verification deferred to the combined manual test session. |
+| Active milestone | Scripting: C++20 is the primary language; optional embedded scripting runtimes should ship with EMBER and require no separate Extension installation. Scene lifecycle integration is next. Input Action Mapping Editor verification remains deferred to the combined manual test session. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -115,6 +115,13 @@
 
 **Audio Runtime is complete and Windows Editor-verified.** The miniaudio 0.11.26 runtime facade, Application/Editor audio lifecycle, device-less generated-WAV tests, serializable `AudioSource2D`, typed Inspector properties and safe Audio-asset picker, Scene asset-resolution/playback lifecycle, runtime Play/Stop controls, safe Scene move/Stop lifetime, and Editor Asset Browser preview are implemented. Windows CI #219 passed. Automated coverage includes unavailable/uninitialized devices, missing dependencies/assets, inactive/disabled sources, invalid volume, wrong asset types and hand-edited traversal metadata. The final Windows Editor checklist in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md) was user-confirmed passed. Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191 and final Windows Editor verification was user-confirmed passed.
 
+### Scripting language policy
+- [x] C++20 is the primary and first-class language for Engine, Editor and native game code
+- [x] Additional languages may be supported through optional embedded runtimes bundled/managed by EMBER; end users should not need separate Extension or runtime installation
+- [x] Keep the host API language-neutral and VM implementation details private
+- [ ] Evaluate concrete embedded runtime candidates only after Scene lifecycle and asset workflow requirements are clearer
+- [ ] C++ native game-code build workflow and optional language workflows
+
 ### Scripting foundation — first slice implemented
 - [x] Language-neutral ScriptRuntime interface: Initialize/Shutdown, instance creation and lifecycle invocation contract
 - [x] Opaque ScriptInstanceHandle; backend/VM pointers remain private
@@ -124,9 +131,9 @@
 - [x] Automated ScriptComponent clone, validation and registry serialization tests
 - [ ] Scene lifecycle integration, script instance ownership and per-instance diagnostics
 - [ ] Script asset import/type and Editor assignment workflow
-- [ ] Choose and integrate a concrete scripting backend
+- [ ] Evaluate and select an optional embedded scripting backend in accordance with the language policy
 
-See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for boundaries and deferred decisions.
+See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy, backend boundaries and deferred decisions.
 
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
@@ -168,4 +175,4 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for boundaries and deferred decis
 
 ---
 
-**Handoff:** UI System v1, Audio Runtime, and Physics Joints are complete and Windows Editor-verified. Input Action Mapping implementation and CI are complete; its manual Editor checklist is deferred to the combined verification session. Scripting foundation (language-neutral runtime contract + serializable ScriptComponent) is now implemented; next integrate the Scene lifecycle and script diagnostics. Continue on `develop`; do not merge to `main`.
+**Handoff:** UI System v1, Audio Runtime, and Physics Joints are complete and Windows Editor-verified. Input Action Mapping implementation and CI are complete; its manual Editor checklist is deferred to the combined verification session. Scripting foundation (language-neutral runtime contract + serializable ScriptComponent) is implemented. C++20 is the primary language; optional additional languages should use EMBER-bundled embedded runtimes without requiring separate Extensions. Next integrate Scene lifecycle and script diagnostics. Continue on `develop`; do not merge to `main`.

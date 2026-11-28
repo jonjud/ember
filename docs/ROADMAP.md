@@ -77,7 +77,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Scripting foundation: language-neutral ScriptRuntime host contract and serializable ScriptComponent
 - [ ] Scene scripting lifecycle integration, runtime instance ownership and diagnostics
 - [ ] Script asset type/import pipeline and Editor assignment workflow
-- [ ] Select and integrate a concrete scripting backend
+- [ ] Evaluate optional embedded scripting language/runtime candidates; keep C++ as the primary language
 
 ## Phase 5 — Packaging and Quality
 - [ ] Windows game export / runtime executable
@@ -85,6 +85,14 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Automated tests executed in CI
 - [ ] Profiler
 - [ ] User documentation and samples
+
+## Scripting language policy
+- C++20 is EMBER's primary and first-class implementation language for the Engine, Editor and native game code.
+- Keep the Engine's public scripting host API language-neutral; never expose VM-specific types or pointers across it.
+- Additional gameplay scripting languages may be supported through optional embedded runtimes. Their required runtime must be bundled/managed by EMBER so game users do not install separate Extensions or language runtimes.
+- Prefer a built-in Editor workflow for selecting and using supported languages; extensions are not the required distribution mechanism for language support.
+- A C++ development toolchain is still required to compile native C++ game code. The no-extra-install goal applies to end-user runtime setup and optional embedded scripting languages, not to removing the compiler requirement for C++ development.
+- Do not select or add a concrete embedded language/runtime until its integration cost, licensing, platform support, debugging, packaging and API needs have been reviewed.
 
 ## Development rules
 1. Keep third-party dependencies behind narrow engine-facing interfaces.
@@ -94,4 +102,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Scripting foundation is in place: the runtime boundary is language-neutral and ScriptComponent is serializable/Inspector-editable. Next integrate script instance lifecycle with Scene, add diagnostics and script asset assignment, then choose a concrete backend after reviewing the desired language and API surface. Input Action Mapping implementation is complete; its final Editor checklist is deferred to the combined manual verification session. Keep VM types private and editor-only code out of `ember_engine`.
+- Scripting foundation is in place: C++20 remains the primary language; optional additional languages should use EMBER-bundled embedded runtimes and must not require users to install Extensions. Next integrate script instance lifecycle with Scene, add diagnostics and script asset assignment, then evaluate concrete runtime candidates against the policy in [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md). Input Action Mapping implementation is complete; its final Editor checklist is deferred to the combined manual verification session. Keep VM types private and editor-only code out of `ember_engine`.
