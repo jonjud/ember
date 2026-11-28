@@ -74,7 +74,7 @@ namespace ember::editor
 
     for (Entity* entity : entities)
     {
-        if (entity == nullptr) return false;
+        if (entity == nullptr || !entity->CanModifyComponents()) return false;
         bool alreadyPresent = false;
         for (const auto& existing : entity->GetComponents())
         {
@@ -125,10 +125,15 @@ namespace ember::editor
     const std::string& componentId)
 {
     if (entities.empty() || componentId.empty()) return false;
-    bool removedAny = false;
+
+    // Resolve every target and validate editability before removing anything.
+    // A running Scene rejects structural component changes, so fail atomically
+    // instead of removing from an earlier Entity and failing on a later one.
+    std::vector<std::pair<Entity*, Component*>> matches;
+    matches.reserve(entities.size());
     for (Entity* entity : entities)
     {
-        if (entity == nullptr) return false;
+        if (entity == nullptr || !entity->CanModifyComponents()) return false;
         Component* match = nullptr;
         for (const auto& component : entity->GetComponents())
         {
@@ -139,15 +144,15 @@ namespace ember::editor
                 break;
             }
         }
-        if (match == nullptr) continue;
-        try
-        {
-            if (!entity->RemoveComponent(match)) return false;
-        }
-        catch (...) { return false; }
-        removedAny = true;
+        if (match != nullptr) matches.emplace_back(entity, match);
     }
-    return removedAny;
+
+    if (matches.empty()) return false;
+    for (const auto& [entity, component] : matches)
+    {
+        if (!entity->RemoveComponent(component)) return false;
+    }
+    return true;
 }
 
 } // namespace ember::editor
