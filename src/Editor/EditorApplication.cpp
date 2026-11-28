@@ -2710,7 +2710,7 @@ void EditorApplication::DrawUnsavedScriptExitModal()
             m_scriptSourceDirty = false;
             m_hasScriptValidationResult = false;
             m_scriptValidationMessage.clear();
-            m_scriptSourceBuffer.fill('\\0');
+            m_scriptSourceBuffer.fill('\0');
             m_scriptSourceOriginal.clear();
             m_scriptSourceAssetId.clear();
             m_scriptSourcePath.clear();
