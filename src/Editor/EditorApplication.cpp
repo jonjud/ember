@@ -48,6 +48,7 @@ const char* AssetTypeName(ember::AssetType type)
     case ember::AssetType::Texture: return "Texture";
     case ember::AssetType::Audio: return "Audio";
     case ember::AssetType::Scene: return "Scene";
+    case ember::AssetType::Script: return "Script";
     }
     return "Unknown";
 }
@@ -57,7 +58,8 @@ bool MatchesAssetType(ember::AssetType type, int filter)
     return filter == 0 ||
         (filter == 1 && type == ember::AssetType::Texture) ||
         (filter == 2 && type == ember::AssetType::Audio) ||
-        (filter == 3 && type == ember::AssetType::Scene);
+        (filter == 3 && type == ember::AssetType::Scene) ||
+    (filter == 4 && type == ember::AssetType::Script);
 }
 
 float SnapValue(float value, float increment)
@@ -673,6 +675,49 @@ void EditorApplication::DrawInspector()
                                         ImGui::EndCombo();
                                     }
                                     ImGui::TextDisabled("Choose an imported Audio asset from the project Asset Browser.");
+                                }
+
+                                else if (property.id == "script_asset_id")
+                                {
+                                    const AssetMetadata* currentAsset = m_assetRegistry.Find(current);
+                                    const std::string preview = current.empty() ? "None"
+                                        : (currentAsset != nullptr && currentAsset->type == AssetType::Script
+                                            ? currentAsset->source.generic_string()
+                                            : "Missing Script asset: " + current);
+                                    if (ImGui::BeginCombo(property.displayName.c_str(), preview.c_str()))
+                                    {
+                                        if (ImGui::Selectable("None", current.empty()) &&
+                                            property.set(*component, nlohmann::json(std::string{})))
+                                            MarkSceneDirty();
+                                        std::vector<const AssetMetadata*> scriptAssets;
+                                        for (const auto& [assetId, metadata] : m_assetRegistry.GetAssets())
+                                        {
+                                            (void)assetId;
+                                            if (metadata.type != AssetType::Script) continue;
+                                            const auto path = m_assetRegistry.GetDirectory().Resolve(metadata.source);
+                                            std::error_code pathError;
+                                            if (!path || !std::filesystem::is_regular_file(*path, pathError) || pathError)
+                                                continue;
+                                            scriptAssets.push_back(&metadata);
+                                        }
+                                        std::sort(scriptAssets.begin(), scriptAssets.end(),
+                                            [](const AssetMetadata* left, const AssetMetadata* right)
+                                            {
+                                                return left->source.generic_string() < right->source.generic_string();
+                                            });
+                                        for (const AssetMetadata* metadata : scriptAssets)
+                                        {
+                                            const std::string label = metadata->source.generic_string() +
+                                                " (" + metadata->assetId + ")##" + metadata->assetId;
+                                            const bool selected = metadata->assetId == current;
+                                            if (ImGui::Selectable(label.c_str(), selected) &&
+                                                property.set(*component, nlohmann::json(metadata->assetId)))
+                                                MarkSceneDirty();
+                                            if (selected) ImGui::SetItemDefaultFocus();
+                                        }
+                                        ImGui::EndCombo();
+                                    }
+                                    ImGui::TextDisabled("Choose an imported Script asset. Its source language is handled by a ScriptRuntime backend.");
                                 }
                                 else
                                 {
@@ -1313,6 +1358,31 @@ void EditorApplication::DrawAssetBrowser()
         {
             ImGui::TextDisabled("The previously selected asset is no longer indexed.");
         }
+
+
+        ImGui::SeparatorText("Import Script Source");
+        ImGui::SetNextItemWidth(360.0F);
+        ImGui::InputText("Asset-relative source path", m_scriptImportSource, sizeof(m_scriptImportSource));
+        ImGui::SameLine();
+        ImGui::BeginDisabled(m_isPlaying || m_scriptImportSource[0] == '\0');
+        if (ImGui::Button("Import Script"))
+        {
+            std::string error;
+            if (m_assetImportService.ImportScript(m_scriptImportSource, &error))
+            {
+                (void)m_assetRegistry.Scan();
+                std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                    "Imported Script asset: %.180s", m_scriptImportSource);
+                m_scriptImportSource[0] = '\0';
+            }
+            else
+            {
+                std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                    "Script import failed: %.190s", error.c_str());
+            }
+        }
+        ImGui::EndDisabled();
+        ImGui::TextDisabled("Use a path relative to the asset root. The Script type is language-neutral; no VM is selected here.");
 
         if (ImGui::CollapsingHeader("Import / Scan Diagnostics"))
         {
