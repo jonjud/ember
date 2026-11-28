@@ -74,22 +74,23 @@ int main()
     Check(enemyId > playerId, "Entity IDs increase monotonically");
     Check(scene.GetEntityCount() == 2, "Scene counts created entities");
 
-    ember::Entity& hierarchyRoot = scene.CreateEntity("Hierarchy Root");
-    ember::Entity& hierarchyChild = scene.CreateEntity("Hierarchy Child");
-    ember::Entity& hierarchyGrandchild = scene.CreateEntity("Hierarchy Grandchild");
-    Check(scene.SetParent(hierarchyChild.GetId(), hierarchyRoot.GetId()),
+    ember::Scene hierarchyScene;
+    ember::Entity& hierarchyRoot = hierarchyScene.CreateEntity("Hierarchy Root");
+    ember::Entity& hierarchyChild = hierarchyScene.CreateEntity("Hierarchy Child");
+    ember::Entity& hierarchyGrandchild = hierarchyScene.CreateEntity("Hierarchy Grandchild");
+    Check(hierarchyScene.SetParent(hierarchyChild.GetId(), hierarchyRoot.GetId()),
           "Scene assigns an Entity parent");
-    Check(scene.SetParent(hierarchyGrandchild.GetId(), hierarchyChild.GetId()),
+    Check(hierarchyScene.SetParent(hierarchyGrandchild.GetId(), hierarchyChild.GetId()),
           "Scene supports nested parent-child relationships");
-    Check(!scene.SetParent(hierarchyRoot.GetId(), hierarchyGrandchild.GetId()),
+    Check(!hierarchyScene.SetParent(hierarchyRoot.GetId(), hierarchyGrandchild.GetId()),
           "Scene rejects hierarchy cycles");
-    Check(!scene.SetParent(hierarchyRoot.GetId(), hierarchyRoot.GetId()),
+    Check(!hierarchyScene.SetParent(hierarchyRoot.GetId(), hierarchyRoot.GetId()),
           "Scene rejects self-parenting");
-    Check(!scene.SetParent(hierarchyChild.GetId(), 999999),
+    Check(!hierarchyScene.SetParent(hierarchyChild.GetId(), 999999),
           "Scene rejects missing parent IDs");
-    Check(scene.GetRootEntityIds().size() == 3 &&
-          scene.GetChildren(hierarchyRoot.GetId()).size() == 1 &&
-          scene.GetChildren(hierarchyChild.GetId()).front() == hierarchyGrandchild.GetId(),
+    Check(hierarchyScene.GetRootEntityIds().size() == 3 &&
+          hierarchyScene.GetChildren(hierarchyRoot.GetId()).size() == 1 &&
+          hierarchyScene.GetChildren(hierarchyChild.GetId()).front() == hierarchyGrandchild.GetId(),
           "Scene returns roots and direct children in deterministic order");
     const ember::EntityId hierarchyRootId = hierarchyRoot.GetId();
     const ember::EntityId hierarchyChildId = hierarchyChild.GetId();
@@ -152,9 +153,9 @@ int main()
     Check(scene.DestroyEntity(duplicateId),
           "Duplicate entity can be removed independently");
     Check(scene.DestroyEntity(enemyId), "DestroyEntity removes an existing entity");
-    Check(scene.DestroyEntity(hierarchyRootId) &&
-          scene.FindEntity(hierarchyChildId)->GetParentId() == 0 &&
-          scene.FindEntity(hierarchyGrandchildId)->GetParentId() == hierarchyChildId,
+    Check(hierarchyScene.DestroyEntity(hierarchyRootId) &&
+          hierarchyScene.FindEntity(hierarchyChildId)->GetParentId() == 0 &&
+          hierarchyScene.FindEntity(hierarchyGrandchildId)->GetParentId() == hierarchyChildId,
           "Destroying a parent detaches direct children without deleting descendants");
     Check(!scene.DestroyEntity(enemyId), "DestroyEntity reports missing entity");
     Check(scene.FindEntity(enemyId) == nullptr, "Destroyed entity cannot be found");
