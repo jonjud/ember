@@ -250,11 +250,11 @@ void RuntimeApplication::Render()
         if (!visual.visible)
             return;
 
+        const Transform2D worldTransform = m_scene.GetWorldTransform(entity.GetId()).value_or(entity.GetTransform());
         const auto texture = m_textures.find(visual.textureAssetId);
         if (!visual.textureAssetId.empty() && texture != m_textures.end())
         {
             const auto* animation = entity.GetComponent<SpriteAnimation2D>();
-            const Transform2D worldTransform = m_scene.GetWorldTransform(entity.GetId()).value_or(entity.GetTransform());
             if (animation != nullptr && animation->IsConfigurationValid())
                 m_renderer.DrawTexture(texture->second, worldTransform, m_camera,
                     visual.size, animation->GetSourcePosition(), animation->GetSourceSize(),
