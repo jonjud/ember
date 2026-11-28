@@ -2825,8 +2825,8 @@ void EditorApplication::SaveScriptSource()
             "Could not verify Script source before saving");
         return;
     }
-    const std::string diskContents(
-        std::istreambuf_iterator<char>(currentSource), std::istreambuf_iterator<char>());
+    const std::string diskContents{
+        std::istreambuf_iterator<char>(currentSource), std::istreambuf_iterator<char>()};
     if (currentSource.bad() || diskContents != m_scriptSourceOriginal)
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
@@ -2895,7 +2895,8 @@ void EditorApplication::DrawScriptSourceEditor()
                 if (ImGui::Button("Discard Changes"))
                 {
                     m_scriptSourceDirty = false;
-                    m_scriptSourceBuffer.fill('\\0');
+                    m_scriptSourceBuffer.fill('\0');
+                    m_scriptSourceOriginal.clear();
                     m_scriptSourceAssetId.clear();
                     m_scriptSourcePath.clear();
                     m_allowScriptSourceClose = true;
