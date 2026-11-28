@@ -6,7 +6,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include <algorithm>\n#include <cctype>\n#include <fstream>
+#include <algorithm>
+#include <cctype>\n#include <fstream>
 #include <system_error>
 #include <vector>
 
@@ -176,7 +177,8 @@ bool ProjectExporter::ExportWindows(
 
     std::size_t copied = 0;
     const auto runtimeDestination = output / "ember_runtime.exe";
-    if (!CopyRegularFile(runtime, runtimeDestination, copied, error)) return false;\n    if (!CopyRuntimeLibraries(runtime.parent_path(), output, copied, error)) return false;
+    if (!CopyRegularFile(runtime, runtimeDestination, copied, error)) return false;
+    if (!CopyRuntimeLibraries(runtime.parent_path(), output, copied, error)) return false;
 
     const auto projectDestination = output / project.filename();
     if (!CopyRegularFile(project, projectDestination, copied, error)) return false;
