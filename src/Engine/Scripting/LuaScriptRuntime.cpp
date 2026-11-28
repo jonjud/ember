@@ -327,7 +327,7 @@ std::optional<ScriptInstanceHandle> LuaScriptRuntime::CreateInstance(
 
     auto instance = std::make_unique<Instance>();
     instance->owner = &owner;
-    instance->state = lua_newstate(&Instance::Allocate, instance.get());
+    instance->state = lua_newstate(&Instance::Allocate, instance.get(), 0U);
     if (instance->state == nullptr)
     {
         Fail(error, "Lua could not create a VM within the per-script memory budget.");
