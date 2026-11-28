@@ -101,6 +101,22 @@ int main()
           std::abs(reparentedWorld->position.x - childWorld->position.x) < 0.001F &&
           std::abs(reparentedWorld->position.y - childWorld->position.y) < 0.001F,
           "Keep-world reparenting does not move the child");
+    if (reparentedWorld)
+    {
+        Transform2D desiredWorld = *reparentedWorld;
+        desiredWorld.position = {125.0F, 85.0F};
+        desiredWorld.scale = {3.0F, 4.0F};
+        desiredWorld.rotation = 0.25F;
+        Check(hierarchyScene.SetWorldTransform(hierarchyChild.GetId(), desiredWorld),
+              "Scene can set a child transform in world space");
+        const auto updatedWorld = hierarchyScene.GetWorldTransform(hierarchyChild.GetId());
+        Check(updatedWorld && std::abs(updatedWorld->position.x - 125.0F) < 0.001F &&
+              std::abs(updatedWorld->position.y - 85.0F) < 0.001F &&
+              std::abs(updatedWorld->scale.x - 3.0F) < 0.001F &&
+              std::abs(updatedWorld->scale.y - 4.0F) < 0.001F &&
+              std::abs(updatedWorld->rotation - 0.25F) < 0.001F,
+              "Setting a child world transform correctly updates its local transform");
+    }
     Check(hierarchyScene.SetParent(hierarchyChild.GetId(), hierarchyRoot.GetId(), false),
           "Child can be moved back under its original parent");
     Check(!hierarchyScene.SetParent(hierarchyRoot.GetId(), hierarchyGrandchild.GetId()),

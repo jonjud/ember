@@ -4,7 +4,7 @@
 
 namespace ember
 {
-// Rotation is stored in radians. Position is the top-left world-space origin.
+// Rotation is stored in radians. Position is parent-local (world-space for root Entities).
 struct Transform2D
 {
     Vector2 position{};
