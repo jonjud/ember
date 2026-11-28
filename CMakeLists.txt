@@ -210,7 +210,10 @@ if(BUILD_TESTING)
     target_include_directories(ember_logging_tests PRIVATE src)
     target_link_libraries(ember_logging_tests PRIVATE Threads::Threads)
     add_test(NAME ember_logging_history_tests COMMAND ember_logging_tests history)
-    add_test(NAME ember_logging_sink_tests COMMAND ember_logging_tests sinks)
+    add_test(NAME ember_logging_recording_sink_tests COMMAND ember_logging_tests recording)
+    add_test(NAME ember_logging_file_sink_tests COMMAND ember_logging_tests file)
+    add_test(NAME ember_logging_zero_capacity_sink_tests COMMAND ember_logging_tests zero-capacity)
+    set_tests_properties(ember_logging_recording_sink_tests ember_logging_file_sink_tests ember_logging_zero_capacity_sink_tests PROPERTIES TIMEOUT 30)
     add_test(NAME ember_logging_concurrency_tests COMMAND ember_logging_tests concurrency)
 
     add_executable(ember_audio_engine_tests

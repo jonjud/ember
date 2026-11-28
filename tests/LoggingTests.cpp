@@ -49,7 +49,7 @@ void History() {
     logger.Info("Engine", "after clear");
     Check(logger.Snapshot().front().sequence == 8, "clear preserves sequence");
 }
-void Sinks() {
+void RecordingSinkTest() {
     auto recording = std::make_shared<RecordingSink>();
     ember::Logger logger(4);
     logger.AddSink(recording);
@@ -58,6 +58,8 @@ void Sinks() {
     logger.ClearSinks();
     logger.Info("Tests", "not delivered");
     Check(recording->messages.size() == 1, "clear sinks");
+}
+void FileSinkTest() {
     const auto path = std::filesystem::temp_directory_path() / "ember_logging_tests.log";
     std::filesystem::remove(path);
     {
@@ -72,6 +74,8 @@ void Sinks() {
     const std::string contents((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
     Check(contents.find("[Warning] [Persistence]") != std::string::npos && contents.find("file sink entry") != std::string::npos, "file sink contents");
     std::filesystem::remove(path);
+}
+void ZeroCapacitySinkTest() {
     ember::Logger disabled(0);
     auto disabledSink = std::make_shared<RecordingSink>();
     disabled.AddSink(disabledSink);
@@ -104,7 +108,9 @@ void Concurrency() {
 int main(int argc, char** argv) {
     const std::string stage = argc > 1 ? argv[1] : "all";
     if (stage == "history" || stage == "all") History();
-    else if (stage == "sinks") Sinks();
+    else if (stage == "recording") RecordingSinkTest();
+    else if (stage == "file") FileSinkTest();
+    else if (stage == "zero-capacity") ZeroCapacitySinkTest();
     else if (stage == "concurrency") Concurrency();
     else return EXIT_FAILURE;
     if (failures) { std::cerr << failures << " logger test(s) failed\n"; return EXIT_FAILURE; }
