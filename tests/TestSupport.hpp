@@ -1,5 +1,15 @@
 #pragma once
 
+#include <cstdlib>
+#include <iostream>
+
+#define EMBER_CHECK(expression) do { \
+    if (!(expression)) { \
+        std::cerr << "[FAIL] " #expression " at " << __FILE__ << ':' << __LINE__ << '\\n'; \
+        std::abort(); \
+    } \
+} while (false)
+
 #ifdef _MSC_VER
 #include <crtdbg.h>
 

@@ -1,7 +1,7 @@
 #include "Engine/Audio/AudioEngine.hpp"
 
 #include <array>
-#include <cassert>
+#include "TestSupport.hpp"
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
@@ -52,44 +52,44 @@ void WriteTinyWave(const std::filesystem::path& path)
 int main()
 {
     ember::AudioEngine audio;
-    assert(!audio.IsInitialized());
-    assert(!audio.Play({1}));
-    assert(!audio.Initialize({true, 0, 48000}));
-    assert(!audio.Initialize({true, 2, 1000}));
-    assert(audio.Initialize({true, 2, 48000}));
-    assert(audio.Initialize({true, 2, 48000}));
+    EMBER_CHECK(!audio.IsInitialized());
+    EMBER_CHECK(!audio.Play({1}));
+    EMBER_CHECK(!audio.Initialize({true, 0, 48000}));
+    EMBER_CHECK(!audio.Initialize({true, 2, 1000}));
+    EMBER_CHECK(audio.Initialize({true, 2, 48000}));
+    EMBER_CHECK(audio.Initialize({true, 2, 48000}));
 
     const auto path = std::filesystem::temp_directory_path() / "ember_audio_engine_test.wav";
     WriteTinyWave(path);
     const auto sound = audio.LoadSound(path);
-    assert(sound);
-    assert(!audio.LoadSound(path.string() + ".missing"));
-    assert(!audio.SetVolume(sound, -0.1F));
-    assert(!audio.SetVolume(sound, std::numeric_limits<float>::quiet_NaN()));
-    assert(!audio.SetVolume(sound, 4.1F));
-    assert(audio.SetVolume(sound, 0.5F));
-    assert(audio.SetLooping(sound, true));
-    assert(audio.Play(sound));
-    assert(audio.IsPlaying(sound));
-    assert(audio.Stop(sound));
-    assert(audio.SetLooping(sound, false));
-    assert(audio.UnloadSound(sound));
-    assert(!audio.Play(sound));
-    assert(!audio.UnloadSound(sound));
+    EMBER_CHECK(sound);
+    EMBER_CHECK(!audio.LoadSound(path.string() + ".missing"));
+    EMBER_CHECK(!audio.SetVolume(sound, -0.1F));
+    EMBER_CHECK(!audio.SetVolume(sound, std::numeric_limits<float>::quiet_NaN()));
+    EMBER_CHECK(!audio.SetVolume(sound, 4.1F));
+    EMBER_CHECK(audio.SetVolume(sound, 0.5F));
+    EMBER_CHECK(audio.SetLooping(sound, true));
+    EMBER_CHECK(audio.Play(sound));
+    EMBER_CHECK(audio.IsPlaying(sound));
+    EMBER_CHECK(audio.Stop(sound));
+    EMBER_CHECK(audio.SetLooping(sound, false));
+    EMBER_CHECK(audio.UnloadSound(sound));
+    EMBER_CHECK(!audio.Play(sound));
+    EMBER_CHECK(!audio.UnloadSound(sound));
 
     const auto streamedSound = audio.LoadSound(path, true);
-    assert(streamedSound);
-    assert(audio.SetLooping(streamedSound, true));
-    assert(audio.Play(streamedSound));
-    assert(audio.UnloadSound(streamedSound));
+    EMBER_CHECK(streamedSound);
+    EMBER_CHECK(audio.SetLooping(streamedSound, true));
+    EMBER_CHECK(audio.Play(streamedSound));
+    EMBER_CHECK(audio.UnloadSound(streamedSound));
 
     std::error_code error;
     std::filesystem::remove(path, error);
     audio.Shutdown();
-    assert(!audio.IsInitialized());
-    assert(!audio.Play(sound));
-    assert(audio.Initialize({true, 2, 48000}));
-    assert(!audio.Play(sound)); // Handles from before Shutdown must never become valid again.
+    EMBER_CHECK(!audio.IsInitialized());
+    EMBER_CHECK(!audio.Play(sound));
+    EMBER_CHECK(audio.Initialize({true, 2, 48000}));
+    EMBER_CHECK(!audio.Play(sound)); // Handles from before Shutdown must never become valid again.
     audio.Shutdown();
     return 0;
 }

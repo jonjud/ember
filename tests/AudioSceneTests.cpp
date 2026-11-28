@@ -4,7 +4,7 @@
 #include "Engine/Scene/AudioComponents2D.hpp"
 #include "Engine/Scene/Scene.hpp"
 
-#include <cassert>
+#include "TestSupport.hpp"
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
@@ -63,13 +63,13 @@ int main()
     metadata.assetId = "audio-ambience";
     metadata.type = ember::AssetType::Audio;
     metadata.source = "audio/ambience.wav";
-    assert(ember::AssetMetadataStore::Save(root / "audio" / "ambience.emberasset", metadata));
+    EMBER_CHECK(ember::AssetMetadataStore::Save(root / "audio" / "ambience.emberasset", metadata));
 
     ember::AssetRegistry assets(root);
-    assert(assets.Scan());
+    EMBER_CHECK(assets.Scan());
 
     ember::AudioEngine audio;
-    assert(audio.Initialize({true, 2, 48000}));
+    EMBER_CHECK(audio.Initialize({true, 2, 48000}));
 
     ember::Scene scene("Audio Scene");
     auto& ambienceEntity = scene.CreateEntity("Ambience");
@@ -94,29 +94,29 @@ int main()
     inactiveEntity.SetActive(false);
 
     scene.Start(&audio, &assets);
-    assert(scene.IsStarted());
-    assert(scene.GetAudioSourceCount() == 2);
-    assert(scene.IsAudioSourcePlaying(ambienceEntity.GetId()));
-    assert(!scene.IsAudioSourcePlaying(inactiveEntity.GetId()));
-    assert(!scene.IsAudioSourcePlaying(delayedEntity.GetId()));
-    assert(scene.PlayAudioSource(delayedEntity.GetId()));
-    assert(scene.IsAudioSourcePlaying(delayedEntity.GetId()));
-    assert(scene.StopAudioSource(delayedEntity.GetId()));
-    assert(!scene.IsAudioSourcePlaying(delayedEntity.GetId()));
-    assert(!scene.PlayAudioSource(0));
-    assert(!scene.StopAudioSource(0));
-    assert(!scene.IsAudioSourcePlaying(disabledEntity.GetId()));
-    assert(!scene.HasAudioSource(disabledEntity.GetId()));
-    assert(scene.HasAudioSource(ambienceEntity.GetId()));
-    assert(scene.GetAudioDiagnostics().empty());
+    EMBER_CHECK(scene.IsStarted());
+    EMBER_CHECK(scene.GetAudioSourceCount() == 2);
+    EMBER_CHECK(scene.IsAudioSourcePlaying(ambienceEntity.GetId()));
+    EMBER_CHECK(!scene.IsAudioSourcePlaying(inactiveEntity.GetId()));
+    EMBER_CHECK(!scene.IsAudioSourcePlaying(delayedEntity.GetId()));
+    EMBER_CHECK(scene.PlayAudioSource(delayedEntity.GetId()));
+    EMBER_CHECK(scene.IsAudioSourcePlaying(delayedEntity.GetId()));
+    EMBER_CHECK(scene.StopAudioSource(delayedEntity.GetId()));
+    EMBER_CHECK(!scene.IsAudioSourcePlaying(delayedEntity.GetId()));
+    EMBER_CHECK(!scene.PlayAudioSource(0));
+    EMBER_CHECK(!scene.StopAudioSource(0));
+    EMBER_CHECK(!scene.IsAudioSourcePlaying(disabledEntity.GetId()));
+    EMBER_CHECK(!scene.HasAudioSource(disabledEntity.GetId()));
+    EMBER_CHECK(scene.HasAudioSource(ambienceEntity.GetId()));
+    EMBER_CHECK(scene.GetAudioDiagnostics().empty());
 
     scene.Stop();
-    assert(!scene.IsStarted());
-    assert(scene.GetAudioSourceCount() == 0);
-    assert(!scene.IsAudioSourcePlaying(ambienceEntity.GetId()));
+    EMBER_CHECK(!scene.IsStarted());
+    EMBER_CHECK(scene.GetAudioSourceCount() == 0);
+    EMBER_CHECK(!scene.IsAudioSourcePlaying(ambienceEntity.GetId()));
 
     scene.Start(&audio, &assets);
-    assert(scene.GetAudioSourceCount() == 2);
+    EMBER_CHECK(scene.GetAudioSourceCount() == 2);
     scene.Stop();
 
     ember::Scene missingAssetScene("Missing Audio");
@@ -124,8 +124,8 @@ int main()
     auto& missingSource = missing.AddComponent<ember::AudioSource2D>();
     missingSource.audioAssetId = "not-found";
     missingAssetScene.Start(&audio, &assets);
-    assert(missingAssetScene.GetAudioSourceCount() == 0);
-    assert(!missingAssetScene.GetAudioDiagnostics().empty());
+    EMBER_CHECK(missingAssetScene.GetAudioSourceCount() == 0);
+    EMBER_CHECK(!missingAssetScene.GetAudioDiagnostics().empty());
     missingAssetScene.Stop();
 
     // A missing AudioEngine and a missing AssetRegistry are reported per active source.
@@ -136,13 +136,13 @@ int main()
     ember::Logger audioLogger;
     missingEngineScene.SetLogger(&audioLogger);
     missingEngineScene.Start(nullptr, &assets);
-    assert(missingEngineScene.GetAudioSourceCount() == 0);
-    assert(missingEngineScene.GetAudioDiagnostics().size() == 1);
+    EMBER_CHECK(missingEngineScene.GetAudioSourceCount() == 0);
+    EMBER_CHECK(missingEngineScene.GetAudioDiagnostics().size() == 1);
     const auto audioLogs = audioLogger.Snapshot();
-    assert(audioLogs.size() == 1 && audioLogs.front().category == "Audio" &&
+    EMBER_CHECK(audioLogs.size() == 1 && audioLogs.front().category == "Audio" &&
         audioLogs.front().level == ember::LogLevel::Warning);
     missingEngineScene.Update(1.0F / 60.0F);
-    assert(audioLogger.Size() == 1);
+    EMBER_CHECK(audioLogger.Size() == 1);
     missingEngineScene.Stop();
 
     ember::Scene missingRegistryScene("Missing Asset Registry");
@@ -150,8 +150,8 @@ int main()
     auto& noRegistrySource = noRegistryEntity.AddComponent<ember::AudioSource2D>();
     noRegistrySource.audioAssetId = "audio-ambience";
     missingRegistryScene.Start(&audio, nullptr);
-    assert(missingRegistryScene.GetAudioSourceCount() == 0);
-    assert(missingRegistryScene.GetAudioDiagnostics().size() == 1);
+    EMBER_CHECK(missingRegistryScene.GetAudioSourceCount() == 0);
+    EMBER_CHECK(missingRegistryScene.GetAudioDiagnostics().size() == 1);
     missingRegistryScene.Stop();
 
     ember::AudioEngine unavailableAudio;
@@ -160,8 +160,8 @@ int main()
     auto& unavailableSource = unavailableEntity.AddComponent<ember::AudioSource2D>();
     unavailableSource.audioAssetId = "audio-ambience";
     unavailableEngineScene.Start(&unavailableAudio, &assets);
-    assert(unavailableEngineScene.GetAudioSourceCount() == 0);
-    assert(unavailableEngineScene.GetAudioDiagnostics().size() == 1);
+    EMBER_CHECK(unavailableEngineScene.GetAudioSourceCount() == 0);
+    EMBER_CHECK(unavailableEngineScene.GetAudioDiagnostics().size() == 1);
     unavailableEngineScene.Stop();
 
     // Wrong-type and traversal paths are rejected before any sound is loaded.
@@ -169,7 +169,7 @@ int main()
     textureMetadata.assetId = "texture-not-audio";
     textureMetadata.type = ember::AssetType::Texture;
     textureMetadata.source = "audio/ambience.wav";
-    assert(ember::AssetMetadataStore::Save(root / "audio" / "texture.emberasset", textureMetadata));
+    EMBER_CHECK(ember::AssetMetadataStore::Save(root / "audio" / "texture.emberasset", textureMetadata));
     const auto outsideWave = root.parent_path() / "ember_audio_scene_outside.wav";
     WriteTinyWave(outsideWave);
     ember::AssetMetadata traversalMetadata;
@@ -181,10 +181,10 @@ int main()
     {
         std::ofstream sidecar(root / "audio" / "traversal.emberasset", std::ios::binary);
         sidecar << R"({"schema_version":1,"asset_id":"audio-traversal","type":"audio","source":"../ember_audio_scene_outside.wav"})";
-        assert(sidecar.good());
+        EMBER_CHECK(sidecar.good());
     }
-    assert(assets.Scan());
-    assert(assets.Find("audio-traversal") == nullptr);
+    EMBER_CHECK(assets.Scan());
+    EMBER_CHECK(assets.Find("audio-traversal") == nullptr);
 
     ember::Scene invalidReferencesScene("Invalid Audio References");
     auto& wrongTypeEntity = invalidReferencesScene.CreateEntity("Wrong Type");
@@ -194,8 +194,8 @@ int main()
     auto& traversalSource = traversalEntity.AddComponent<ember::AudioSource2D>();
     traversalSource.audioAssetId = "audio-traversal";
     invalidReferencesScene.Start(&audio, &assets);
-    assert(invalidReferencesScene.GetAudioSourceCount() == 0);
-    assert(invalidReferencesScene.GetAudioDiagnostics().size() == 2);
+    EMBER_CHECK(invalidReferencesScene.GetAudioSourceCount() == 0);
+    EMBER_CHECK(invalidReferencesScene.GetAudioDiagnostics().size() == 2);
     invalidReferencesScene.Stop();
 
     ember::Scene invalidConfigurationScene("Invalid Audio Configuration");
@@ -204,8 +204,8 @@ int main()
     invalidConfigSource.audioAssetId = "audio-ambience";
     invalidConfigSource.volume = std::numeric_limits<float>::quiet_NaN();
     invalidConfigurationScene.Start(&audio, &assets);
-    assert(invalidConfigurationScene.GetAudioSourceCount() == 0);
-    assert(invalidConfigurationScene.GetAudioDiagnostics().size() == 1);
+    EMBER_CHECK(invalidConfigurationScene.GetAudioSourceCount() == 0);
+    EMBER_CHECK(invalidConfigurationScene.GetAudioDiagnostics().size() == 1);
     invalidConfigurationScene.Stop();
 
     // Moving a running Scene transfers ownership of its runtime sound handles.
@@ -215,23 +215,23 @@ int main()
     movingSource.audioAssetId = "audio-ambience";
     movingSource.loop = true;
     moveSource.Start(&audio, &assets);
-    assert(moveSource.IsAudioSourcePlaying(movingEntity.GetId()));
+    EMBER_CHECK(moveSource.IsAudioSourcePlaying(movingEntity.GetId()));
 
     ember::Scene moveTarget("Move Target");
     auto& replacedEntity = moveTarget.CreateEntity("Replaced Audio");
     auto& replacedSource = replacedEntity.AddComponent<ember::AudioSource2D>();
     replacedSource.audioAssetId = "audio-ambience";
     moveTarget.Start(&audio, &assets);
-    assert(moveTarget.IsAudioSourcePlaying(replacedEntity.GetId()));
+    EMBER_CHECK(moveTarget.IsAudioSourcePlaying(replacedEntity.GetId()));
 
     moveTarget = std::move(moveSource);
-    assert(!moveSource.IsStarted());
-    assert(moveTarget.IsStarted());
-    assert(moveTarget.GetAudioSourceCount() == 1);
-    assert(moveTarget.IsAudioSourcePlaying(movingEntity.GetId()));
-    assert(!moveTarget.IsAudioSourcePlaying(replacedEntity.GetId()));
+    EMBER_CHECK(!moveSource.IsStarted());
+    EMBER_CHECK(moveTarget.IsStarted());
+    EMBER_CHECK(moveTarget.GetAudioSourceCount() == 1);
+    EMBER_CHECK(moveTarget.IsAudioSourcePlaying(movingEntity.GetId()));
+    EMBER_CHECK(!moveTarget.IsAudioSourcePlaying(replacedEntity.GetId()));
     moveTarget.Stop();
-    assert(!moveTarget.IsAudioSourcePlaying(movingEntity.GetId()));
+    EMBER_CHECK(!moveTarget.IsAudioSourcePlaying(movingEntity.GetId()));
 
     audio.Shutdown();
     std::filesystem::remove_all(root, error);
