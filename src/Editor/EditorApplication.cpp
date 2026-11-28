@@ -7,6 +7,7 @@
 #include "Engine/Scene/AnimationComponentRegistration.hpp"
 #include "Engine/Scene/AudioComponentRegistration.hpp"
 #include "Engine/Scripting/ScriptComponentRegistration.hpp"
+#include "Engine/Scripting/LuaScriptRuntime.hpp"
 #include "Engine/UI/UIComponentRegistration.hpp"
 #include "Engine/UI/UILayout2D.hpp"
 #include "Engine/Platform/Input.hpp"
@@ -257,6 +258,7 @@ void EditorApplication::UpdatePlayMode()
 
 void EditorApplication::Shutdown()
 {
+    if (m_isPlaying) StopPlayMode();
     if (m_isPlaying)
     {
         m_playScene.Stop();
@@ -2328,16 +2330,27 @@ void EditorApplication::StartPlayMode()
     StopAudioPreview();
     m_uiInputRouter.Reset();
     m_playScene = m_scene.Clone();
-    m_playScene.Start(&m_audio, &m_assetRegistry);
+    m_scriptRuntime = std::make_unique<LuaScriptRuntime>(m_assetRegistry);
+    m_playScene.Start(&m_audio, &m_assetRegistry, m_scriptRuntime.get());
     m_isPlaying = true;
-    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-        "Play mode: WASD / arrow keys move the selected entity in an isolated scene copy");
+    if (m_playScene.GetScriptDiagnostics().empty())
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Play mode started: C++ components and Lua scripts are running");
+    }
+    else
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Play mode started with script diagnostic: %.190s",
+            m_playScene.GetScriptDiagnostics().front().c_str());
+    }
 }
 
 void EditorApplication::StopPlayMode()
 {
     if (!m_isPlaying) return;
     m_playScene.Stop();
+    m_scriptRuntime.reset();
     m_uiInputRouter.Reset();
     m_isPlaying = false;
     m_playScene.Clear();

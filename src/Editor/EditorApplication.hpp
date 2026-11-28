@@ -10,9 +10,11 @@
 #include "Engine/Platform/InputMap.hpp"
 #include "Engine/UI/UIInputRouter2D.hpp"
 #include "Engine/Project/ProjectConfiguration.hpp"
+#include "Engine/Scripting/ScriptRuntime.hpp"
 
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -81,6 +83,7 @@ private:
     Scene m_scene{"Untitled Scene"};
     ComponentRegistry m_componentRegistry;
     Scene m_playScene{"Play Scene"};
+    std::unique_ptr<ScriptRuntime> m_scriptRuntime;
     UIInputRouter2D m_uiInputRouter;
     bool m_isPlaying = false;
     bool m_sceneDirty = false;

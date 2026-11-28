@@ -94,6 +94,51 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 
+
+# Lua 5.5.1 is compiled as a private static dependency. Only approved standard
+# libraries are compiled into the backend; filesystem/process libraries are omitted.
+FetchContent_Declare(
+    lua
+    URL https://www.lua.org/ftp/lua-5.5.1.tar.gz
+    URL_HASH SHA256=1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_GetProperties(lua)
+if(NOT lua_POPULATED)
+    FetchContent_Populate(lua)
+endif()
+
+add_library(ember_lua STATIC
+    ${lua_SOURCE_DIR}/src/lapi.c
+    ${lua_SOURCE_DIR}/src/lcode.c
+    ${lua_SOURCE_DIR}/src/lctype.c
+    ${lua_SOURCE_DIR}/src/ldebug.c
+    ${lua_SOURCE_DIR}/src/ldo.c
+    ${lua_SOURCE_DIR}/src/ldump.c
+    ${lua_SOURCE_DIR}/src/lfunc.c
+    ${lua_SOURCE_DIR}/src/lgc.c
+    ${lua_SOURCE_DIR}/src/llex.c
+    ${lua_SOURCE_DIR}/src/lmem.c
+    ${lua_SOURCE_DIR}/src/lobject.c
+    ${lua_SOURCE_DIR}/src/lopcodes.c
+    ${lua_SOURCE_DIR}/src/lparser.c
+    ${lua_SOURCE_DIR}/src/lstate.c
+    ${lua_SOURCE_DIR}/src/lstring.c
+    ${lua_SOURCE_DIR}/src/ltable.c
+    ${lua_SOURCE_DIR}/src/ltm.c
+    ${lua_SOURCE_DIR}/src/lundump.c
+    ${lua_SOURCE_DIR}/src/lvm.c
+    ${lua_SOURCE_DIR}/src/lzio.c
+    ${lua_SOURCE_DIR}/src/lauxlib.c
+    ${lua_SOURCE_DIR}/src/lbaselib.c
+    ${lua_SOURCE_DIR}/src/lmathlib.c
+    ${lua_SOURCE_DIR}/src/lstrlib.c
+    ${lua_SOURCE_DIR}/src/ltablib.c
+    ${lua_SOURCE_DIR}/src/lutf8lib.c
+)
+target_include_directories(ember_lua PUBLIC ${lua_SOURCE_DIR}/src)
+set_target_properties(ember_lua PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON)
+
 # miniaudio is compiled once behind EMBER's engine-owned audio facade.
 FetchContent_Declare(
     miniaudio
@@ -110,6 +155,7 @@ add_library(ember_miniaudio STATIC ${miniaudio_SOURCE_DIR}/miniaudio.c)
 target_include_directories(ember_miniaudio PUBLIC ${miniaudio_SOURCE_DIR})
 
 add_library(ember_engine STATIC
+    src/Engine/Scripting/LuaScriptRuntime.cpp
     src/Engine/Core/Application.cpp
     src/Engine/Core/Time.cpp
     src/Engine/Audio/AudioEngine.cpp
@@ -130,7 +176,7 @@ add_library(ember_engine STATIC
 )
 
 target_include_directories(ember_engine PUBLIC src)
-target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image nlohmann_json::nlohmann_json PRIVATE box2d::box2d ember_miniaudio)
+target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image nlohmann_json::nlohmann_json PRIVATE box2d::box2d ember_miniaudio ember_lua)
 
 add_library(ember_imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -351,6 +397,19 @@ if(BUILD_TESTING)
     target_link_libraries(ember_project_configuration_tests PRIVATE nlohmann_json::nlohmann_json)
     add_test(NAME ember_project_configuration_tests COMMAND ember_project_configuration_tests)
 
+
+    add_executable(ember_lua_script_runtime_tests
+        tests/LuaScriptRuntimeTests.cpp
+    )
+    target_include_directories(ember_lua_script_runtime_tests PRIVATE src)
+    target_link_libraries(ember_lua_script_runtime_tests PRIVATE ember_engine SDL3::SDL3)
+    add_custom_command(TARGET ember_lua_script_runtime_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:SDL3::SDL3>
+            $<TARGET_FILE_DIR:ember_lua_script_runtime_tests>
+    )
+    add_test(NAME ember_lua_script_runtime_tests COMMAND ember_lua_script_runtime_tests)
+
     add_executable(ember_asset_import_service_tests
         tests/AssetImportServiceTests.cpp
         src/Engine/Resources/AssetImportService.cpp
@@ -411,6 +470,7 @@ if(MSVC)
         target_compile_options(ember_scene_serializer_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_import_service_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_project_configuration_tests PRIVATE /W4 /permissive-)
+        target_compile_options(ember_lua_script_runtime_tests PRIVATE /W4 /permissive-)
     endif()
 else()
     target_compile_options(ember_engine PRIVATE -Wall -Wextra -Wpedantic)
@@ -436,6 +496,7 @@ else()
         target_compile_options(ember_scene_serializer_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_import_service_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_project_configuration_tests PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(ember_lua_script_runtime_tests PRIVATE -Wall -Wextra -Wpedantic)
     endif()
 endif()
 
