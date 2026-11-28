@@ -990,8 +990,338 @@ void EditorApplication::DrawInspector()
         Entity* entity = activeScene.FindEntity(m_selectedEntity);
         if (m_entitySelection.Size() > 1)
         {
-            ImGui::Text("%zu entities selected", m_entitySelection.Size());
-            ImGui::TextDisabled("Multi-edit is not available yet. Select one Entity to edit its components.");
+            std::vector<Entity*> selectedEntities;
+            selectedEntities.reserve(m_entitySelection.Size());
+            for (const EntityId id : m_entitySelection.GetIds())
+                if (Entity* selected = activeScene.FindEntity(id))
+                    selectedEntities.push_back(selected);
+
+            ImGui::Text("%zu entities selected", selectedEntities.size());
+            if (selectedEntities.size() != m_entitySelection.Size())
+                ImGui::TextDisabled("Selection changed; missing Entities will be pruned.");
+            if (!selectedEntities.empty())
+            {
+                const auto applyAll = [&selectedEntities](auto&& edit)
+                {
+                    for (Entity* selected : selectedEntities) edit(*selected);
+                };
+                const auto showMixed = [](bool mixed)
+                {
+                    if (mixed) ImGui::TextDisabled("Mixed");
+                };
+
+                bool active = selectedEntities.front()->IsActive();
+                bool activeMixed = false;
+                for (const Entity* selected : selectedEntities)
+                    activeMixed = activeMixed || selected->IsActive() != active;
+                showMixed(activeMixed);
+                if (activeMixed) ImGui::SameLine();
+                if (ImGui::Checkbox("Active", &active))
+                {
+                    applyAll([active](Entity& selected) { selected.SetActive(active); });
+                    MarkSceneDirty();
+                }
+
+                ImGui::SeparatorText("Transform (Local)");
+                Vector2 position = selectedEntities.front()->GetTransform().position;
+                Vector2 scale = selectedEntities.front()->GetTransform().scale;
+                float rotation = selectedEntities.front()->GetTransform().rotation;
+                bool positionMixed = false, scaleMixed = false, rotationMixed = false;
+                for (const Entity* selected : selectedEntities)
+                {
+                    const auto& value = selected->GetTransform();
+                    positionMixed = positionMixed || value.position.x != position.x || value.position.y != position.y;
+                    scaleMixed = scaleMixed || value.scale.x != scale.x || value.scale.y != scale.y;
+                    rotationMixed = rotationMixed || value.rotation != rotation;
+                }
+                showMixed(positionMixed);
+                if (positionMixed) ImGui::SameLine();
+                if (ImGui::DragFloat2("Position", &position.x, 0.1F))
+                {
+                    applyAll([position](Entity& selected) { selected.GetTransform().position = position; });
+                    MarkSceneDirty();
+                }
+                showMixed(scaleMixed);
+                if (scaleMixed) ImGui::SameLine();
+                if (ImGui::DragFloat2("Scale", &scale.x, 0.01F))
+                {
+                    applyAll([scale](Entity& selected) { selected.GetTransform().scale = scale; });
+                    MarkSceneDirty();
+                }
+                showMixed(rotationMixed);
+                if (rotationMixed) ImGui::SameLine();
+                if (ImGui::DragFloat("Rotation (rad)", &rotation, 0.01F))
+                {
+                    applyAll([rotation](Entity& selected) { selected.GetTransform().rotation = rotation; });
+                    MarkSceneDirty();
+                }
+
+                ImGui::SeparatorText("Movement");
+                bool movementEnabled = selectedEntities.front()->GetMovementComponent().enabled;
+                float movementSpeed = selectedEntities.front()->GetMovementComponent().speed;
+                bool movementEnabledMixed = false, movementSpeedMixed = false;
+                for (const Entity* selected : selectedEntities)
+                {
+                    const auto& value = selected->GetMovementComponent();
+                    movementEnabledMixed = movementEnabledMixed || value.enabled != movementEnabled;
+                    movementSpeedMixed = movementSpeedMixed || value.speed != movementSpeed;
+                }
+                showMixed(movementEnabledMixed);
+                if (movementEnabledMixed) ImGui::SameLine();
+                if (ImGui::Checkbox("Enable keyboard movement", &movementEnabled))
+                {
+                    applyAll([movementEnabled](Entity& selected) {
+                        selected.GetMovementComponent().enabled = movementEnabled;
+                    });
+                    MarkSceneDirty();
+                }
+                showMixed(movementSpeedMixed);
+                if (movementSpeedMixed) ImGui::SameLine();
+                if (ImGui::DragFloat("Movement speed", &movementSpeed, 1.0F, 0.0F, 2000.0F))
+                {
+                    applyAll([movementSpeed](Entity& selected) {
+                        selected.GetMovementComponent().speed = movementSpeed;
+                    });
+                    MarkSceneDirty();
+                }
+
+                ImGui::SeparatorText("Renderer");
+                bool visible = selectedEntities.front()->GetRenderComponent().visible;
+                Vector2 renderSize = selectedEntities.front()->GetRenderComponent().size;
+                int tint[4]{
+                    selectedEntities.front()->GetRenderComponent().red,
+                    selectedEntities.front()->GetRenderComponent().green,
+                    selectedEntities.front()->GetRenderComponent().blue,
+                    selectedEntities.front()->GetRenderComponent().alpha
+                };
+                bool visibleMixed = false, sizeMixed = false, tintMixed = false;
+                for (const Entity* selected : selectedEntities)
+                {
+                    const auto& value = selected->GetRenderComponent();
+                    visibleMixed = visibleMixed || value.visible != visible;
+                    sizeMixed = sizeMixed || value.size.x != renderSize.x || value.size.y != renderSize.y;
+                    tintMixed = tintMixed || value.red != tint[0] || value.green != tint[1] ||
+                        value.blue != tint[2] || value.alpha != tint[3];
+                }
+                showMixed(visibleMixed);
+                if (visibleMixed) ImGui::SameLine();
+                if (ImGui::Checkbox("Visible", &visible))
+                {
+                    applyAll([visible](Entity& selected) { selected.GetRenderComponent().visible = visible; });
+                    MarkSceneDirty();
+                }
+                showMixed(sizeMixed);
+                if (sizeMixed) ImGui::SameLine();
+                if (ImGui::DragFloat2("Size", &renderSize.x, 0.5F, 0.0F, 4096.0F))
+                {
+                    applyAll([renderSize](Entity& selected) { selected.GetRenderComponent().size = renderSize; });
+                    MarkSceneDirty();
+                }
+                showMixed(tintMixed);
+                if (tintMixed) ImGui::SameLine();
+                if (ImGui::InputInt4("Tint RGBA", tint))
+                {
+                    const int red = std::clamp(tint[0], 0, 255);
+                    const int green = std::clamp(tint[1], 0, 255);
+                    const int blue = std::clamp(tint[2], 0, 255);
+                    const int alpha = std::clamp(tint[3], 0, 255);
+                    applyAll([red, green, blue, alpha](Entity& selected) {
+                        auto& render = selected.GetRenderComponent();
+                        render.red = static_cast<std::uint8_t>(red);
+                        render.green = static_cast<std::uint8_t>(green);
+                        render.blue = static_cast<std::uint8_t>(blue);
+                        render.alpha = static_cast<std::uint8_t>(alpha);
+                    });
+                    MarkSceneDirty();
+                }
+
+                ImGui::SeparatorText("Shared Components");
+                Entity& primary = *selectedEntities.front();
+                for (const auto& component : primary.GetComponents())
+                {
+                    const auto* type = m_componentRegistry.Find(*component);
+                    if (type == nullptr) continue;
+                    std::vector<Component*> matchingComponents;
+                    bool common = true;
+                    for (Entity* selected : selectedEntities)
+                    {
+                        Component* match = nullptr;
+                        for (const auto& candidate : selected->GetComponents())
+                        {
+                            const auto* candidateType = m_componentRegistry.Find(*candidate);
+                            if (candidateType != nullptr && candidateType->id == type->id)
+                            {
+                                match = candidate.get();
+                                break;
+                            }
+                        }
+                        if (match == nullptr) { common = false; break; }
+                        matchingComponents.push_back(match);
+                    }
+                    if (!common) continue;
+
+                    ImGui::PushID(type->id.c_str());
+                    if (ImGui::TreeNode(type->displayName.c_str()))
+                    {
+                        const auto* properties = m_componentRegistry.FindProperties(*component);
+                        if (properties != nullptr)
+                        {
+                            for (const auto& property : *properties)
+                            {
+                                if ((property.id == "audio_asset_id" || property.id == "script_asset_id") &&
+                                    property.type == ComponentPropertyType::String)
+                                {
+                                    ImGui::TextDisabled("%s: multi-edit asset selection is not supported yet",
+                                        property.displayName.c_str());
+                                    continue;
+                                }
+
+                                std::vector<nlohmann::json> values;
+                                values.reserve(matchingComponents.size());
+                                for (const Component* match : matchingComponents)
+                                    values.push_back(property.get(*match));
+                                const bool mixed = editor::HasMixedValues(values);
+                                const auto applyProperty = [&]()
+                                {
+                                    if (editor::ApplyComponentPropertyAtomically(
+                                        matchingComponents, property, editedValue))
+                                        MarkSceneDirty();
+                                    else
+                                        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                                            "Could not apply %s to every selected Entity",
+                                            property.displayName.c_str());
+                                };
+
+                                ImGui::PushID(property.id.c_str());
+                                switch (property.type)
+                                {
+                                case ComponentPropertyType::Boolean:
+                                {
+                                    bool editedValue = values.front().get<bool>();
+                                    showMixed(mixed);
+                                    if (mixed) ImGui::SameLine();
+                                    if (ImGui::Checkbox(property.displayName.c_str(), &editedValue))
+                                    {
+                                        if (editor::ApplyComponentPropertyAtomically(
+                                            matchingComponents, property, nlohmann::json(editedValue)))
+                                            MarkSceneDirty();
+                                    }
+                                    break;
+                                }
+                                case ComponentPropertyType::Integer:
+                                {
+                                    int editedValue = values.front().get<int>();
+                                    showMixed(mixed);
+                                    if (mixed) ImGui::SameLine();
+                                    if (ImGui::DragInt(property.displayName.c_str(), &editedValue))
+                                    {
+                                        if (editor::ApplyComponentPropertyAtomically(
+                                            matchingComponents, property, nlohmann::json(editedValue)))
+                                            MarkSceneDirty();
+                                    }
+                                    break;
+                                }
+                                case ComponentPropertyType::Float:
+                                {
+                                    float editedValue = values.front().get<float>();
+                                    showMixed(mixed);
+                                    if (mixed) ImGui::SameLine();
+                                    if (ImGui::DragFloat(property.displayName.c_str(), &editedValue, 0.05F))
+                                    {
+                                        if (editor::ApplyComponentPropertyAtomically(
+                                            matchingComponents, property, nlohmann::json(editedValue)))
+                                            MarkSceneDirty();
+                                    }
+                                    break;
+                                }
+                                case ComponentPropertyType::String:
+                                {
+                                    std::string current = values.front().get<std::string>();
+                                    char editedValue[4097]{};
+                                    if (!mixed) std::snprintf(editedValue, sizeof(editedValue), "%s", current.c_str());
+                                    showMixed(mixed);
+                                    if (mixed) ImGui::SameLine();
+                                    if (ImGui::InputText(property.displayName.c_str(), editedValue, sizeof(editedValue)))
+                                    {
+                                        if (editor::ApplyComponentPropertyAtomically(
+                                            matchingComponents, property, nlohmann::json(std::string(editedValue))))
+                                            MarkSceneDirty();
+                                    }
+                                    break;
+                                }
+                                case ComponentPropertyType::Vector2:
+                                {
+                                    float editedValue[2]{
+                                        values.front().at(0).get<float>(), values.front().at(1).get<float>()};
+                                    showMixed(mixed);
+                                    if (mixed) ImGui::SameLine();
+                                    if (ImGui::DragFloat2(property.displayName.c_str(), editedValue, 0.05F))
+                                    {
+                                        if (editor::ApplyComponentPropertyAtomically(
+                                            matchingComponents, property,
+                                            nlohmann::json::array({editedValue[0], editedValue[1]})))
+                                            MarkSceneDirty();
+                                    }
+                                    break;
+                                }
+                                case ComponentPropertyType::Enumeration:
+                                {
+                                    const int current = values.front().get<int>();
+                                    const char* preview = mixed ? "Mixed" : "Unknown";
+                                    if (!mixed)
+                                        for (const auto& option : property.enumValues)
+                                            if (option.first == current) preview = option.second.c_str();
+                                    if (ImGui::BeginCombo(property.displayName.c_str(), preview))
+                                    {
+                                        for (const auto& option : property.enumValues)
+                                            if (ImGui::Selectable(option.second.c_str(), !mixed && option.first == current) &&
+                                                editor::ApplyComponentPropertyAtomically(
+                                                    matchingComponents, property, nlohmann::json(option.first)))
+                                                MarkSceneDirty();
+                                        ImGui::EndCombo();
+                                    }
+                                    break;
+                                }
+                                case ComponentPropertyType::EntityReference:
+                                {
+                                    const EntityId current = values.front().get<EntityId>();
+                                    const char* preview = mixed ? "Mixed" : "None";
+                                    if (!mixed && current != 0)
+                                    {
+                                        const Entity* target = activeScene.FindEntity(current);
+                                        if (target != nullptr) preview = target->GetName().c_str();
+                                    }
+                                    if (ImGui::BeginCombo(property.displayName.c_str(), preview))
+                                    {
+                                        if (ImGui::Selectable("None", !mixed && current == 0) &&
+                                            editor::ApplyComponentPropertyAtomically(
+                                                matchingComponents, property, nlohmann::json(std::uint64_t{0})))
+                                            MarkSceneDirty();
+                                        for (const EntityId candidateId : activeScene.GetEntityIds())
+                                        {
+                                            const Entity* candidate = activeScene.FindEntity(candidateId);
+                                            if (candidate == nullptr) continue;
+                                            const std::string label = candidate->GetName() +
+                                                " (#" + std::to_string(candidateId) + ")";
+                                            if (ImGui::Selectable(label.c_str(), !mixed && candidateId == current) &&
+                                                editor::ApplyComponentPropertyAtomically(
+                                                    matchingComponents, property, nlohmann::json(candidateId)))
+                                                MarkSceneDirty();
+                                        }
+                                        ImGui::EndCombo();
+                                    }
+                                    break;
+                                }
+                                }
+                                ImGui::PopID();
+                            }
+                        }
+                        ImGui::TreePop();
+                    }
+                    ImGui::PopID();
+                }
+                ImGui::TextDisabled("Only components present on every selected Entity are shown.");
+            }
         }
         else if (entity == nullptr)
         {
