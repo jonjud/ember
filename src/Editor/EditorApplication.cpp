@@ -2984,9 +2984,23 @@ void EditorApplication::SaveScriptSource()
             "Could not verify Script source before saving");
         return;
     }
-    const std::string diskContents{
-        std::istreambuf_iterator<char>(currentSource), std::istreambuf_iterator<char>()};
-    if (currentSource.bad() || diskContents != m_scriptSourceOriginal)
+    std::error_code diskSizeError;
+    const auto diskSize = std::filesystem::file_size(*resolved, diskSizeError);
+    if (diskSizeError || diskSize > m_scriptSourceBuffer.size() - 1)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script source changed or exceeds the 64 KiB Editor limit; reload before saving");
+        return;
+    }
+    std::array<char, 65536> diskBuffer{};
+    currentSource.read(diskBuffer.data(), static_cast<std::streamsize>(diskSize));
+    const bool readComplete =
+        currentSource.gcount() == static_cast<std::streamsize>(diskSize) && !currentSource.bad();
+    const int trailingByte = readComplete ? currentSource.peek() : std::char_traits<char>::eof();
+    const std::string diskContents(diskBuffer.data(),
+        static_cast<std::size_t>(std::max<std::streamsize>(0, currentSource.gcount())));
+    if (!readComplete || trailingByte != std::char_traits<char>::eof() ||
+        diskContents != m_scriptSourceOriginal)
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "Script source changed on disk; discard edits and reload before saving");
