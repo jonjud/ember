@@ -511,12 +511,11 @@ void EditorApplication::DrawExportWindowsModal()
     ImGui::BeginDisabled(!canExport);
     if (ImGui::Button("Export", ImVec2(120.0F, 0.0F)))
     {
-        char* executableDirectory = SDL_GetBasePath();
+        const char* executableDirectory = SDL_GetBasePath();
         std::filesystem::path runtimePath;
         if (executableDirectory != nullptr)
         {
             runtimePath = PathFromUtf8(executableDirectory);
-            SDL_free(executableDirectory);
             runtimePath /= "ember_runtime.exe";
         }
 
