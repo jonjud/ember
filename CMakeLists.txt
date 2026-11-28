@@ -214,6 +214,7 @@ if(BUILD_TESTING)
         src/Engine/Audio/AudioEngine.cpp
         src/Engine/Resources/AssetDirectory.cpp
         src/Engine/Resources/AssetMetadataStore.cpp
+        src/Engine/Core/FileSystem.cpp
         src/Engine/Resources/AssetRegistry.cpp
         src/Engine/Scene/Scene.cpp
         src/Engine/Physics/PhysicsWorld.cpp
@@ -355,6 +356,7 @@ if(BUILD_TESTING)
         src/Engine/Scene/Scene.cpp
         src/Engine/Physics/PhysicsWorld.cpp
         src/Engine/Scene/SceneSerializer.cpp
+        src/Engine/Core/FileSystem.cpp
     )
     target_include_directories(ember_scene_serializer_tests PRIVATE src)
     target_link_libraries(ember_scene_serializer_tests PRIVATE nlohmann_json::nlohmann_json box2d::box2d)
@@ -363,6 +365,7 @@ if(BUILD_TESTING)
     add_executable(ember_asset_metadata_tests
         tests/AssetMetadataTests.cpp
         src/Engine/Resources/AssetMetadataStore.cpp
+        src/Engine/Core/FileSystem.cpp
     )
     target_include_directories(ember_asset_metadata_tests PRIVATE src)
     target_link_libraries(ember_asset_metadata_tests PRIVATE nlohmann_json::nlohmann_json)
@@ -373,6 +376,7 @@ if(BUILD_TESTING)
         src/Engine/Resources/AssetRegistry.cpp
         src/Engine/Resources/AssetMetadataStore.cpp
         src/Engine/Resources/AssetDirectory.cpp
+        src/Engine/Core/FileSystem.cpp
     )
     target_include_directories(ember_asset_registry_tests PRIVATE src)
     target_link_libraries(ember_asset_registry_tests PRIVATE nlohmann_json::nlohmann_json)
@@ -385,6 +389,7 @@ if(BUILD_TESTING)
         src/Engine/Resources/AssetMetadataStore.cpp
         src/Engine/Resources/AssetDirectory.cpp
         src/Engine/Resources/TextureCache.cpp
+        src/Engine/Core/FileSystem.cpp
     )
     target_include_directories(ember_asset_manager_tests PRIVATE src)
     target_link_libraries(ember_asset_manager_tests PRIVATE nlohmann_json::nlohmann_json)
@@ -393,6 +398,7 @@ if(BUILD_TESTING)
     add_executable(ember_project_configuration_tests
         tests/ProjectConfigurationTests.cpp
         src/Engine/Project/ProjectConfigurationStore.cpp
+        src/Engine/Core/FileSystem.cpp
     )
     target_include_directories(ember_project_configuration_tests PRIVATE src)
     target_link_libraries(ember_project_configuration_tests PRIVATE nlohmann_json::nlohmann_json)
@@ -417,6 +423,7 @@ if(BUILD_TESTING)
         src/Engine/Resources/AssetRegistry.cpp
         src/Engine/Resources/AssetMetadataStore.cpp
         src/Engine/Resources/AssetDirectory.cpp
+        src/Engine/Core/FileSystem.cpp
     )
     target_include_directories(ember_asset_import_service_tests PRIVATE src)
     target_link_libraries(ember_asset_import_service_tests PRIVATE nlohmann_json::nlohmann_json)
@@ -437,6 +444,7 @@ if(BUILD_TESTING)
     )
         target_sources(${scene_target} PRIVATE
             src/Engine/Audio/AudioEngine.cpp
+            src/Engine/Core/FileSystem.cpp
             src/Engine/Resources/AssetDirectory.cpp
             src/Engine/Resources/AssetMetadataStore.cpp
             src/Engine/Resources/AssetRegistry.cpp
