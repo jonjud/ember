@@ -860,12 +860,15 @@ void EditorApplication::DrawSceneHierarchy()
 
         const std::vector<EntityId> orderedIds = activeScene.GetEntityIds();
         const ImGuiIO& selectionIO = ImGui::GetIO();
-        activeScene.ForEachEntity([this, &orderedIds, &selectionIO](Entity& entity)
+        const auto drawHierarchyEntity = [this, &activeScene, &orderedIds, &selectionIO]
+            (auto&& drawSelf, EntityId id) -> void
         {
-            const EntityId id = entity.GetId();
+            Entity* entity = activeScene.FindEntity(id);
+            if (entity == nullptr) return;
+
             char label[160]{};
             std::snprintf(label, sizeof(label), "%s##%llu",
-                entity.GetName().c_str(), static_cast<unsigned long long>(id));
+                entity->GetName().c_str(), static_cast<unsigned long long>(id));
             if (ImGui::Selectable(label, m_entitySelection.Contains(id)))
             {
                 if (selectionIO.KeyShift)
@@ -876,7 +879,42 @@ void EditorApplication::DrawSceneHierarchy()
                     m_entitySelection.SelectOnly(id);
                 m_selectedEntity = m_entitySelection.Primary();
             }
-        });
+
+            if (ImGui::BeginDragDropSource())
+            {
+                ImGui::SetDragDropPayload("EMBER_ENTITY_ID", &id, sizeof(id));
+                ImGui::TextUnformatted(entity->GetName().c_str());
+                ImGui::EndDragDropSource();
+            }
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EMBER_ENTITY_ID"))
+                {
+                    if (payload->DataSize == static_cast<int>(sizeof(EntityId)))
+                    {
+                        const EntityId draggedId = *static_cast<const EntityId*>(payload->Data);
+                        if (activeScene.SetParent(draggedId, id)) MarkSceneDirty();
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
+            if (ImGui::BeginPopupContextItem("EntityHierarchyContext"))
+            {
+                const bool hasParent = entity->GetParentId() != 0;
+                ImGui::BeginDisabled(!hasParent || m_isPlaying);
+                if (ImGui::MenuItem("Unparent") &&
+                    activeScene.SetParent(id, 0)) MarkSceneDirty();
+                ImGui::EndDisabled();
+                ImGui::EndPopup();
+            }
+
+            ImGui::Indent(14.0F);
+            for (const EntityId childId : activeScene.GetChildren(id))
+                drawSelf(drawSelf, childId);
+            ImGui::Unindent(14.0F);
+        };
+        for (const EntityId rootId : activeScene.GetRootEntityIds())
+            drawHierarchyEntity(drawHierarchyEntity, rootId);
 
         if (activeScene.IsEmpty()) ImGui::TextDisabled("No entities. Press + to create one.");
         else if (!m_isPlaying)
