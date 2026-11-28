@@ -1,5 +1,6 @@
 #include "Engine/Scene/Scene.hpp"
 #include "Engine/Scripting/ScriptComponent.hpp"
+#include "Engine/Platform/InputMap.hpp"
 
 #include <iostream>
 #include <memory>

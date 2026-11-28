@@ -270,6 +270,13 @@ if(BUILD_TESTING)
     target_link_libraries(ember_script_component_tests PRIVATE nlohmann_json::nlohmann_json)
     add_test(NAME ember_script_component_tests COMMAND ember_script_component_tests)
 
+    add_executable(ember_script_runtime_scene_tests
+        tests/ScriptRuntimeSceneTests.cpp
+    )
+    target_include_directories(ember_script_runtime_scene_tests PRIVATE src)
+    target_link_libraries(ember_script_runtime_scene_tests PRIVATE ember_engine)
+    add_test(NAME ember_script_runtime_scene_tests COMMAND ember_script_runtime_scene_tests)
+
     add_executable(ember_component_registry_tests
         tests/ComponentRegistryTests.cpp
     )
