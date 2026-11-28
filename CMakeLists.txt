@@ -168,6 +168,7 @@ add_library(ember_engine STATIC
     src/Engine/Resources/AssetRegistry.cpp
     src/Engine/Resources/AssetMetadataStore.cpp
     src/Engine/Project/ProjectConfigurationStore.cpp
+    src/Engine/Project/ProjectExporter.cpp
     src/Engine/Resources/TextureCache.cpp
     src/Engine/Scene/Scene.cpp
     src/Engine/Physics/PhysicsWorld.cpp
@@ -418,6 +419,19 @@ if(BUILD_TESTING)
     target_include_directories(ember_asset_manager_tests PRIVATE src)
     target_link_libraries(ember_asset_manager_tests PRIVATE nlohmann_json::nlohmann_json)
     add_test(NAME ember_asset_manager_tests COMMAND ember_asset_manager_tests)
+
+    add_executable(ember_project_exporter_tests
+        tests/ProjectExporterTests.cpp
+        src/Engine/Project/ProjectExporter.cpp
+        src/Engine/Project/ProjectConfigurationStore.cpp
+        src/Engine/Resources/AssetRegistry.cpp
+        src/Engine/Resources/AssetMetadataStore.cpp
+        src/Engine/Resources/AssetDirectory.cpp
+        src/Engine/Core/FileSystem.cpp
+    )
+    target_include_directories(ember_project_exporter_tests PRIVATE src)
+    target_link_libraries(ember_project_exporter_tests PRIVATE nlohmann_json::nlohmann_json)
+    add_test(NAME ember_project_exporter_tests COMMAND ember_project_exporter_tests)
 
     add_executable(ember_project_configuration_tests
         tests/ProjectConfigurationTests.cpp
