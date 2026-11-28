@@ -177,17 +177,12 @@ Json ToJson(const Entity& entity, const ComponentRegistry* componentRegistry)
 }
 }
 
-bool SceneSerializer::Save(
+bool SceneSerializer::SerializeToString(
     const Scene& scene,
-    const std::filesystem::path& filePath,
+    std::string& serialized,
     std::string* error,
     const ComponentRegistry* componentRegistry)
 {
-    if (filePath.empty())
-    {
-        return Fail(error, "Scene file path is empty.");
-    }
-
     try
     {
         Json entities = Json::array();
@@ -201,21 +196,28 @@ bool SceneSerializer::Save(
             {"scene_name", scene.GetName()},
             {"entities", std::move(entities)}
         };
-
-        const std::string serialized = document.dump(4) + "\n";
-        if (!WriteFileAtomically(filePath, serialized, false, error))
-            return false;
+        serialized = document.dump(4) + "\n";
     }
     catch (const std::exception& exception)
     {
+        serialized.clear();
         return Fail(error, exception.what());
     }
 
-    if (error != nullptr)
-    {
-        error->clear();
-    }
+    if (error != nullptr) error->clear();
     return true;
+}
+
+bool SceneSerializer::Save(
+    const Scene& scene,
+    const std::filesystem::path& filePath,
+    std::string* error,
+    const ComponentRegistry* componentRegistry)
+{
+    if (filePath.empty()) return Fail(error, "Scene file path is empty.");
+    std::string serialized;
+    if (!SerializeToString(scene, serialized, error, componentRegistry)) return false;
+    return WriteFileAtomically(filePath, serialized, false, error);
 }
 
 bool SceneSerializer::Load(
@@ -227,12 +229,26 @@ bool SceneSerializer::Load(
     try
     {
         std::ifstream input(filePath, std::ios::binary);
-        if (!input)
-        {
-            return Fail(error, "Could not open scene file.");
-        }
+        if (!input) return Fail(error, "Could not open scene file.");
+        const std::string serialized(
+            (std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+        return LoadFromString(scene, serialized, error, componentRegistry);
+    }
+    catch (const std::exception& exception)
+    {
+        return Fail(error, exception.what());
+    }
+}
 
-        const Json document = Json::parse(input);
+bool SceneSerializer::LoadFromString(
+    Scene& scene,
+    std::string_view serialized,
+    std::string* error,
+    const ComponentRegistry* componentRegistry)
+{
+    try
+    {
+        const Json document = Json::parse(serialized);
         if (document.at("schema_version").get<std::uint32_t>() != kSceneSchemaVersion)
         {
             return Fail(error, "Unsupported scene schema version.");
