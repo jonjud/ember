@@ -10,13 +10,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`414bce5`](https://github.com/jonjud/ember/commit/414bce55243350f1faab8c82b49f973017975821) — Script Source Editor syntax validation and external-change protection |
-| Latest repository HEAD | [`1089bd1`](https://github.com/jonjud/ember/commit/1089bd102727fc5fdff9c4f7ae07e9a00e08e0fe) on `develop` |
-| Last verified code CI | [Windows CI run 46105064345](https://github.com/jonjud/ember/actions/runs/46105064345) — **Success**; external-change guard and safe reload build/tests passed |
-| Latest CI | [Windows CI run 46104170651](https://github.com/jonjud/ember/actions/runs/46104170651) — **Success** |
+| Last code commit | [`c6f3c54`](https://github.com/jonjud/ember/commit/c6f3c540afeb1c807f84ab6064c8f5f96c935f39) — failure-safe Script Source Editor file I/O |
+| Latest repository HEAD | [`c6f3c54`](https://github.com/jonjud/ember/commit/c6f3c540afeb1c807f84ab6064c8f5f96c935f39) on `develop` |
+| Last verified code CI | [Windows CI run 46105718716](https://github.com/jonjud/ember/actions/runs/46105718716) — **Success**; failure-safe reload and atomic save build/tests passed |
+| Latest CI | [Windows CI run 46105718716](https://github.com/jonjud/ember/actions/runs/46105718716) — **Success** |
 | Latest documentation CI | [Windows CI run 46101797386](https://github.com/jonjud/ember/actions/runs/46101797386) — **Success** |
-| Last completed milestone | Script Source Editor external-change protection, safe reload, dirty-state and close protection — Windows CI run 46104170651 Success; combined manual Editor verification remains pending |
-| Active milestone | Harden Script Source Editor file I/O: failure-safe reload and atomic save replacement; then close remaining authoring workflow gaps. C++20 remains primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
+| Last completed milestone | Script Source Editor authoring workflow: syntax validation, dirty-state/close protection, external-change detection, failure-safe reload and atomic save — Windows CI run 46105718716 Success; combined manual Editor verification remains pending |
+| Active milestone | Close remaining Script Source Editor authoring workflow gaps, then complete combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -32,6 +32,7 @@
 ### Engine / Editor foundations
 - [x] Built-in Script Source Editor for text Script assets: open from Asset Browser, edit/save, 64 KiB cap, explicit discard and unsaved-close protection (Windows CI run 46102606726 Success)
 - [x] Detect external source changes before save and reload only when the Editor buffer is clean (Windows CI run 46104170651 Success)
+- [x] Failure-safe reload and atomic save replacement; failed reads preserve the current buffer and failed replacement preserves the original file (Windows CI run 46105718716 Success)
 - [x] CMake/C++20, SDL3 application loop, timing and input foundation
 - [x] Renderer2D, Transform2D, Camera2D, Scene/Entity
 - [x] AssetDirectory, AssetManager, AssetRegistry, texture cache and import metadata
@@ -185,7 +186,8 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 | 2026-11-28 | [Language-neutral Script Asset import and Editor assignment, `cd36dd1`, CI run 46092542143](https://github.com/jonjud/ember/actions/runs/46092542143) | Success; Script metadata/import tests and Editor build passed |
 | 2026-11-28 | [Lua backend + language-tagged Script Assets, `41f5ac3`, CI run 46097066791](https://github.com/jonjud/ember/actions/runs/46097066791) | Success; Lua runtime, Editor Play Mode integration, script language tagging and automated sandbox/lifecycle tests passed |
 | 2026-11-28 | [Script Source Editor external-change guard, `1089bd1`, CI run 46104170651](https://github.com/jonjud/ember/actions/runs/46104170651) | Success; external edits are detected before save, clean buffers can safely reload from disk, and Editor build/tests passed |
+| 2026-11-28 | [Failure-safe Script Source Editor file I/O, `c6f3c54`, CI run 46105718716](https://github.com/jonjud/ember/actions/runs/46105718716) | Success; reload preserves the in-memory buffer on read failure and save uses atomic replacement |
 
 ---
 
-**Handoff:** Script Source Editor now protects dirty buffers, detects external file changes before save, and supports safe reload when the buffer is clean. Windows CI run 46104170651 passed. The Lua backend exposes Entity/Transform/Input operations through a narrow host API, enforces VM memory/instruction budgets, blocks binary chunks and prevents pcall/xpcall from swallowing budget violations. Next: harden Script Source Editor file I/O with failure-safe reload and atomic replacement save; then complete combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
+**Handoff:** Script Source Editor now supports Lua syntax validation, protects dirty buffers and unsaved close, detects external file changes before save, reloads through a temporary buffer, and saves with atomic replacement. Windows CI run 46105718716 passed. The Lua backend exposes Entity/Transform/Input operations through a narrow host API, enforces VM memory/instruction budgets, blocks binary chunks and prevents pcall/xpcall from swallowing budget violations. Next: close remaining authoring workflow gaps, then complete combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
