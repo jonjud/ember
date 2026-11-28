@@ -340,7 +340,7 @@ void EditorApplication::ProcessEvents()
         ImGui_ImplSDL3_ProcessEvent(&event);
         if (event.type == SDL_EVENT_QUIT)
         {
-            m_isRunning = false;
+            RequestExit();
         }
         else if (event.type == SDL_EVENT_KEY_DOWN && !event.key.repeat)
         {
@@ -435,6 +435,7 @@ void EditorApplication::Render()
     DrawScriptSourceEditor();
     DrawViewport();
     DrawUnsavedChangesModal();
+    DrawUnsavedScriptExitModal();
 
     ImGui::SetNextWindowPos(ImVec2(0.0F, 0.0F), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(1440.0F, 24.0F), ImGuiCond_Always);
@@ -467,7 +468,7 @@ void EditorApplication::DrawMenuBar()
         if (ImGui::MenuItem("Load Scene")) LoadScene();
         ImGui::EndDisabled();
         ImGui::Separator();
-        if (ImGui::MenuItem("Exit")) m_isRunning = false;
+        if (ImGui::MenuItem("Exit")) RequestExit();
         ImGui::EndMenu();
     }
 
@@ -2659,6 +2660,61 @@ void EditorApplication::DrawUnsavedChangesModal()
         {
             m_pendingSceneChange = 0;
             m_pendingScenePath.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void EditorApplication::RequestExit()
+{
+    if (m_scriptSourceDirty)
+    {
+        m_pendingScriptExit = true;
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Unsaved Script changes — save or discard before exiting");
+        return;
+    }
+    m_isRunning = false;
+}
+
+void EditorApplication::DrawUnsavedScriptExitModal()
+{
+    if (!m_pendingScriptExit) return;
+    ImGui::OpenPopup("Unsaved Script Changes");
+    if (ImGui::BeginPopupModal("Unsaved Script Changes", nullptr,
+        ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::TextUnformatted("The Script Source Editor has unsaved changes.");
+        ImGui::TextUnformatted("Save your script before exiting EMBER?");
+        if (ImGui::Button("Save and Exit", ImVec2(130.0F, 0.0F)))
+        {
+            SaveScriptSource();
+            if (!m_scriptSourceDirty)
+            {
+                m_pendingScriptExit = false;
+                m_isRunning = false;
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Discard and Exit", ImVec2(130.0F, 0.0F)))
+        {
+            m_scriptSourceDirty = false;
+            m_hasScriptValidationResult = false;
+            m_scriptValidationMessage.clear();
+            m_scriptSourceBuffer.fill('\\0');
+            m_scriptSourceOriginal.clear();
+            m_scriptSourceAssetId.clear();
+            m_scriptSourcePath.clear();
+            m_pendingScriptExit = false;
+            m_isRunning = false;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(110.0F, 0.0F)))
+        {
+            m_pendingScriptExit = false;
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();

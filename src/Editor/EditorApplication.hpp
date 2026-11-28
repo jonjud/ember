@@ -58,6 +58,8 @@ private:
     void ValidateScriptSource();
     void DrawViewport();
     void DrawUnsavedChangesModal();
+    void DrawUnsavedScriptExitModal();
+    void RequestExit();
     void CreateEntity();
     void DuplicateSelectedEntity();
     void DeleteSelectedEntity();
@@ -88,6 +90,7 @@ private:
     SDL_Renderer* m_renderer = nullptr;
     std::unordered_map<std::string, SDL_Texture*> m_previewTextures;
     bool m_isRunning = false;
+    bool m_pendingScriptExit = false;
     Scene m_scene{"Untitled Scene"};
     ComponentRegistry m_componentRegistry;
     Scene m_playScene{"Play Scene"};
