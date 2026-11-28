@@ -119,8 +119,9 @@ EditorApplication::~EditorApplication()
     Shutdown();
 }
 
-bool EditorApplication::Initialize()
+bool EditorApplication::Initialize(const std::filesystem::path& projectFile)
 {
+    if (!projectFile.empty()) m_projectFilePath = std::filesystem::absolute(projectFile).lexically_normal();
     m_logger.AddSink(std::make_shared<ConsoleLogSink>());
 
     char* preferencePath = SDL_GetPrefPath("EMBER", "EMBER");
@@ -347,6 +348,62 @@ void EditorApplication::Shutdown()
     }
     SDL_Quit();
     m_isRunning = false;
+}
+
+void SDLCALL EditorApplication::OpenProjectDialogCallback(
+    void* userdata, const char* const* filelist, int filter)
+{
+    (void)filter;
+    auto* application = static_cast<EditorApplication*>(userdata);
+    if (application == nullptr) return;
+    if (filelist == nullptr)
+    {
+        std::snprintf(application->m_statusMessage, sizeof(application->m_statusMessage),
+            "Open Project cancelled");
+        return;
+    }
+    if (filelist[0] != nullptr)
+        application->OpenProjectFromPath(PathFromUtf8(filelist[0]));
+}
+
+void EditorApplication::OpenProjectFromPath(const std::filesystem::path& path)
+{
+    if (m_isPlaying || m_sceneDirty || m_scriptSourceDirty)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Save or discard current changes before opening another project");
+        return;
+    }
+
+    const auto absolutePath = std::filesystem::absolute(path).lexically_normal();
+    std::string error;
+    const auto configuration = ProjectConfigurationStore::Load(absolutePath, &error);
+    if (!configuration)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Open Project failed: %.190s", error.c_str());
+        m_logger.Error("Project", error);
+        return;
+    }
+
+    StopAudioPreview();
+    ClearPreviewTextures();
+    m_projectFilePath = absolutePath;
+    m_projectConfiguration = *configuration;
+    m_projectLoadFailed = false;
+    m_scene = Scene("Untitled Scene");
+    m_currentScenePath.clear();
+    m_selectedEntity = 0;
+    m_sceneDirty = false;
+    m_selectedAssetId.clear();
+    m_importSettingsAssetId.clear();
+    LoadInputSettings();
+    if (m_projectLoadFailed) return;
+    RefreshAssets();
+    LoadStartupScene();
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+        "Opened project: %.190s", PathToUtf8(absolutePath).c_str());
+    m_logger.Info("Project", "Opened project: " + PathToUtf8(absolutePath));
 }
 
 void EditorApplication::ProcessEvents()
@@ -631,6 +688,15 @@ void EditorApplication::DrawMenuBar()
 
     if (ImGui::BeginMenu("File"))
     {
+        const bool canOpenProject = !m_isPlaying && !m_sceneDirty && !m_scriptSourceDirty;
+        if (ImGui::MenuItem("Open Project...", nullptr, false, canOpenProject))
+        {
+            const SDL_DialogFileFilter filters[]{{"EMBER Project", "emberproject"}};
+            const std::string directory = PathToUtf8(m_projectFilePath.parent_path());
+            SDL_ShowOpenFileDialog(&EditorApplication::OpenProjectDialogCallback,
+                this, m_window, filters, 1, directory.c_str(), false);
+        }
+        ImGui::Separator();
         const bool canCreateProject = !m_isPlaying && !m_sceneDirty && !m_scriptSourceDirty;
         if (ImGui::MenuItem("New Project...", nullptr, false, canCreateProject))
         {

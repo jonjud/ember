@@ -22,6 +22,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <SDL3/SDL.h>
 
 struct SDL_Renderer;
 struct SDL_Texture;
@@ -38,12 +39,14 @@ public:
     EditorApplication(const EditorApplication&) = delete;
     EditorApplication& operator=(const EditorApplication&) = delete;
 
-    [[nodiscard]] bool Initialize();
+    [[nodiscard]] bool Initialize(const std::filesystem::path& projectFile = {});
     void Run();
     void Shutdown();
 
 private:
     void ProcessEvents();
+    static void SDLCALL OpenProjectDialogCallback(void* userdata, const char* const* filelist, int filter);
+    void OpenProjectFromPath(const std::filesystem::path& path);
     void Render();
     void UpdatePlayMode();
     void DrawMenuBar();
