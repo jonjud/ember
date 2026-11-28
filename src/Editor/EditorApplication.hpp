@@ -11,6 +11,7 @@
 #include "Engine/Platform/InputMap.hpp"
 #include "Engine/UI/UIInputRouter2D.hpp"
 #include "Engine/Project/ProjectConfiguration.hpp"
+#include "Engine/Project/ProjectExporter.hpp"
 #include "Engine/Scripting/ScriptRuntime.hpp"
 
 #include <array>
@@ -46,6 +47,7 @@ private:
     void Render();
     void UpdatePlayMode();
     void DrawMenuBar();
+    void DrawExportWindowsModal();
     void DrawSceneHierarchy();
     void DrawInspector();
     void DrawAssetBrowser();
@@ -116,6 +118,7 @@ private:
     std::string m_rebindAction;
     bool m_replaceActionOnRebind = true;
     char m_projectName[128] = "Untitled Project";
+    char m_exportOutputDirectory[1024]{};
     char m_assetDirectory[260] = "assets";
     char m_startupScenePath[260]{};
     char m_newInputActionName[64]{};

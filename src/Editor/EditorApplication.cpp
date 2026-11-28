@@ -13,6 +13,7 @@
 #include "Engine/UI/UILayout2D.hpp"
 #include "Engine/Platform/Input.hpp"
 #include "Engine/Project/ProjectConfigurationStore.hpp"
+#include "Engine/Project/ProjectExporter.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
@@ -448,6 +449,7 @@ void EditorApplication::Render()
     ImGui::NewFrame();
 
     DrawMenuBar();
+    DrawExportWindowsModal();
     DrawSceneHierarchy();
     DrawInspector();
     DrawAssetBrowser();
@@ -477,6 +479,74 @@ void EditorApplication::Render()
     SDL_RenderPresent(m_renderer);
 }
 
+void EditorApplication::DrawExportWindowsModal()
+{
+    if (!ImGui::BeginPopupModal("Export Windows Game", nullptr,
+        ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+
+    ImGui::TextWrapped("Create a standalone Windows game folder containing the EMBER runtime, project and assets.");
+    ImGui::Spacing();
+    ImGui::Text("Output directory");
+    ImGui::SetNextItemWidth(520.0F);
+    ImGui::InputText("##ExportOutputDirectory", m_exportOutputDirectory,
+        sizeof(m_exportOutputDirectory));
+    ImGui::TextDisabled("Choose a new or empty folder outside the source project.");
+
+    if (m_sceneDirty)
+    {
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(1.0F, 0.72F, 0.25F, 1.0F),
+            "Save the current scene before exporting.");
+    }
+    if (m_isPlaying)
+    {
+        ImGui::TextColored(ImVec4(1.0F, 0.72F, 0.25F, 1.0F),
+            "Stop Play Mode before exporting.");
+    }
+
+    ImGui::Separator();
+    const bool canExport = !m_isPlaying && !m_sceneDirty &&
+        !m_projectLoadFailed && m_exportOutputDirectory[0] != '\0';
+    ImGui::BeginDisabled(!canExport);
+    if (ImGui::Button("Export", ImVec2(120.0F, 0.0F)))
+    {
+        char* executableDirectory = SDL_GetBasePath();
+        std::filesystem::path runtimePath;
+        if (executableDirectory != nullptr)
+        {
+            runtimePath = PathFromUtf8(executableDirectory);
+            SDL_free(executableDirectory);
+            runtimePath /= "ember_runtime.exe";
+        }
+
+        ProjectExportResult result;
+        std::string error;
+        if (runtimePath.empty() ||
+            !ProjectExporter::ExportWindows(m_projectFilePath, runtimePath,
+                PathFromUtf8(m_exportOutputDirectory), &result, &error))
+        {
+            if (error.empty()) error = "Could not locate ember_runtime.exe beside the Editor.";
+            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                "Windows export failed: %.190s", error.c_str());
+            m_logger.Error("Export", error);
+        }
+        else
+        {
+            const std::string exportedPath = PathToUtf8(result.outputDirectory);
+            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                "Windows game exported: %.190s", exportedPath.c_str());
+            m_logger.Info("Export", "Windows game export completed: " + exportedPath);
+            ImGui::CloseCurrentPopup();
+        }
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel", ImVec2(120.0F, 0.0F)))
+        ImGui::CloseCurrentPopup();
+    ImGui::EndPopup();
+}
+
 void EditorApplication::DrawMenuBar()
 {
     if (!ImGui::BeginMainMenuBar())
@@ -490,6 +560,20 @@ void EditorApplication::DrawMenuBar()
         if (ImGui::MenuItem("Save Scene", "Ctrl+S")) (void)SaveScene();
         if (ImGui::MenuItem("Load Scene")) LoadScene();
         ImGui::EndDisabled();
+        ImGui::Separator();
+        const bool canExport = !m_isPlaying && !m_projectLoadFailed &&
+            !m_projectConfiguration.startupScene.empty();
+        if (ImGui::MenuItem("Export Windows Game...", nullptr, false, canExport))
+        {
+            const auto projectPath = std::filesystem::absolute(m_projectFilePath).lexically_normal();
+            const auto projectRoot = projectPath.parent_path();
+            auto outputName = projectRoot.filename().string();
+            if (outputName.empty()) outputName = "EMBER-Game";
+            const auto defaultOutput = projectRoot.parent_path() / (outputName + "-Windows");
+            std::snprintf(m_exportOutputDirectory, sizeof(m_exportOutputDirectory), "%s",
+                PathToUtf8(defaultOutput).c_str());
+            ImGui::OpenPopup("Export Windows Game");
+        }
         ImGui::Separator();
         if (ImGui::MenuItem("Exit")) RequestExit();
         ImGui::EndMenu();
