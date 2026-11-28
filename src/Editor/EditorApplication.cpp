@@ -182,7 +182,7 @@ bool EditorApplication::Initialize()
 
     if (!RegisterScriptComponent(m_componentRegistry))
     {
-        std::cerr << "EMBER Editor: Script component registration failed.\\n";
+        std::cerr << "EMBER Editor: Script component registration failed.\n";
         return false;
     }
 

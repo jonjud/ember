@@ -18,7 +18,7 @@ public:
     [[nodiscard]] bool IsConfigurationValid() const noexcept
     {
         return scriptAssetId.size() <= 256 &&
-            scriptAssetId.find('\\0') == std::string::npos;
+            scriptAssetId.find('\0') == std::string::npos;
     }
 
     [[nodiscard]] std::unique_ptr<Component> Clone() const override

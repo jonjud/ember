@@ -11,10 +11,10 @@ int failures = 0;
 void Check(bool condition, const char* message)
 {
     if (!condition) {
-        std::cerr << "[FAIL] " << message << '\\n';
+        std::cerr << "[FAIL] " << message << '\n';
         ++failures;
     } else {
-        std::cout << "[PASS] " << message << '\\n';
+        std::cout << "[PASS] " << message << '\n';
     }
 }
 }
@@ -35,7 +35,7 @@ int main()
 
     component.scriptAssetId.assign(257, 'x');
     Check(!component.IsConfigurationValid(), "Overlong script asset IDs are rejected");
-    component.scriptAssetId = std::string("scripts/invalid") + '\\0' + ".lua";
+    component.scriptAssetId = std::string("scripts/invalid") + '\0' + ".lua";
     Check(!component.IsConfigurationValid(), "Script asset IDs containing null bytes are rejected");
 
     ember::ComponentRegistry registry;
