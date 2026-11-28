@@ -81,6 +81,8 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Implement Lua 5.5.1 backend: per-instance VM state, lifecycle callbacks, safe asset resolution and diagnostics (Windows CI run 46097066791 Success)
 - [x] Expose minimal Entity/Transform/Input API to Lua without leaking Lua types into Engine interfaces (CI run 46097066791 Success)
 - [x] Integrate Lua backend with Editor Play Mode and add lifecycle/error/isolation/sandbox tests (instruction and memory budgets, protected initialization, pcall/xpcall budget enforcement, text-only loading; CI run 46097066791 Success)
+- [x] Add Script Diagnostics window with Entity-aware diagnostics and scrollable message list (CI run 46101206269 Success)
+- [x] Add built-in Script Source Editor for text Script assets, with 64 KiB limit, explicit save/discard, dirty-state protection and Play Mode write guard (CI run 46101797386 Success)
 
 ## Phase 5 — Packaging and Quality
 - [ ] Windows game export / runtime executable
@@ -122,5 +124,5 @@ These are strategic goals after the core engine, scripting workflow and packagin
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- The language-neutral scripting foundation, Scene lifecycle, Script Asset import/Editor assignment, Lua 5.5.1 backend, Entity/Transform/Input bindings, Editor Play Mode integration and automated sandbox/lifecycle tests are complete (Windows CI run 46097066791 Success). Next: complete the combined Windows Editor verification checklist for Input Action Mapping and Lua scripting, then continue with scripting usability (language-aware asset workflow, diagnostics and source editing). Keep C++20 primary and keep editor-only code out of `ember_engine`.
+- The language-neutral scripting foundation, Scene lifecycle, Script Asset import/Editor assignment, Lua 5.5.1 gameplay backend, Entity/Transform/Input bindings, Play Mode integration, Script Diagnostics and initial built-in Script Source Editor are implemented and pass Windows CI (latest run 46101797386 Success). Next: harden source editing against external file changes, add script authoring conveniences and validation, then complete the combined Windows Editor verification checklist for Input Action Mapping and Lua Play Mode. C++20 remains the primary language for Engine and Editor; Lua is an optional gameplay scripting language. Keep editor-only code out of `ember_engine`.
 - After the scripting and packaging foundations are stable, begin the planned Phase 6 extensibility work: Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions.

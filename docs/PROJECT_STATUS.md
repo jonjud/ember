@@ -10,20 +10,26 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | Language-tagged Script Assets (`41f5ac3`) |
-| Latest repository HEAD | [`41f5ac3`](https://github.com/jonjud/ember/commit/41f5ac3a035d9bf2c63045bbedc4a8bbec250037) on `develop` |
-| Last verified code CI | [Windows CI run 46097066791](https://github.com/jonjud/ember/actions/runs/46097066791) — **Success**; Lua backend, script-language metadata, Editor Play Mode integration and automated tests passed |
-| Latest CI | [Windows CI run 46097066791](https://github.com/jonjud/ember/actions/runs/46097066791) — **Success** (`41f5ac3`) |
-| Latest documentation CI | [Windows CI run 46097066791](https://github.com/jonjud/ember/actions/runs/46097066791) — **Success** |
-| Last completed milestone | Lua 5.5.1 scripting backend — Windows CI passed; combined manual Editor verification remains pending |
-| Active milestone | Scripting foundation + Lua 5.5.1 backend are implemented and pass Windows CI. Next: combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains primary. |
+| Last code commit | Script Source Editor workflow (`29063f2`) |
+| Latest repository HEAD | [`29063f2`](https://github.com/jonjud/ember/commit/29063f20e27f00f705c2f765f0cd8f0a72e422de) on `develop` |
+| Last verified code CI | [Windows CI run 46101797386](https://github.com/jonjud/ember/actions/runs/46101797386) — **Success**; Script Source Editor and full Windows build/tests passed |
+| Latest CI | [Windows CI run 46101797386](https://github.com/jonjud/ember/actions/runs/46101797386) — **Success** (`29063f2`) |
+| Latest documentation CI | [Windows CI run 46101797386](https://github.com/jonjud/ember/actions/runs/46101797386) — **Success** |
+| Last completed milestone | Initial Script Source Editor workflow — Windows CI passed; combined manual Editor verification remains pending |
+| Active milestone | Script authoring workflow hardening: protect unsaved edits, prevent accidental close/discard, and improve source validation. C++20 remains primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
 
 ## 2. สิ่งที่เสร็จแล้ว
 
+### Scripting authoring
+- [x] Lua 5.5.1 gameplay scripting backend; C++20 remains the primary Engine/Editor implementation language
+- [x] Script Diagnostics window with Entity-aware fault messages (Windows CI #269 Success)
+- [x] Initial Script Source Editor workflow (Windows CI #270 Success)
+
 ### Engine / Editor foundations
+- [x] Built-in Script Source Editor for text Script assets: open from Asset Browser, edit/save, 64 KiB cap, explicit discard and unsaved-close protection (Windows CI #270 Success)
 - [x] CMake/C++20, SDL3 application loop, timing and input foundation
 - [x] Renderer2D, Transform2D, Camera2D, Scene/Entity
 - [x] AssetDirectory, AssetManager, AssetRegistry, texture cache and import metadata

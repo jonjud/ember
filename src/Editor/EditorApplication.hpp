@@ -125,6 +125,7 @@ private:
     bool m_showScriptDiagnostics = true;
     bool m_showScriptSourceEditor = false;
     bool m_scriptSourceDirty = false;
+    bool m_allowScriptSourceClose = false;
     std::string m_scriptSourceAssetId;
     std::filesystem::path m_scriptSourcePath;
     std::array<char, 65536> m_scriptSourceBuffer{};

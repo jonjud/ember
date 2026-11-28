@@ -449,7 +449,18 @@ void EditorApplication::DrawMenuBar()
     if (ImGui::BeginMenu("Window"))
     {
         ImGui::MenuItem("Script Diagnostics", nullptr, &m_showScriptDiagnostics);
-        ImGui::MenuItem("Script Source Editor", nullptr, &m_showScriptSourceEditor);
+        if (ImGui::MenuItem("Script Source Editor", nullptr, m_showScriptSourceEditor))
+        {
+            if (m_showScriptSourceEditor && m_scriptSourceDirty)
+            {
+                std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                    "Save or discard Script changes before closing the editor");
+            }
+            else
+            {
+                m_showScriptSourceEditor = !m_showScriptSourceEditor;
+            }
+        }
         ImGui::EndMenu();
     }
 
@@ -2772,7 +2783,8 @@ void EditorApplication::SaveScriptSource()
 void EditorApplication::DrawScriptSourceEditor()
 {
     if (!m_showScriptSourceEditor) return;
-    if (ImGui::Begin("Script Source Editor", &m_showScriptSourceEditor))
+    bool keepOpen = true;
+    if (ImGui::Begin("Script Source Editor", &keepOpen))
     {
         if (m_scriptSourceAssetId.empty())
         {
@@ -2797,13 +2809,38 @@ void EditorApplication::DrawScriptSourceEditor()
                 m_scriptSourceDirty = true;
             }
             if (m_scriptSourceDirty)
+            {
                 ImGui::TextColored(ImVec4(1.0F, 0.75F, 0.25F, 1.0F),
                     "Unsaved changes — save before opening another Script asset.");
+                if (ImGui::Button("Discard Changes"))
+                {
+                    m_scriptSourceDirty = false;
+                    m_scriptSourceBuffer.fill('\\0');
+                    m_scriptSourceAssetId.clear();
+                    m_scriptSourcePath.clear();
+                    m_allowScriptSourceClose = true;
+                    keepOpen = false;
+                }
+            }
             if (m_isPlaying)
                 ImGui::TextDisabled("Stop Play Mode to edit or save source files.");
         }
     }
     ImGui::End();
+    if (!keepOpen)
+    {
+        if (m_scriptSourceDirty && !m_allowScriptSourceClose)
+        {
+            m_showScriptSourceEditor = true;
+            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                "Unsaved Script changes kept open; save or discard them explicitly");
+        }
+        else
+        {
+            m_showScriptSourceEditor = false;
+        }
+        m_allowScriptSourceClose = false;
+    }
 }
 
 void EditorApplication::RefreshAssets()
