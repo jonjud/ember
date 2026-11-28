@@ -338,7 +338,9 @@ void EditorApplication::ProcessEvents()
     while (SDL_PollEvent(&event))
     {
         ImGui_ImplSDL3_ProcessEvent(&event);
-        if (event.type == SDL_EVENT_QUIT)
+        if (event.type == SDL_EVENT_QUIT ||
+            (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
+             event.window.windowID == SDL_GetWindowID(m_window)))
         {
             RequestExit();
         }
@@ -2668,11 +2670,11 @@ void EditorApplication::DrawUnsavedChangesModal()
 
 void EditorApplication::RequestExit()
 {
-    if (m_scriptSourceDirty)
+    if (m_scriptSourceDirty || m_sceneDirty)
     {
         m_pendingScriptExit = true;
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-            "Unsaved Script changes — save or discard before exiting");
+            "Unsaved changes — save or discard before exiting");
         return;
     }
     m_isRunning = false;
@@ -2685,13 +2687,16 @@ void EditorApplication::DrawUnsavedScriptExitModal()
     if (ImGui::BeginPopupModal("Unsaved Script Changes", nullptr,
         ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::TextUnformatted("The Script Source Editor has unsaved changes.");
-        ImGui::TextUnformatted("Save your script before exiting EMBER?");
+        ImGui::TextUnformatted("EMBER has unsaved changes.");
+        if (m_sceneDirty) ImGui::BulletText("Current Scene");
+        if (m_scriptSourceDirty) ImGui::BulletText("Script Source Editor");
+        ImGui::TextUnformatted("Save your changes before exiting?");
         if (ImGui::Button("Save and Exit", ImVec2(130.0F, 0.0F)))
         {
             if (m_isPlaying) StopPlayMode();
-            SaveScriptSource();
-            if (!m_scriptSourceDirty)
+            if (m_sceneDirty) (void)SaveScene();
+            if (m_scriptSourceDirty) SaveScriptSource();
+            if (!m_sceneDirty && !m_scriptSourceDirty)
             {
                 m_pendingScriptExit = false;
                 m_isRunning = false;
@@ -2701,6 +2706,7 @@ void EditorApplication::DrawUnsavedScriptExitModal()
         ImGui::SameLine();
         if (ImGui::Button("Discard and Exit", ImVec2(130.0F, 0.0F)))
         {
+            m_sceneDirty = false;
             m_scriptSourceDirty = false;
             m_hasScriptValidationResult = false;
             m_scriptValidationMessage.clear();
