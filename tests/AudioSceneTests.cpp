@@ -218,18 +218,20 @@ int main()
     EMBER_CHECK(moveSource.IsAudioSourcePlaying(movingEntity.GetId()));
 
     ember::Scene moveTarget("Move Target");
+    (void)moveTarget.CreateEntity("ID Reservation");
     auto& replacedEntity = moveTarget.CreateEntity("Replaced Audio");
     auto& replacedSource = replacedEntity.AddComponent<ember::AudioSource2D>();
     replacedSource.audioAssetId = "audio-ambience";
+    const ember::EntityId replacedEntityId = replacedEntity.GetId();
     moveTarget.Start(&audio, &assets);
-    EMBER_CHECK(moveTarget.IsAudioSourcePlaying(replacedEntity.GetId()));
+    EMBER_CHECK(moveTarget.IsAudioSourcePlaying(replacedEntityId));
 
     moveTarget = std::move(moveSource);
     EMBER_CHECK(!moveSource.IsStarted());
     EMBER_CHECK(moveTarget.IsStarted());
     EMBER_CHECK(moveTarget.GetAudioSourceCount() == 1);
     EMBER_CHECK(moveTarget.IsAudioSourcePlaying(movingEntity.GetId()));
-    EMBER_CHECK(!moveTarget.IsAudioSourcePlaying(replacedEntity.GetId()));
+    EMBER_CHECK(!moveTarget.IsAudioSourcePlaying(replacedEntityId));
     moveTarget.Stop();
     EMBER_CHECK(!moveTarget.IsAudioSourcePlaying(movingEntity.GetId()));
 
