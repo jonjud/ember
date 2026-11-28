@@ -331,21 +331,24 @@ void Scene::StepPhysics(float deltaSeconds) noexcept
         const Entity* entity = FindEntity(entityId);
         if (entity == nullptr) continue;
         const auto* bodyConfig = entity->GetComponent<PhysicsBody2D>();
-        if (bodyConfig == nullptr || bodyConfig->type == PhysicsBodyType2D::Dynamic) continue;
+        if (bodyConfig == nullptr) continue;
+
         const Transform2D& transform = entity->GetTransform();
         const PhysicsTransform2D desired{
             {transform.position.x / metersToPixels, transform.position.y / metersToPixels},
             transform.rotation
         };
-        if (bodyConfig->type != PhysicsBodyType2D::Dynamic)
+
+        if (bodyConfig->type == PhysicsBodyType2D::Static ||
+            bodyConfig->type == PhysicsBodyType2D::Kinematic)
         {
             (void)m_physicsWorld->SetBodyTransform(handle, desired);
         }
-        else
+        else if (bodyConfig->type == PhysicsBodyType2D::Dynamic)
         {
             // Gameplay/scripts may directly edit a dynamic Entity transform.
-            // Only teleport the body when the Entity actually diverged from the
-            // last physics transform; otherwise let simulation remain authoritative.
+            // Only teleport when the Entity actually diverged from the last
+            // physics transform; otherwise simulation remains authoritative.
             const auto bodyTransform = m_physicsWorld->GetBodyTransform(handle);
             if (bodyTransform &&
                 (std::abs(bodyTransform->position.x - desired.position.x) > 0.0001F ||

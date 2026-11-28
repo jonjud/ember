@@ -622,6 +622,8 @@ void EditorApplication::DrawNewProjectModal()
 
 void EditorApplication::DrawMenuBar()
 {
+    bool openNewProjectPopup = false;
+    bool openExportPopup = false;
     if (!ImGui::BeginMainMenuBar())
     {
         return;
@@ -637,7 +639,7 @@ void EditorApplication::DrawMenuBar()
             std::snprintf(m_newProjectDirectory, sizeof(m_newProjectDirectory), "%s",
                 PathToUtf8(defaultDirectory).c_str());
             m_newProjectTemplate = 0;
-            ImGui::OpenPopup("Create New Project");
+            openNewProjectPopup = true;
         }
         ImGui::Separator();
         ImGui::BeginDisabled(m_isPlaying);
@@ -656,7 +658,7 @@ void EditorApplication::DrawMenuBar()
             const auto defaultOutput = projectRoot.parent_path() / (outputName + "-Windows");
             std::snprintf(m_exportOutputDirectory, sizeof(m_exportOutputDirectory), "%s",
                 PathToUtf8(defaultOutput).c_str());
-            ImGui::OpenPopup("Export Windows Game");
+            openExportPopup = true;
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Exit")) RequestExit();
@@ -707,6 +709,10 @@ void EditorApplication::DrawMenuBar()
     }
 
     ImGui::EndMainMenuBar();
+
+    // Open modal popups at the root ID scope used by BeginPopupModal.
+    if (openNewProjectPopup) ImGui::OpenPopup("Create New Project");
+    if (openExportPopup) ImGui::OpenPopup("Export Windows Game");
 }
 
 void EditorApplication::DrawSceneHierarchy()
