@@ -453,6 +453,7 @@ if(BUILD_TESTING)
         ember_ui_input_tests
     )
         target_sources(${scene_target} PRIVATE
+            src/Engine/Core/Logger.cpp
             src/Engine/Audio/AudioEngine.cpp
             src/Engine/Core/FileSystem.cpp
             src/Engine/Resources/AssetDirectory.cpp
