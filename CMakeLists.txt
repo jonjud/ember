@@ -12,6 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(CTest)
 include(FetchContent)
+find_package(Threads REQUIRED)
 
 set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
@@ -178,7 +179,7 @@ add_library(ember_engine STATIC
 )
 
 target_include_directories(ember_engine PUBLIC src)
-target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image nlohmann_json::nlohmann_json PRIVATE box2d::box2d ember_miniaudio ember_lua)
+target_link_libraries(ember_engine PUBLIC SDL3::SDL3 SDL3_image::SDL3_image nlohmann_json::nlohmann_json Threads::Threads PRIVATE box2d::box2d ember_miniaudio ember_lua)
 
 add_library(ember_imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
@@ -207,7 +208,6 @@ if(BUILD_TESTING)
         src/Engine/Core/Logger.cpp
     )
     target_include_directories(ember_logging_tests PRIVATE src)
-    find_package(Threads REQUIRED)
     target_link_libraries(ember_logging_tests PRIVATE Threads::Threads)
     add_test(NAME ember_logging_tests COMMAND ember_logging_tests)
 

@@ -35,15 +35,15 @@ int main()
 
     auto entries = logger.Snapshot();
     Check(entries.size() == 3, "History is bounded to its configured capacity");
-    Check(entries[0].message == "load failed" &&
-          entries[1].message == "fatal" &&
+    Check(entries[0].message == "missing optional asset" &&
+          entries[1].message == "load failed" &&
           entries[2].message == "fatal",
         "The bounded history retains the newest entries");
 
     Check(entries[0].sequence == 5 && entries[1].sequence == 6,
         "Log entries receive increasing sequence numbers");
-    Check(entries[0].category == "Scene" &&
-          entries[0].level == ember::LogLevel::Error,
+    Check(entries[0].category == "Assets" &&
+          entries[0].level == ember::LogLevel::Warning,
         "Structured category and severity are retained");
     Check(entries[0].timestamp <= entries[1].timestamp,
         "Log timestamps are chronological");
@@ -67,7 +67,7 @@ int main()
         "History can be cleared");
     logger.SetMinimumLevel(ember::LogLevel::Trace);
     logger.Info("Engine", "after clear");
-    Check(logger.Snapshot().front().sequence == 9,
+    Check(logger.Snapshot().front().sequence == 8,
         "Clearing history does not reset sequence numbers");
 
     ember::Logger disabled(0);
