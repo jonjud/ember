@@ -32,6 +32,8 @@ class Entity
 {
 public:
     [[nodiscard]] EntityId GetId() const { return m_id; }
+    // Parent/child links are Scene-owned relationships; zero denotes a root Entity.
+    [[nodiscard]] EntityId GetParentId() const { return m_parentId; }
     [[nodiscard]] const std::string& GetName() const { return m_name; }
     void SetName(std::string name) { m_name = std::move(name); }
     [[nodiscard]] Transform2D& GetTransform() { return m_transform; }
@@ -168,6 +170,7 @@ private:
     }
 
     EntityId m_id = 0;
+    EntityId m_parentId = 0;
     std::string m_name;
     Transform2D m_transform{};
     RenderComponent2D m_renderComponent{};

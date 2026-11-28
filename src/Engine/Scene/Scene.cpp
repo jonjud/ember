@@ -784,7 +784,18 @@ bool Scene::DestroyEntity(EntityId id)
 {
     if (m_started)
         throw std::logic_error("Entities cannot be destroyed while their Scene is running.");
-    return m_entities.erase(id) != 0;
+    const auto found = m_entities.find(id);
+    if (found == m_entities.end()) return false;
+
+    // Deleting an Entity never implicitly deletes its descendants. Direct children
+    // become roots so no relationship is left pointing at a missing Entity.
+    for (auto& [childId, entity] : m_entities)
+    {
+        (void)childId;
+        if (entity->m_parentId == id) entity->m_parentId = 0;
+    }
+    m_entities.erase(found);
+    return true;
 }
 
 Entity* Scene::DuplicateEntity(EntityId id)
@@ -825,6 +836,42 @@ std::vector<EntityId> Scene::GetEntityIds() const
     return ids;
 }
 
+bool Scene::SetParent(EntityId child, EntityId parent)
+{
+    if (m_started)
+        throw std::logic_error("Entity hierarchy cannot be changed while its Scene is running.");
+    const auto childIt = m_entities.find(child);
+    if (childIt == m_entities.end() || child == parent) return false;
+    if (parent != 0 && !m_entities.contains(parent)) return false;
+
+    // Walk upward from the proposed parent. Reaching child would introduce a cycle.
+    EntityId ancestor = parent;
+    while (ancestor != 0)
+    {
+        if (ancestor == child) return false;
+        const auto ancestorIt = m_entities.find(ancestor);
+        if (ancestorIt == m_entities.end()) return false;
+        ancestor = ancestorIt->second->m_parentId;
+    }
+
+    childIt->second->m_parentId = parent;
+    return true;
+}
+
+std::vector<EntityId> Scene::GetChildren(EntityId parent) const
+{
+    std::vector<EntityId> children;
+    if (parent != 0 && !m_entities.contains(parent)) return children;
+    for (const auto& [id, entity] : m_entities)
+        if (entity->m_parentId == parent && id != parent) children.push_back(id);
+    return children;
+}
+
+std::vector<EntityId> Scene::GetRootEntityIds() const
+{
+    return GetChildren(0);
+}
+
 Scene Scene::Clone() const
 {
     if (m_started)
@@ -839,6 +886,7 @@ Scene Scene::Clone() const
         copiedEntity->m_renderComponent = entity->m_renderComponent;
         copiedEntity->m_movementComponent = entity->m_movementComponent;
         copiedEntity->m_active = entity->m_active;
+        copiedEntity->m_parentId = entity->m_parentId;
         entity->CopyComponentsTo(*copiedEntity);
         clone.m_entities.emplace(id, std::move(copiedEntity));
     }

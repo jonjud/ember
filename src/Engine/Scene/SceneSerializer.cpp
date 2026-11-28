@@ -142,6 +142,7 @@ Json ToJson(const Entity& entity, const ComponentRegistry* componentRegistry)
 
     Json result{
         {"id", entity.GetId()},
+        {"parent_id", entity.GetParentId()},
         {"name", entity.GetName()},
         {"active", entity.IsActive()},
         {"movement", {{"enabled", movement.enabled}, {"speed", movement.speed}}},
@@ -264,6 +265,7 @@ bool SceneSerializer::LoadFromString(
 
         Scene loadedScene(sceneName);
         EntityId maxId = 0;
+        std::map<EntityId, EntityId> parentIds;
 
         for (const Json& value : entities)
         {
@@ -280,6 +282,21 @@ bool SceneSerializer::LoadFromString(
 
             const std::string name = value.at("name").get<std::string>();
             const bool active = value.at("active").get<bool>();
+            EntityId parentId = 0;
+            if (value.contains("parent_id"))
+            {
+                const Json& parentValue = value.at("parent_id");
+                if (parentValue.is_number_unsigned())
+                    parentId = parentValue.get<EntityId>();
+                else if (parentValue.is_number_integer())
+                {
+                    const auto signedParent = parentValue.get<std::int64_t>();
+                    if (signedParent < 0)
+                        return Fail(error, "Scene contains an invalid parent Entity ID.");
+                    parentId = static_cast<EntityId>(signedParent);
+                }
+                else return Fail(error, "Scene contains an invalid parent Entity ID.");
+            }
             const Json& transformJson = value.at("transform");
             const Json& renderJson = value.at("render");
 
@@ -368,6 +385,7 @@ bool SceneSerializer::LoadFromString(
             if (!MigrateLegacyColliders(*entity, error)) return false;
 
             loadedScene.m_entities.emplace(id, std::move(entity));
+            parentIds.emplace(id, parentId);
             if (id > maxId)
             {
                 maxId = id;
@@ -376,6 +394,14 @@ bool SceneSerializer::LoadFromString(
 
         loadedScene.m_nextEntityId =
             maxId == std::numeric_limits<EntityId>::max() ? 0 : maxId + 1;
+
+        // Resolve links only after every Entity exists; SetParent rejects missing
+        // references and cycles while preserving the all-or-nothing load contract.
+        for (const auto& [childId, parentId] : parentIds)
+        {
+            if (parentId != 0 && !loadedScene.SetParent(childId, parentId))
+                return Fail(error, "Scene contains an invalid or cyclic Entity hierarchy.");
+        }
 
         scene.m_name = std::move(loadedScene.m_name);
         scene.m_nextEntityId = loadedScene.m_nextEntityId;

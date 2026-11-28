@@ -91,6 +91,10 @@ int main()
 
     auto& second = source.CreateEntity("Decoration");
     second.GetTransform().position = {100.0F, 200.0F};
+    auto& nestedDecoration = source.CreateEntity("Nested Decoration");
+    nestedDecoration.GetTransform().position = {5.0F, 7.0F};
+    Check(source.SetParent(nestedDecoration.GetId(), second.GetId()),
+          "Serializer fixture supports parent-child relationships");
 
     auto& playerHinge = player.AddComponent<ember::RevoluteJoint2D>();
     playerHinge.connectedEntity = second.GetId();
@@ -166,7 +170,10 @@ int main()
     Check(restoredFromSnapshot.GetName() == snapshotTargetName &&
           restoredFromSnapshot.GetEntityCount() == source.GetEntityCount(),
           "Failed in-memory restore leaves the destination Scene unchanged");
-    Check(loaded.GetEntityCount() == 3, "All entities survive round-trip");
+    Check(loaded.GetEntityCount() == 4, "All entities survive round-trip");
+    const auto* loadedNested = loaded.FindEntity(nestedDecoration.GetId());
+    Check(loadedNested != nullptr && loadedNested->GetParentId() == second.GetId(),
+          "Parent-child relationships survive Scene serialization");
     const auto* loadedAnimationOwner = loaded.FindEntity(player.GetId());
     const auto* loadedAnimation = loadedAnimationOwner
         ? loadedAnimationOwner->GetComponent<ember::SpriteAnimation2D>() : nullptr;
@@ -316,6 +323,21 @@ int main()
           "Duplicate entity IDs are rejected");
     Check(loaded.GetName() == oldName && loaded.GetEntityCount() == oldCount,
           "Failed duplicate-ID load leaves the destination scene unchanged");
+
+    const auto invalidParentPath = root / "invalid_parent.emberscene";
+    auto invalidParentDocument = savedDocument;
+    invalidParentDocument["entities"][0]["parent_id"] = 999999;
+    { std::ofstream invalidParent(invalidParentPath); invalidParent << invalidParentDocument.dump(4); }
+    Check(!ember::SceneSerializer::Load(loaded, invalidParentPath, &error, &registry),
+          "Scene loading rejects missing parent references");
+
+    const auto cyclePath = root / "hierarchy_cycle.emberscene";
+    auto cycleDocument = savedDocument;
+    cycleDocument["entities"][0]["parent_id"] = second.GetId();
+    cycleDocument["entities"][1]["parent_id"] = player.GetId();
+    { std::ofstream cycle(cyclePath); cycle << cycleDocument.dump(4); }
+    Check(!ember::SceneSerializer::Load(loaded, cyclePath, &error, &registry),
+          "Scene loading rejects cyclic parent-child references");
 
     const auto unsupportedPath = root / "unsupported.emberscene";
     {

@@ -95,6 +95,12 @@ public:
     [[nodiscard]] bool IsEmpty() const { return m_entities.empty(); }
     [[nodiscard]] std::vector<EntityId> GetEntityIds() const;
 
+    // Set parent to zero to make child a root. Rejects missing IDs, self-parenting,
+    // cycles and structural changes while the Scene is running.
+    [[nodiscard]] bool SetParent(EntityId child, EntityId parent);
+    [[nodiscard]] std::vector<EntityId> GetChildren(EntityId parent) const;
+    [[nodiscard]] std::vector<EntityId> GetRootEntityIds() const;
+
     template <typename Function>
     void ForEachEntity(Function&& function)
     {
