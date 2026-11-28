@@ -10,24 +10,26 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`a1533a7`](https://github.com/jonjud/ember/commit/a1533a722d2736da5b70fa8971ba25d00f0a9b72) — Engine Log Window |
-| Latest repository HEAD | [`a1533a7`](https://github.com/jonjud/ember/commit/a1533a722d2736da5b70fa8971ba25d00f0a9b72) — Engine Log Window |
-| Last verified code CI | [Windows CI run 46117795488](https://github.com/jonjud/ember/actions/runs/46117795488) — **Success**; Windows build and engine tests passed |
-| Latest CI | [Windows CI run 46117795488](https://github.com/jonjud/ember/actions/runs/46117795488) — **Success** |
+| Last code commit | [`0057a6b`](https://github.com/jonjud/ember/commit/0057a6be33e892b5818ddf9b1dc6293e2efb1190) — Scene diagnostic Logger tests |
+| Latest repository HEAD | [`0057a6b`](https://github.com/jonjud/ember/commit/0057a6be33e892b5818ddf9b1dc6293e2efb1190) — Scene diagnostic Logger tests |
+| Last verified code CI | [Windows CI run 46130841060](https://github.com/jonjud/ember/actions/runs/46130841060) — **Success**; Windows build and all engine tests passed |
+| Latest CI | [Windows CI run 46130841060](https://github.com/jonjud/ember/actions/runs/46130841060) — **Success** |
 | Latest documentation CI | Windows CI #288 — **Success** |
 | Last completed milestone | Scripting + Input Action Mapping: Lua authoring/Play Mode, diagnostics, input rebinding, validation/save/reload and unsaved-work protection; combined Windows Editor checklist user-confirmed passed 2026-11-28 and CI #288 Success |
-| Active milestone | Complete structured logging and diagnostics. Engine Logger API and Editor Log Window are implemented; next add console/file sinks and forward Engine diagnostics. Keep C++20 primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
+| Active milestone | Improve log usability and operational diagnostics: severity/category filtering, safe log-file location/rotation policy, and separation of Editor vs game-runtime logs. Structured Logging foundation (Logger, Log Window, Console/File sinks, Scene diagnostic forwarding) passed CI #303–#315. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
 
 ## 2. สิ่งที่เสร็จแล้ว
 
-### Structured Logging & Diagnostics — in progress
+### Structured Logging & Diagnostics — foundation complete (Windows CI passed)
 - [x] Add bounded, thread-safe Engine Logger API with severity filtering, sequence/timestamp/thread metadata, snapshots, clear and concurrent-writer tests (Windows CI #303 Success)
-- [x] Add Editor Log Window with severity/category/message display, filtering colors, clear action and bounded-entry counter; log key Editor lifecycle, Play Mode, Scene save and Asset scan events (Windows CI #304 Success)
-- [ ] Add console and file logging sinks
-- [ ] Forward Engine-owned diagnostics into the Logger without introducing Editor dependencies into `ember_engine`
+- [x] Add Editor Log Window with severity/category/message display, severity colors, clear action and bounded-entry counter; log key Editor lifecycle, Play Mode, Scene save and Asset scan events (Windows CI #304 Success)
+- [x] Add ConsoleLogSink and FileLogSink; sink callbacks execute outside Logger history lock and sink exceptions are isolated (Windows CI #306 and follow-up #314 Success)
+- [x] Forward Scene Physics, Audio and Scripting diagnostics into Engine Logger with severity/category metadata and duplicate-forward suppression (Windows CI #315 Success)
+- [x] Add isolated tests for history, recording sink, file sink, zero-capacity sink and concurrent writers (Windows CI #303–#315 Success)
+- [ ] Improve log usability and operational diagnostics: severity/category filtering, safe log-file location/rotation policy, and separation of Editor vs game-runtime logs
 
 
 ### Scripting authoring
@@ -168,6 +170,7 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 
 | 2026-11-28 | [Engine Logger API, `2d05980`, CI #303](https://github.com/jonjud/ember/actions/runs/46117251072) | Success; bounded thread-safe Logger and automated tests |
 | 2026-11-28 | [Editor Log Window, `a1533a7`, CI #304](https://github.com/jonjud/ember/actions/runs/46117795488) | Success; Windows build and engine tests passed |
+| 2026-11-28 | [Logger sinks and Scene diagnostics, `0057a6b`, CI #315](https://github.com/jonjud/ember/actions/runs/46130841060) | Success; Console/File sinks and Physics/Audio/Scripting diagnostic forwarding verified |
 
 
 | Date | Commit / CI | Result |
@@ -204,4 +207,4 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 
 ---
 
-**Handoff:** Scripting + Input Action Mapping is complete. The combined Windows Editor checklist [SCRIPTING_RUNTIME_VERIFICATION.md](SCRIPTING_RUNTIME_VERIFICATION.md) was user-confirmed passed on 2026-11-28; Windows CI #288 passed. Structured Logging & Diagnostics is active: the bounded, thread-safe Engine Logger API (CI #303) and Editor Log Window (CI #304) are implemented and CI-verified. Next: add console/file sinks and route Engine diagnostics into the Logger while keeping Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
+**Handoff:** Scripting + Input Action Mapping is complete and Windows Editor-verified. Structured Logging foundation is complete and CI-verified through #315: bounded thread-safe Logger, Editor Log Window, Console/File sinks, and Scene Physics/Audio/Scripting diagnostic forwarding. Next: improve log usability and operational diagnostics (filtering, file location/rotation, and Editor-vs-game log separation). Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.

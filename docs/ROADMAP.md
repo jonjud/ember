@@ -13,7 +13,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Frame-rate-independent movement proof of concept
 - [x] Windows CI build
 - [x] Verify interactive runtime behavior on Windows (manual checklist passed)
-- [ ] Complete structured logging and diagnostics (Engine Logger API and Editor Log Window implemented; logging sinks and Engine diagnostic forwarding remain)
+- [x] Complete structured logging foundation: bounded thread-safe Engine Logger, Editor Log Window, console/file sinks, and Scene Physics/Audio/Scripting diagnostic forwarding with duplicate-suppression tests (Windows CI #303–#315 Success)
 
 ## Phase 2 — 2D Core and Project Assets
 - [x] Renderer2D, primitive drawing, and sprite API
@@ -125,5 +125,5 @@ These are strategic goals after the core engine, scripting workflow and packagin
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- The scripting and Input Action Mapping milestone is complete: combined Windows Editor verification in [SCRIPTING_RUNTIME_VERIFICATION.md](SCRIPTING_RUNTIME_VERIFICATION.md) was user-confirmed passed on 2026-11-28, and Windows CI run [46112250378](https://github.com/jonjud/ember/actions/runs/46112250378) passed. Structured logging is in progress: the bounded, thread-safe Engine Logger API and Editor Log Window are implemented (Windows CI #303 and #304 Success). Next: add console/file logging sinks and forward Engine diagnostics into the logging pipeline, keeping Editor-only code out of `ember_engine`. C++20 remains the primary language for Engine and Editor; Lua is an optional gameplay scripting language.
+- The scripting + Input Action Mapping milestone is complete and Windows Editor-verified. Structured Logging & Diagnostics foundation is also complete: Engine Logger API, Editor Log Window, Console/File sinks, and Scene Physics/Audio/Scripting diagnostic forwarding with automated coverage passed Windows CI #303–#315. Next focused milestone: improve log usability and operational diagnostics—severity/category filtering, safe log-file location/rotation policy, and clear distinction between Editor and game-runtime logs—without introducing Editor dependencies into `ember_engine`. C++20 remains the primary language for Engine and Editor; Lua is an optional gameplay scripting language.
 - After the scripting and packaging foundations are stable, begin the planned Phase 6 extensibility work: Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions.
