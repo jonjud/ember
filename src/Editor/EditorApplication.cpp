@@ -117,18 +117,24 @@ EditorApplication::~EditorApplication()
 
 bool EditorApplication::Initialize()
 {
+    m_logger.Info("Editor", "Initializing EMBER Editor");
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
+        m_logger.Error("Platform", std::string("SDL initialization failed: ") + SDL_GetError());
         std::cerr << "EMBER Editor: SDL initialization failed: " << SDL_GetError() << '\n';
         return false;
     }
 
     if (!m_audio.Initialize())
+    {
+        m_logger.Warning("Audio", "Audio device unavailable; continuing without audio");
         std::cerr << "EMBER Editor: Audio device unavailable; continuing without audio.\n";
+    }
 
     m_window = SDL_CreateWindow("EMBER Editor", kWindowWidth, kWindowHeight, SDL_WINDOW_RESIZABLE);
     if (m_window == nullptr)
     {
+        m_logger.Error("Platform", std::string("Window creation failed: ") + SDL_GetError());
         std::cerr << "EMBER Editor: Window creation failed: " << SDL_GetError() << '\n';
         Shutdown();
         return false;
@@ -137,6 +143,7 @@ bool EditorApplication::Initialize()
     m_renderer = SDL_CreateRenderer(m_window, nullptr);
     if (m_renderer == nullptr)
     {
+        m_logger.Error("Renderer", std::string("Renderer creation failed: ") + SDL_GetError());
         std::cerr << "EMBER Editor: Renderer creation failed: " << SDL_GetError() << '\n';
         Shutdown();
         return false;
@@ -212,6 +219,7 @@ bool EditorApplication::Initialize()
     RefreshAssets();
     LoadStartupScene();
     m_isRunning = true;
+    m_logger.Info("Editor", "EMBER Editor initialized successfully");
     return true;
 }
 
@@ -408,6 +416,7 @@ void EditorApplication::Render()
     DrawInputSettings();
     DrawProjectSettings();
     DrawScriptDiagnostics();
+    DrawLogWindow();
     DrawScriptSourceEditor();
     DrawViewport();
     DrawUnsavedChangesModal();
@@ -468,6 +477,7 @@ void EditorApplication::DrawMenuBar()
 
     if (ImGui::BeginMenu("Window"))
     {
+        ImGui::MenuItem("Log", nullptr, &m_showLogWindow);
         ImGui::MenuItem("Script Diagnostics", nullptr, &m_showScriptDiagnostics);
         if (ImGui::MenuItem("Script Source Editor", nullptr, m_showScriptSourceEditor))
         {
@@ -2390,6 +2400,46 @@ void EditorApplication::DrawViewport()
     ImGui::End();
 }
 
+void EditorApplication::DrawLogWindow()
+{
+    if (!m_showLogWindow) return;
+
+    ImGui::SetNextWindowSize(ImVec2(560.0F, 260.0F), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Log", &m_showLogWindow))
+    {
+        const auto entries = m_logger.Snapshot();
+        if (ImGui::Button("Clear")) m_logger.Clear();
+        ImGui::SameLine();
+        ImGui::TextDisabled("%zu / %zu entries", entries.size(), m_logger.Capacity());
+        ImGui::Separator();
+        if (ImGui::BeginChild("EngineLogEntries", ImVec2(0.0F, 0.0F), ImGuiChildFlags_Borders))
+        {
+            if (entries.empty()) ImGui::TextDisabled("No log entries yet.");
+            else
+            {
+                for (std::size_t index = 0; index < entries.size(); ++index)
+                {
+                    const LogEntry& entry = entries[index];
+                    ImGui::PushID(static_cast<int>(index));
+                    ImVec4 color(0.82F, 0.85F, 0.90F, 1.0F);
+                    if (entry.level == LogLevel::Warning) color = ImVec4(1.0F, 0.78F, 0.30F, 1.0F);
+                    else if (entry.level == LogLevel::Error || entry.level == LogLevel::Critical)
+                        color = ImVec4(1.0F, 0.38F, 0.32F, 1.0F);
+                    else if (entry.level == LogLevel::Debug || entry.level == LogLevel::Trace)
+                        color = ImVec4(0.58F, 0.64F, 0.72F, 1.0F);
+                    ImGui::TextColored(color, "[%llu] [%s] [%s]",
+                        static_cast<unsigned long long>(entry.sequence), ToString(entry.level), entry.category.c_str());
+                    ImGui::SameLine();
+                    ImGui::TextWrapped("%s", entry.message.c_str());
+                    ImGui::PopID();
+                }
+            }
+        }
+        ImGui::EndChild();
+    }
+    ImGui::End();
+}
+
 void EditorApplication::DrawScriptDiagnostics()
 {
     if (!m_showScriptDiagnostics) return;
@@ -2447,6 +2497,9 @@ void EditorApplication::StartPlayMode()
     m_scriptRuntime = std::make_unique<LuaScriptRuntime>(m_assetRegistry);
     m_playScene.Start(&m_audio, &m_assetRegistry, m_scriptRuntime.get());
     m_isPlaying = true;
+    m_logger.Info("Scene", "Play Mode started");
+    for (const std::string& diagnostic : m_playScene.GetScriptDiagnostics())
+        m_logger.Error("Scripting", diagnostic);
     if (m_playScene.GetScriptDiagnostics().empty())
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
@@ -2468,6 +2521,7 @@ void EditorApplication::StopPlayMode()
     m_uiInputRouter.Reset();
     m_isPlaying = false;
     m_playScene.Clear();
+    m_logger.Info("Scene", "Play Mode stopped");
     if (m_scene.FindEntity(m_selectedEntity) == nullptr) m_selectedEntity = 0;
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Play mode stopped: authoring scene restored unchanged");
@@ -2521,12 +2575,14 @@ bool EditorApplication::SaveScene()
     if (SceneSerializer::Save(m_scene, *resolvedPath, &error, &m_componentRegistry))
     {
         m_sceneDirty = false;
+        m_logger.Info("Scene", std::string("Saved scene: ") + PathToUtf8(m_currentScenePath));
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "Saved scene: %.200s", PathToUtf8(m_currentScenePath).c_str());
         (void)m_assetRegistry.Scan();
         return true;
     }
 
+    m_logger.Error("Scene", std::string("Scene save failed: ") + error);
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Save failed: %.220s", error.c_str());
     return false;
@@ -3109,6 +3165,7 @@ void EditorApplication::RefreshAssets()
 
     if (scanSucceeded && importScanSucceeded)
     {
+        m_logger.Info("Assets", "Asset scan completed");
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "Asset scan complete: %zu assets, %zu diagnostics",
             m_assetRegistry.GetAssetCount(), m_assetRegistry.GetDiagnostics().size());
@@ -3117,6 +3174,7 @@ void EditorApplication::RefreshAssets()
     {
         const auto& diagnostics = m_assetRegistry.GetDiagnostics();
         const char* reason = diagnostics.empty() ? "Asset scan failed." : diagnostics.front().message.c_str();
+        m_logger.Error("Assets", reason);
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Asset scan failed: %.210s", reason);
     }
 }

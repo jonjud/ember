@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/Core/Time.hpp"
+#include "Engine/Core/Logger.hpp"
 #include "Engine/Audio/AudioEngine.hpp"
 #include "Engine/Resources/AssetImportService.hpp"
 #include "Engine/Resources/AssetRegistry.hpp"
@@ -51,6 +52,7 @@ private:
     void DrawInputSettings();
     void DrawProjectSettings();
     void DrawScriptDiagnostics();
+    void DrawLogWindow();
     void DrawScriptSourceEditor();
     void OpenSelectedScriptSource();
     void SaveScriptSource();
@@ -85,6 +87,7 @@ private:
 
     SDL_Window* m_window = nullptr;
     AudioEngine m_audio;
+    Logger m_logger{2048};
     AudioSoundHandle m_audioPreviewSound{};
     std::string m_audioPreviewAssetId;
     SDL_Renderer* m_renderer = nullptr;
@@ -130,6 +133,7 @@ private:
     bool m_snapTransforms = false;
     bool m_showPhysicsDebugOverlay = false;
     bool m_showScriptDiagnostics = true;
+    bool m_showLogWindow = true;
     bool m_showScriptSourceEditor = false;
     bool m_scriptSourceDirty = false;
     bool m_allowScriptSourceClose = false;
