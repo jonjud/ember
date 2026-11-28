@@ -14,6 +14,7 @@
 #include "Engine/Platform/Input.hpp"
 #include "Engine/Project/ProjectConfigurationStore.hpp"
 #include "Engine/Project/ProjectExporter.hpp"
+#include "Engine/Project/ProjectTemplateService.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
@@ -450,6 +451,7 @@ void EditorApplication::Render()
 
     DrawMenuBar();
     DrawExportWindowsModal();
+    DrawNewProjectModal();
     DrawSceneHierarchy();
     DrawInspector();
     DrawAssetBrowser();
@@ -546,6 +548,78 @@ void EditorApplication::DrawExportWindowsModal()
     ImGui::EndPopup();
 }
 
+void EditorApplication::DrawNewProjectModal()
+{
+    if (!ImGui::BeginPopupModal("Create New Project", nullptr,
+        ImGuiWindowFlags_AlwaysAutoResize))
+        return;
+
+    ImGui::TextWrapped("Create a new EMBER project from a built-in 2D template.");
+    ImGui::Spacing();
+    ImGui::Text("Project name");
+    ImGui::SetNextItemWidth(420.0F);
+    ImGui::InputText("##NewProjectName", m_newProjectName, sizeof(m_newProjectName));
+    ImGui::Text("Project directory");
+    ImGui::SetNextItemWidth(520.0F);
+    ImGui::InputText("##NewProjectDirectory", m_newProjectDirectory,
+        sizeof(m_newProjectDirectory));
+    const char* templateNames[] = {"Blank 2D", "2D Starter"};
+    ImGui::SetNextItemWidth(240.0F);
+    ImGui::Combo("Template", &m_newProjectTemplate, templateNames,
+        static_cast<int>(std::size(templateNames)));
+    if (m_newProjectTemplate == 0)
+        ImGui::TextDisabled("An empty scene and assets folder.");
+    else
+        ImGui::TextDisabled("A visible Player entity with WASD movement enabled.");
+
+    ImGui::Separator();
+    const bool canCreate = m_newProjectName[0] != '\0' &&
+        m_newProjectDirectory[0] != '\0' && !m_isPlaying &&
+        !m_sceneDirty && !m_scriptSourceDirty;
+    ImGui::BeginDisabled(!canCreate);
+    if (ImGui::Button("Create Project", ImVec2(150.0F, 0.0F)))
+    {
+        ProjectTemplateResult result;
+        std::string error;
+        const auto templateId = m_newProjectTemplate == 1
+            ? ProjectTemplateId::Starter2D : ProjectTemplateId::Blank2D;
+        if (!ProjectTemplateService::CreateProject(
+                PathFromUtf8(m_newProjectDirectory), m_newProjectName,
+                templateId, &result, &error))
+        {
+            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                "Project creation failed: %.180s", error.c_str());
+            m_logger.Error("Project", error);
+        }
+        else
+        {
+            m_projectFilePath = result.projectFile;
+            m_projectLoadFailed = false;
+            m_sceneDirty = false;
+            m_selectedEntity = 0;
+            m_scriptSourceDirty = false;
+            m_showScriptSourceEditor = false;
+            m_scriptSourceAssetId.clear();
+            m_scriptSourcePath.clear();
+            m_scriptSourceOriginal.clear();
+            m_scriptValidationMessage.clear();
+            LoadInputSettings();
+            LoadStartupScene();
+            RefreshAssets();
+            const std::string createdPath = PathToUtf8(result.projectDirectory);
+            std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+                "Created project: %.190s", createdPath.c_str());
+            m_logger.Info("Project", "Created project: " + createdPath);
+            ImGui::CloseCurrentPopup();
+        }
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel", ImVec2(120.0F, 0.0F)))
+        ImGui::CloseCurrentPopup();
+    ImGui::EndPopup();
+}
+
 void EditorApplication::DrawMenuBar()
 {
     if (!ImGui::BeginMainMenuBar())
@@ -555,6 +629,17 @@ void EditorApplication::DrawMenuBar()
 
     if (ImGui::BeginMenu("File"))
     {
+        const bool canCreateProject = !m_isPlaying && !m_sceneDirty && !m_scriptSourceDirty;
+        if (ImGui::MenuItem("New Project...", nullptr, false, canCreateProject))
+        {
+            std::snprintf(m_newProjectName, sizeof(m_newProjectName), "%s", "New Project");
+            const auto defaultDirectory = std::filesystem::current_path() / "New Project";
+            std::snprintf(m_newProjectDirectory, sizeof(m_newProjectDirectory), "%s",
+                PathToUtf8(defaultDirectory).c_str());
+            m_newProjectTemplate = 0;
+            ImGui::OpenPopup("Create New Project");
+        }
+        ImGui::Separator();
         ImGui::BeginDisabled(m_isPlaying);
         if (ImGui::MenuItem("Save Scene", "Ctrl+S")) (void)SaveScene();
         if (ImGui::MenuItem("Load Scene")) LoadScene();

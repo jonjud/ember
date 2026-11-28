@@ -48,6 +48,7 @@ private:
     void UpdatePlayMode();
     void DrawMenuBar();
     void DrawExportWindowsModal();
+    void DrawNewProjectModal();
     void DrawSceneHierarchy();
     void DrawInspector();
     void DrawAssetBrowser();
@@ -119,6 +120,9 @@ private:
     bool m_replaceActionOnRebind = true;
     char m_projectName[128] = "Untitled Project";
     char m_exportOutputDirectory[1024]{};
+    char m_newProjectName[128] = "New Project";
+    char m_newProjectDirectory[1024]{};
+    int m_newProjectTemplate = 0;
     char m_assetDirectory[260] = "assets";
     char m_startupScenePath[260]{};
     char m_newInputActionName[64]{};
