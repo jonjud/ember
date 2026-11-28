@@ -10,13 +10,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`25b8fc2`](https://github.com/jonjud/ember/commit/25b8fc2d44f44432bd0391f118b6ddf3896d5cac) — log rotation and runtime log separation |
-| Latest repository HEAD | [`25b8fc2`](https://github.com/jonjud/ember/commit/25b8fc2d44f44432bd0391f118b6ddf3896d5cac) — log rotation and runtime log separation |
-| Last verified code CI | [Windows CI #318](https://github.com/jonjud/ember/actions/runs/46132259115) — **Success**; Windows build and all engine tests passed |
-| Latest CI | [Windows CI #318](https://github.com/jonjud/ember/actions/runs/46132259115) — **Success** |
+| Last code commit | [`92afc0c`](https://github.com/jonjud/ember/commit/92afc0c8e6968a01a7bad2805f9229947d8209ba) — SDL3 base path type fix for Editor export workflow |
+| Latest repository HEAD | [`92afc0c`](https://github.com/jonjud/ember/commit/92afc0c8e6968a01a7bad2805f9229947d8209ba) — SDL3 base path type fix for Editor export workflow |
+| Last verified code CI | [Windows CI #329](https://github.com/jonjud/ember/actions/runs/46146571294) — **Success**; Windows build and all engine tests passed |
+| Latest CI | [Windows CI #329](https://github.com/jonjud/ember/actions/runs/46146571294) — **Success** |
 | Latest documentation CI | Windows CI #288 — **Success** |
 | Last completed milestone | Scripting + Input Action Mapping: Lua authoring/Play Mode, diagnostics, input rebinding, validation/save/reload and unsaved-work protection; combined Windows Editor checklist user-confirmed passed 2026-11-28 and CI #288 Success |
-| Active milestone | Windows game export/runtime packaging. Structured Logging & Diagnostics is complete through CI #318, including filters, per-user log directory, rotation and separate Editor/runtime log files. |
+| Active milestone | Project Templates. Windows game export/runtime implementation is complete through CI #329; manual export-and-run verification remains pending. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -34,6 +34,13 @@
 - [x] Separate Editor and game-runtime Logger/file outputs; Play Mode Scene diagnostics go to the runtime logger (Windows CI #318 Success)
 - [x] Add automated file-rotation coverage (Windows CI #318 Success)
 
+
+### Windows game export / runtime packaging — implementation complete (Windows CI passed; manual verification pending)
+- [x] Add standalone `ember_runtime` target without Editor/ImGui dependencies; load project config, assets, startup Scene, runtime components, input, Renderer2D, audio and Lua scripts (Windows CI #320 Success)
+- [x] Add safe Windows export service with project-root/output validation, asset and startup-scene copying, manifest generation and automated safety tests (Windows CI #321–#322 Success)
+- [x] Stage and package runtime DLL dependencies beside the executable; record dependency names and startup Scene in `ember-export.json` (Windows CI #323–#327 Success)
+- [x] Add Editor `File > Export Windows Game...` workflow with saved-scene/Play Mode guards and export diagnostics (Windows CI #328–#329 Success)
+- [ ] Manual Windows verification: export a real project, inspect output folder, launch exported game on a machine/session without Editor, and verify assets/audio/Lua runtime behavior
 
 ### Scripting authoring
 - [x] Lua Script syntax preflight with actionable line/column diagnostics and validation-state reset on open/reload/discard (Windows CI run 46105064345 Success)
@@ -176,6 +183,7 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 | 2026-11-28 | [Logger sinks and Scene diagnostics, `0057a6b`, CI #315](https://github.com/jonjud/ember/actions/runs/46130841060) | Success; Console/File sinks and Physics/Audio/Scripting diagnostic forwarding verified |
 | 2026-11-28 | [Log filters, `2ddf473`, CI #317](https://github.com/jonjud/ember/actions/runs/46131695550) | Success; severity and text filtering in the Editor Log Window |
 | 2026-11-28 | [Log rotation and runtime separation, `25b8fc2`, CI #318](https://github.com/jonjud/ember/actions/runs/46132259115) | Success; per-user logs, bounded rotation and separate Editor/runtime output |
+| 2026-11-28 | [Standalone runtime, exporter, DLL manifest and Editor export UI, CI #320–#329](https://github.com/jonjud/ember/actions/runs/46146571294) | Success; Windows build and all automated engine/exporter tests passed; manual export-and-run verification remains pending |
 
 
 | Date | Commit / CI | Result |
@@ -212,4 +220,4 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 
 ---
 
-**Handoff:** Scripting + Input Action Mapping is complete and Windows Editor-verified. Structured Logging & Diagnostics is complete and CI-verified through #318: bounded Logger, filtered Editor Log Window, Console/File sinks, per-user log storage, 5 MiB rotation with one backup, separate Editor/game-runtime files, and Scene diagnostic forwarding. Next: Windows game export/runtime packaging. Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
+**Handoff:** Scripting + Input Action Mapping and Structured Logging & Diagnostics are complete. Windows game export/runtime implementation is complete through CI #329: standalone runtime, safe project exporter, staged DLL dependencies, export manifest and Editor export UI. Next: Project Templates. After implementation, perform the combined manual Windows Editor/exported-game verification (export a sample project and run it outside the Editor). Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
