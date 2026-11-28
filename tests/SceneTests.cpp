@@ -103,7 +103,7 @@ int main()
           "Keep-world reparenting does not move the child");
     if (reparentedWorld)
     {
-        Transform2D desiredWorld = *reparentedWorld;
+        ember::Transform2D desiredWorld = *reparentedWorld;
         desiredWorld.position = {125.0F, 85.0F};
         desiredWorld.scale = {3.0F, 4.0F};
         desiredWorld.rotation = 0.25F;
