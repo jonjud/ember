@@ -9,6 +9,9 @@
 #include "Engine/Scripting/ScriptComponentRegistration.hpp"
 #include "Engine/Scripting/LuaScriptRuntime.hpp"
 #include "Engine/UI/UIComponentRegistration.hpp"
+#include "Engine/UI/UIComponents2D.hpp"
+#include "Engine/UI/UILayout2D.hpp"
+#include "Engine/Scene/AnimationComponents2D.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -174,6 +177,8 @@ int RuntimeApplication::Run()
     auto previous = Clock::now();
     while (m_running)
     {
+        bool pointerPressed = false;
+        bool pointerReleased = false;
         SDL_Event event{};
         while (SDL_PollEvent(&event))
         {
@@ -181,22 +186,52 @@ int RuntimeApplication::Run()
                 (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
                  event.window.windowID == SDL_GetWindowID(m_window)))
                 m_running = false;
+            else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN &&
+                event.button.button == SDL_BUTTON_LEFT)
+                pointerPressed = true;
+            else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP &&
+                event.button.button == SDL_BUTTON_LEFT)
+                pointerReleased = true;
         }
 
         const auto now = Clock::now();
         const float deltaSeconds = std::clamp(
             std::chrono::duration<float>(now - previous).count(), 0.0F, 0.05F);
         previous = now;
-        Update(deltaSeconds);
+        Update(deltaSeconds, pointerPressed, pointerReleased);
         Render();
     }
     return 0;
 }
 
-void RuntimeApplication::Update(float deltaSeconds)
+void RuntimeApplication::Update(float deltaSeconds, bool pointerPressed, bool pointerReleased)
 {
     m_inputMap.Update();
     m_scene.Update(deltaSeconds, m_inputMap.GetActionState());
+
+    float mouseX = 0.0F;
+    float mouseY = 0.0F;
+    const SDL_MouseButtonFlags mouseButtons = SDL_GetMouseState(&mouseX, &mouseY);
+    int width = 0;
+    int height = 0;
+    (void)SDL_GetWindowSize(m_window, &width, &height);
+
+    const UICanvas2D* canvas = nullptr;
+    m_scene.ForEachEntity([&canvas](const Entity& entity)
+    {
+        if (canvas == nullptr && entity.IsActive())
+        {
+            const auto* candidate = entity.GetComponent<UICanvas2D>();
+            if (candidate != nullptr && candidate->enabled && candidate->IsConfigurationValid())
+                canvas = candidate;
+        }
+    });
+    m_uiInputRouter.Update(m_scene, canvas,
+        {static_cast<float>(width), static_cast<float>(height)},
+        {mouseX, mouseY}, (mouseButtons & SDL_BUTTON_LMASK) != 0,
+        pointerPressed, pointerReleased);
+    for (const auto& click : m_uiInputRouter.GetEvents())
+        (void)m_scene.DispatchUIButtonClicked(click.entity);
 }
 
 void RuntimeApplication::Render()
@@ -218,8 +253,14 @@ void RuntimeApplication::Render()
         const auto texture = m_textures.find(visual.textureAssetId);
         if (!visual.textureAssetId.empty() && texture != m_textures.end())
         {
-            m_renderer.DrawTexture(texture->second, entity.GetTransform(), m_camera,
-                visual.size, visual.red, visual.green, visual.blue, visual.alpha);
+            const auto* animation = entity.GetComponent<SpriteAnimation2D>();
+            if (animation != nullptr && animation->IsConfigurationValid())
+                m_renderer.DrawTexture(texture->second, entity.GetTransform(), m_camera,
+                    visual.size, animation->GetSourcePosition(), animation->GetSourceSize(),
+                    visual.red, visual.green, visual.blue, visual.alpha);
+            else
+                m_renderer.DrawTexture(texture->second, entity.GetTransform(), m_camera,
+                    visual.size, visual.red, visual.green, visual.blue, visual.alpha);
         }
         else if (visual.textureAssetId.empty())
         {
@@ -227,6 +268,71 @@ void RuntimeApplication::Render()
                 visual.red, visual.green, visual.blue, visual.alpha);
         }
     });
+
+    int width = 0;
+    int height = 0;
+    (void)SDL_GetWindowSize(m_window, &width, &height);
+    const Vector2 viewport{static_cast<float>(width), static_cast<float>(height)};
+    const UICanvas2D* canvas = nullptr;
+    m_scene.ForEachEntity([&canvas](const Entity& entity)
+    {
+        if (canvas == nullptr && entity.IsActive())
+        {
+            const auto* candidate = entity.GetComponent<UICanvas2D>();
+            if (candidate != nullptr && candidate->enabled && candidate->IsConfigurationValid())
+                canvas = candidate;
+        }
+    });
+    UICanvasLayout2D layout;
+    if (canvas != nullptr && ResolveUICanvasLayout(*canvas, viewport, layout))
+    {
+        m_scene.ForEachEntity([this, &layout](const Entity& entity)
+        {
+            if (!entity.IsActive()) return;
+            if (const auto* panel = entity.GetComponent<UIPanel2D>())
+            {
+                if (panel->enabled && panel->IsConfigurationValid())
+                {
+                    const Vector2 position = layout.origin + panel->position * layout.scale;
+                    const Vector2 size = panel->size * layout.scale;
+                    m_renderer.DrawFilledRect(position.x, position.y, size.x, size.y,
+                        static_cast<std::uint8_t>(panel->red * 255.0F),
+                        static_cast<std::uint8_t>(panel->green * 255.0F),
+                        static_cast<std::uint8_t>(panel->blue * 255.0F),
+                        static_cast<std::uint8_t>(panel->alpha * 255.0F));
+                }
+            }
+            if (const auto* button = entity.GetComponent<UIButton2D>())
+            {
+                if (button->enabled && button->IsConfigurationValid())
+                {
+                    const Vector2 position = layout.origin + button->position * layout.scale;
+                    const Vector2 size = button->size * layout.scale;
+                    const auto& state = m_uiInputRouter.GetState(entity.GetId());
+                    const float boost = state.hovered ? 1.18F : 1.0F;
+                    m_renderer.DrawFilledRect(position.x, position.y, size.x, size.y,
+                        static_cast<std::uint8_t>(std::min(1.0F, button->red * boost) * 255.0F),
+                        static_cast<std::uint8_t>(std::min(1.0F, button->green * boost) * 255.0F),
+                        static_cast<std::uint8_t>(std::min(1.0F, button->blue * boost) * 255.0F),
+                        static_cast<std::uint8_t>(button->alpha * 255.0F));
+                    m_renderer.DrawDebugText(position.x + 8.0F * layout.scale,
+                        position.y + 8.0F * layout.scale, button->text);
+                }
+            }
+            if (const auto* text = entity.GetComponent<UIText2D>())
+            {
+                if (text->enabled && text->IsConfigurationValid())
+                {
+                    const Vector2 position = layout.origin + text->position * layout.scale;
+                    m_renderer.DrawDebugText(position.x, position.y, text->text,
+                        static_cast<std::uint8_t>(text->red * 255.0F),
+                        static_cast<std::uint8_t>(text->green * 255.0F),
+                        static_cast<std::uint8_t>(text->blue * 255.0F),
+                        static_cast<std::uint8_t>(text->alpha * 255.0F));
+                }
+            }
+        });
+    }
     m_renderer.Present();
 }
 

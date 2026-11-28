@@ -9,6 +9,7 @@
 #include "Engine/Resources/AssetRegistry.hpp"
 #include "Engine/Scene/ComponentRegistry.hpp"
 #include "Engine/Scene/Scene.hpp"
+#include "Engine/UI/UIInputRouter2D.hpp"
 #include "Engine/Scripting/ScriptRuntime.hpp"
 
 #include <filesystem>
@@ -36,7 +37,7 @@ public:
 private:
     [[nodiscard]] bool LoadProject(const std::filesystem::path& projectFile);
     [[nodiscard]] bool LoadStartupScene();
-    void Update(float deltaSeconds);
+    void Update(float deltaSeconds, bool pointerPressed, bool pointerReleased);
     void Render();
 
     SDL_Window* m_window = nullptr;
@@ -49,6 +50,7 @@ private:
     std::filesystem::path m_projectFilePath;
     AssetRegistry m_assetRegistry{"assets"};
     InputMap m_inputMap;
+    UIInputRouter2D m_uiInputRouter;
     std::unique_ptr<ScriptRuntime> m_scriptRuntime;
     Camera2D m_camera;
     std::unordered_map<std::string, TextureHandle> m_textures;

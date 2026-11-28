@@ -68,6 +68,9 @@ public:
         std::uint8_t green = 255,
         std::uint8_t blue = 255,
         std::uint8_t alpha = 255);
+    void DrawDebugText(float x, float y, const std::string& text,
+        std::uint8_t red = 255, std::uint8_t green = 255,
+        std::uint8_t blue = 255, std::uint8_t alpha = 255);
     void Present();
 
 private:

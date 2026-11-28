@@ -365,6 +365,14 @@ void Renderer2D::DrawTexture(
     SDL_SetTextureAlphaMod(iterator->second, 255);
 }
 
+void Renderer2D::DrawDebugText(float x, float y, const std::string& text,
+    std::uint8_t red, std::uint8_t green, std::uint8_t blue, std::uint8_t alpha)
+{
+    if (m_renderer == nullptr || text.empty()) return;
+    SDL_SetRenderDrawColor(m_renderer, red, green, blue, alpha);
+    (void)SDL_RenderDebugText(m_renderer, x, y, text.c_str());
+}
+
 void Renderer2D::Present()
 {
     if (m_renderer != nullptr)
