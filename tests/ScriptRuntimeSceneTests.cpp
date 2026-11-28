@@ -12,8 +12,8 @@ namespace
 int failures = 0;
 void Check(bool ok, const char* message)
 {
-    if (!ok) { std::cerr << "[FAIL] " << message << '\\n'; ++failures; }
-    else std::cout << "[PASS] " << message << '\\n';
+    if (!ok) { std::cerr << "[FAIL] " << message << '\n'; ++failures; }
+    else std::cout << "[PASS] " << message << '\n';
 }
 
 class MockScriptRuntime final : public ember::ScriptRuntime
@@ -104,6 +104,6 @@ int main()
     scene.Stop();
 
     if (failures) return 1;
-    std::cout << "All script runtime scene tests passed.\\n";
+    std::cout << "All script runtime scene tests passed.\n";
     return 0;
 }
