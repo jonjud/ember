@@ -10,12 +10,12 @@ void Check(bool condition, const char* description)
 {
     if (!condition)
     {
-        std::cerr << "[FAIL] " << description << '\\n';
+        std::cerr << "[FAIL] " << description << '\n';
         ++failures;
     }
     else
     {
-        std::cout << "[PASS] " << description << '\\n';
+        std::cout << "[PASS] " << description << '\n';
     }
 }
 }
@@ -57,9 +57,9 @@ int main()
 
     if (failures != 0)
     {
-        std::cerr << failures << " undo history test(s) failed.\\n";
+        std::cerr << failures << " undo history test(s) failed.\n";
         return 1;
     }
-    std::cout << "All scene undo history tests passed.\\n";
+    std::cout << "All scene undo history tests passed.\n";
     return 0;
 }
