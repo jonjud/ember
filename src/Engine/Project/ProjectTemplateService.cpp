@@ -88,6 +88,13 @@ bool ProjectTemplateService::CreateProject(
     configuration.name = projectName;
     configuration.assetDirectory = "assets";
     configuration.startupScene = "scenes/main.emberscene";
+    configuration.inputBindings = {
+        {"MoveLeft", {4, 80}},
+        {"MoveRight", {7, 79}},
+        {"MoveUp", {26, 82}},
+        {"MoveDown", {22, 81}}
+    };
+    configuration.inputBindingsConfigured = true;
     const auto projectFile = staging / "project.emberproject";
     if (!ProjectConfigurationStore::Save(projectFile, configuration, error))
     {
