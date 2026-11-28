@@ -11,12 +11,12 @@
 | Active branch | `develop` |
 | Stable branch | `main` |
 | Last code commit | [`c1f55b5`](https://github.com/jonjud/ember/commit/c1f55b5f67f753bd6374199534ffcfd1d1c7f7e1) — clarify unsaved exit prompt and sync status |
-| Latest repository HEAD | [`c1f55b5`](https://github.com/jonjud/ember/commit/c1f55b5f67f753bd6374199534ffcfd1d1c7f7e1) on `develop` |
-| Last verified code CI | [Windows CI run 46108460101](https://github.com/jonjud/ember/actions/runs/46108460101) — **Success**; exit prompt and Script/Scene protection build/tests passed |
-| Latest CI | [Windows CI run 46108460101](https://github.com/jonjud/ember/actions/runs/46108460101) — **Success** |
-| Latest documentation CI | [Windows CI run 46108460101](https://github.com/jonjud/ember/actions/runs/46108460101) — **Success** |
-| Last completed milestone | Script Source Editor authoring workflow: syntax validation, dirty-state/close protection, external-change detection, failure-safe reload, atomic save and application-exit protection for unsaved Scene/Script changes — Windows CI run 46108460101 Success; combined manual Editor verification remains pending |
-| Active milestone | Close remaining Script Source Editor authoring workflow gaps, then complete combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
+| Latest repository HEAD | [`3416971`](https://github.com/jonjud/ember/commit/3416971973437431fe8f35cc0777001f38f8c11e) on `develop` |
+| Last verified code CI | [Windows CI run 46110556033](https://github.com/jonjud/ember/actions/runs/46110556033) — **Success**; bounded external Script Source conflict reads, Windows build and engine tests passed |
+| Latest CI | [Windows CI run 46110556033](https://github.com/jonjud/ember/actions/runs/46110556033) — **Success** |
+| Latest documentation CI | [Windows CI run 46110556033](https://github.com/jonjud/ember/actions/runs/46110556033) — **Success** |
+| Last completed milestone | Script Source Editor authoring implementation: Lua syntax validation, dirty-state/close/exit protection, external-change detection, bounded conflict reads, failure-safe reload and atomic save — Windows CI run 46110556033 Success; combined manual Editor verification remains pending |
+| Active milestone | Prepare and complete the combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -33,6 +33,7 @@
 - [x] Built-in Script Source Editor for text Script assets: open from Asset Browser, edit/save, 64 KiB cap, explicit discard and unsaved-close protection (Windows CI run 46102606726 Success)
 - [x] Detect external source changes before save and reload only when the Editor buffer is clean (Windows CI run 46104170651 Success)
 - [x] Failure-safe reload and atomic save replacement; failed reads preserve the current buffer and failed replacement preserves the original file (Windows CI run 46105718716 Success)
+- [x] Bound external Script Source conflict reads to 64 KiB and detect file growth during reads before comparing snapshots (Windows CI run 46110556033 Success)
 - [x] Protect unsaved Script and Scene changes on application exit, including the window-close request (Windows CI run 46108460101 Success)
 - [x] CMake/C++20, SDL3 application loop, timing and input foundation
 - [x] Renderer2D, Transform2D, Camera2D, Scene/Entity
@@ -188,7 +189,8 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 | 2026-11-28 | [Lua backend + language-tagged Script Assets, `41f5ac3`, CI run 46097066791](https://github.com/jonjud/ember/actions/runs/46097066791) | Success; Lua runtime, Editor Play Mode integration, script language tagging and automated sandbox/lifecycle tests passed |
 | 2026-11-28 | [Script Source Editor external-change guard, `1089bd1`, CI run 46104170651](https://github.com/jonjud/ember/actions/runs/46104170651) | Success; external edits are detected before save, clean buffers can safely reload from disk, and Editor build/tests passed |
 | 2026-11-28 | [Failure-safe Script Source Editor file I/O, `c6f3c54`, CI run 46105718716](https://github.com/jonjud/ember/actions/runs/46105718716) | Success; reload preserves the in-memory buffer on read failure and save uses atomic replacement |
+| 2026-11-28 | [Bound external Script Source conflict reads, `3416971`, CI #285](https://github.com/jonjud/ember/actions/runs/46110556033) | Success; conflict comparison is capped at 64 KiB and detects file growth during the read |
 
 ---
 
-**Handoff:** Script Source Editor now supports Lua syntax validation, protects dirty buffers and unsaved close, detects external file changes before save, reloads through a temporary buffer, and saves with atomic replacement. Application exit and window close now prompt to save or discard dirty Script/Scene changes. Windows CI run 46108460101 passed. The Lua backend exposes Entity/Transform/Input operations through a narrow host API, enforces VM memory/instruction budgets, blocks binary chunks and prevents pcall/xpcall from swallowing budget violations. Next: close remaining authoring workflow gaps, then complete combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
+**Handoff:** Script Source Editor implementation is complete: Lua syntax validation, dirty-buffer and close protection, external-change detection with bounded 64 KiB conflict reads, failure-safe reload and atomic save replacement. Application exit and window close prompt to save or discard dirty Script/Scene changes. Windows CI run [46110556033](https://github.com/jonjud/ember/actions/runs/46110556033) passed. The Lua backend exposes Entity/Transform/Input operations through a narrow host API, enforces VM memory/instruction budgets, blocks binary chunks and prevents pcall/xpcall from swallowing budget violations. Next: complete the combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
