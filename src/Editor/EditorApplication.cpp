@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <optional>
 #include <vector>
 #include <string>
@@ -2722,12 +2723,68 @@ void EditorApplication::OpenSelectedScriptSource()
         return;
     }
     m_scriptSourceBuffer[static_cast<std::size_t>(sourceSize)] = '\0';
+    m_scriptSourceOriginal.assign(m_scriptSourceBuffer.data(), static_cast<std::size_t>(sourceSize));
     m_scriptSourceAssetId = selected->assetId;
     m_scriptSourcePath = selected->source;
     m_scriptSourceDirty = false;
     m_showScriptSourceEditor = true;
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Opened Script source: %.180s", selected->assetId.c_str());
+}
+
+void EditorApplication::ReloadScriptSourceFromDisk()
+{
+    if (m_scriptSourceAssetId.empty() || m_scriptSourcePath.empty())
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "No Script source is open");
+        return;
+    }
+    if (m_scriptSourceDirty)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Discard unsaved edits before reloading from disk");
+        return;
+    }
+    const AssetMetadata* metadata = m_assetRegistry.Find(m_scriptSourceAssetId);
+    if (metadata == nullptr || metadata->type != AssetType::Script ||
+        metadata->source != m_scriptSourcePath)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script asset changed or is no longer indexed; refresh before reloading");
+        return;
+    }
+    const auto resolved = m_assetRegistry.GetDirectory().Resolve(m_scriptSourcePath);
+    if (!resolved)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script source path is invalid or outside the asset directory");
+        return;
+    }
+    std::error_code filesystemError;
+    const auto sourceSize = std::filesystem::file_size(*resolved, filesystemError);
+    if (filesystemError || sourceSize > m_scriptSourceBuffer.size() - 1)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script source is unavailable or exceeds the 64 KiB Editor limit");
+        return;
+    }
+    std::ifstream source(*resolved, std::ios::binary);
+    if (!source)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Could not open Script source");
+        return;
+    }
+    source.read(m_scriptSourceBuffer.data(), static_cast<std::streamsize>(sourceSize));
+    if (source.gcount() != static_cast<std::streamsize>(sourceSize))
+    {
+        m_scriptSourceBuffer.fill('\0');
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Could not read complete Script source");
+        return;
+    }
+    m_scriptSourceBuffer[static_cast<std::size_t>(sourceSize)] = '\0';
+    m_scriptSourceOriginal.assign(m_scriptSourceBuffer.data(), static_cast<std::size_t>(sourceSize));
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+        "Reloaded Script source from disk: %.160s", m_scriptSourceAssetId.c_str());
 }
 
 void EditorApplication::SaveScriptSource()
@@ -2760,6 +2817,23 @@ void EditorApplication::SaveScriptSource()
         return;
     }
 
+    // Refuse to overwrite a file that changed outside the Editor since it was opened/saved.
+    std::ifstream currentSource(*resolved, std::ios::binary);
+    if (!currentSource)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Could not verify Script source before saving");
+        return;
+    }
+    const std::string diskContents(
+        std::istreambuf_iterator<char>(currentSource), std::istreambuf_iterator<char>());
+    if (currentSource.bad() || diskContents != m_scriptSourceOriginal)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script source changed on disk; discard edits and reload before saving");
+        return;
+    }
+
     const std::size_t sourceLength = std::char_traits<char>::length(m_scriptSourceBuffer.data());
     std::ofstream destination(*resolved, std::ios::binary | std::ios::trunc);
     if (!destination)
@@ -2775,6 +2849,7 @@ void EditorApplication::SaveScriptSource()
         return;
     }
 
+    m_scriptSourceOriginal.assign(m_scriptSourceBuffer.data(), sourceLength);
     m_scriptSourceDirty = false;
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Saved Script source: %.180s", m_scriptSourceAssetId.c_str());
@@ -2799,6 +2874,11 @@ void EditorApplication::DrawScriptSourceEditor()
             ImGui::BeginDisabled(!m_scriptSourceDirty || m_isPlaying);
             if (ImGui::Button("Save"))
                 SaveScriptSource();
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            ImGui::BeginDisabled(m_scriptSourceDirty);
+            if (ImGui::Button("Reload from Disk"))
+                ReloadScriptSourceFromDisk();
             ImGui::EndDisabled();
             ImGui::SameLine();
             ImGui::TextDisabled("Text source only | 64 KiB max");

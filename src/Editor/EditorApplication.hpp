@@ -53,6 +53,7 @@ private:
     void DrawScriptSourceEditor();
     void OpenSelectedScriptSource();
     void SaveScriptSource();
+    void ReloadScriptSourceFromDisk();
     void DrawViewport();
     void DrawUnsavedChangesModal();
     void CreateEntity();
@@ -127,6 +128,7 @@ private:
     bool m_scriptSourceDirty = false;
     bool m_allowScriptSourceClose = false;
     std::string m_scriptSourceAssetId;
+    std::string m_scriptSourceOriginal;
     std::filesystem::path m_scriptSourcePath;
     std::array<char, 65536> m_scriptSourceBuffer{};
     float m_positionSnap = 16.0F;
