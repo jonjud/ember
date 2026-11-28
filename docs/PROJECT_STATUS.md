@@ -10,13 +10,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`471921e`](https://github.com/jonjud/ember/commit/471921ed7ac8aa936ac14f2577dd0f6b271bea00) — tests for default Project Template movement bindings |
-| Latest repository HEAD | [`471921e`](https://github.com/jonjud/ember/commit/471921ed7ac8aa936ac14f2577dd0f6b271bea00) — tests for default Project Template movement bindings |
-| Last verified code CI | [Windows CI #336](https://github.com/jonjud/ember/actions/runs/46149415103) — **Success**; Windows build and all engine tests passed |
-| Latest CI | [Windows CI #336](https://github.com/jonjud/ember/actions/runs/46149415103) — **Success** |
-| Latest documentation CI | Windows CI #288 — **Success** |
-| Last completed milestone | Scripting + Input Action Mapping: Lua authoring/Play Mode, diagnostics, input rebinding, validation/save/reload and unsaved-work protection; combined Windows Editor checklist user-confirmed passed 2026-11-28 and CI #288 Success |
-| Active milestone | Combined manual Windows verification: create projects from both templates, open/edit/run in Editor, export Windows game, inspect package and launch exported runtime. All implementation and automated CI work is complete through CI #336. |
+| Last code commit | [`cfb6058`](https://github.com/jonjud/ember/commit/cfb60580b952816c9fe570b9433745376b0e7720) — Runtime/Editor workflow hardening |
+| Latest repository HEAD | [`cfb6058`](https://github.com/jonjud/ember/commit/cfb60580b952816c9fe570b9433745376b0e7720) — Runtime/Editor workflow hardening |
+| Last verified code CI | [Windows CI](https://github.com/jonjud/ember/actions/runs/46152882245) — **Success**; Windows Debug and Release build/tests passed |
+| Latest CI | [Windows CI](https://github.com/jonjud/ember/actions/runs/46152882245) — **Success**; both jobs completed successfully |
+| Latest documentation CI | [Windows CI](https://github.com/jonjud/ember/actions/runs/46152882245) — **Success** |
+| Last completed milestone | Runtime/Editor workflow hardening: UTF-8 project argv/discovery, Editor Open Project, Release/static CRT, popup scope, Runtime UI/button routing/animation frame, physics body-mode separation, Release-safe tests and FetchContent cache |
+| Active milestone | Editor Undo / Redo: design bounded authoring-scene history using safe serialized snapshots and automated tests. Combined manual Windows project-template/export verification remains pending. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -230,4 +230,4 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 
 ---
 
-**Handoff:** Scripting + Input Action Mapping, Structured Logging & Diagnostics, Windows game export/runtime implementation, and Project Templates are complete at implementation/automated-test level. Latest HEAD is `471921ed7ac8aa936ac14f2577dd0f6b271bea00`; Windows CI #336 passed. Next task is a combined manual Windows verification: create Blank 2D and 2D Starter projects in Editor, verify Player movement in Play Mode, export a project, inspect packaged files/DLLs/manifest, and launch the exported game outside Editor. Do not mark interactive verification complete until the user confirms. Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
+**Handoff:** Latest HEAD is `cfb60580b952816c9fe570b9433745376b0e7720`; Windows CI run `46152882245` passed both Debug and Release jobs. Runtime/Editor workflow hardening (eight requested changes) is complete at implementation/automated-test level. Active engineering milestone is Editor Undo / Redo using bounded serialized Scene snapshots; then multi-selection/hierarchy organization. Combined manual Windows verification of Blank 2D/2D Starter creation, Play Mode movement, Windows export contents and launching the exported runtime outside Editor remains pending. Do not mark interactive verification complete until the user confirms. Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md). Continue on `develop`; do not merge to `main`.
