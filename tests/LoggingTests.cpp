@@ -1,12 +1,23 @@
 #include "Engine/Core/Logger.hpp"
 
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <memory>
+#include <string>
 #include <iostream>
 #include <thread>
 #include <vector>
 
 namespace
 {
+class RecordingSink final : public ember::LogSink
+{
+public:
+    void Write(const ember::LogEntry& entry) override { messages.push_back(entry.message); }
+    std::vector<std::string> messages;
+};
+
 int g_failures = 0;
 
 void Check(bool condition, const char* message)
@@ -70,7 +81,40 @@ int main()
     Check(logger.Snapshot().front().sequence == 8,
         "Clearing history does not reset sequence numbers");
 
+    auto recordingSink = std::make_shared<RecordingSink>();
+    ember::Logger sinkLogger(4);
+    sinkLogger.AddSink(recordingSink);
+    sinkLogger.Info("Tests", "sink delivery");
+    Check(recordingSink->messages.size() == 1 && recordingSink->messages[0] == "sink delivery",
+        "Logger dispatches entries to registered sinks");
+    sinkLogger.ClearSinks();
+    sinkLogger.Info("Tests", "not delivered");
+    Check(recordingSink->messages.size() == 1, "Logger can detach all sinks");
+
+    const auto logPath = std::filesystem::temp_directory_path() / "ember_logging_tests.log";
+    std::filesystem::remove(logPath);
+    {
+        auto fileSink = std::make_shared<ember::FileLogSink>(logPath);
+        Check(fileSink->IsOpen(), "File sink opens its target path");
+        ember::Logger fileLogger(2);
+        fileLogger.AddSink(fileSink);
+        fileLogger.Warning("Persistence", "file sink entry");
+        fileSink->Flush();
+    }
+    std::ifstream logInput(logPath);
+    const std::string logContents((std::istreambuf_iterator<char>(logInput)),
+        std::istreambuf_iterator<char>());
+    Check(logContents.find("[Warning] [Persistence]") != std::string::npos &&
+          logContents.find("file sink entry") != std::string::npos,
+        "File sink writes severity, category and message");
+    std::filesystem::remove(logPath);
+
     ember::Logger disabled(0);
+    auto disabledSink = std::make_shared<RecordingSink>();
+    disabled.AddSink(disabledSink);
+    disabled.Error("Engine", "not stored in memory but still sent to sink");
+    Check(disabled.Size() == 0 && disabledSink->messages.size() == 1,
+        "Zero capacity disables history but keeps configured sinks active");
     disabled.Error("Engine", "not stored");
     Check(disabled.Size() == 0, "Zero capacity disables history storage");
 

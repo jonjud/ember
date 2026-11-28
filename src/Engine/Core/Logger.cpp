@@ -1,10 +1,55 @@
 #include "Engine/Core/Logger.hpp"
 
 #include <algorithm>
+#include <iostream>
+#include <sstream>
 #include <utility>
 
 namespace ember
 {
+namespace
+{
+std::string FormatLogEntry(const LogEntry& entry)
+{
+    const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(
+        entry.timestamp.time_since_epoch()).count();
+    std::ostringstream stream;
+    stream << '[' << milliseconds << "] [" << ToString(entry.level) << "] ["
+           << entry.category << "] [thread " << entry.threadId << "] " << entry.message;
+    return stream.str();
+}
+}
+
+void ConsoleLogSink::Write(const LogEntry& entry)
+{
+    std::clog << FormatLogEntry(entry) << '\n';
+}
+
+FileLogSink::FileLogSink(const std::filesystem::path& path)
+    : m_stream(path, std::ios::out | std::ios::app)
+{
+}
+
+bool FileLogSink::IsOpen() const noexcept
+{
+    std::lock_guard lock(m_mutex);
+    return m_stream.is_open() && m_stream.good();
+}
+
+void FileLogSink::Flush()
+{
+    std::lock_guard lock(m_mutex);
+    if (m_stream.is_open()) m_stream.flush();
+}
+
+void FileLogSink::Write(const LogEntry& entry)
+{
+    std::lock_guard lock(m_mutex);
+    if (!m_stream.is_open() || !m_stream.good()) return;
+    m_stream << FormatLogEntry(entry) << '\n';
+    m_stream.flush();
+}
+
 const char* ToString(LogLevel level) noexcept
 {
     switch (level)
@@ -27,22 +72,51 @@ Logger::Logger(std::size_t capacity) noexcept
 
 void Logger::Log(LogLevel level, std::string_view category, std::string_view message)
 {
-    std::lock_guard lock(m_mutex);
-    if (m_capacity == 0 || level == LogLevel::Off ||
-        level < m_minimumLevel || m_minimumLevel == LogLevel::Off)
-        return;
-
-    if (m_entries.size() == m_capacity)
-        m_entries.pop_front();
-
     LogEntry entry;
-    entry.sequence = m_nextSequence++;
-    entry.timestamp = std::chrono::system_clock::now();
-    entry.level = level;
-    entry.category.assign(category);
-    entry.message.assign(message);
-    entry.threadId = std::this_thread::get_id();
-    m_entries.push_back(std::move(entry));
+    std::vector<std::shared_ptr<LogSink>> sinks;
+    {
+        std::lock_guard lock(m_mutex);
+        if (level == LogLevel::Off || level < m_minimumLevel ||
+            m_minimumLevel == LogLevel::Off)
+            return;
+
+        entry.sequence = m_nextSequence++;
+        entry.timestamp = std::chrono::system_clock::now();
+        entry.level = level;
+        entry.category.assign(category);
+        entry.message.assign(message);
+        entry.threadId = std::this_thread::get_id();
+
+        if (m_capacity != 0)
+        {
+            if (m_entries.size() == m_capacity)
+                m_entries.pop_front();
+            m_entries.push_back(entry);
+        }
+        sinks = m_sinks;
+    }
+
+    // Invoke sinks outside the history lock: slow I/O must not block snapshots.
+    // Logging must never propagate sink exceptions into Engine callers.
+    for (const auto& sink : sinks)
+    {
+        if (!sink) continue;
+        try { sink->Write(entry); }
+        catch (...) { /* A broken sink must not break the Engine. */ }
+    }
+}
+
+void Logger::AddSink(std::shared_ptr<LogSink> sink)
+{
+    if (!sink) return;
+    std::lock_guard lock(m_mutex);
+    m_sinks.push_back(std::move(sink));
+}
+
+void Logger::ClearSinks()
+{
+    std::lock_guard lock(m_mutex);
+    m_sinks.clear();
 }
 
 void Logger::Trace(std::string_view category, std::string_view message)
