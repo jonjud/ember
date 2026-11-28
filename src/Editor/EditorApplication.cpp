@@ -2432,36 +2432,56 @@ void EditorApplication::DrawLogWindow()
 {
     if (!m_showLogWindow) return;
 
-    ImGui::SetNextWindowSize(ImVec2(560.0F, 260.0F), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(620.0F, 300.0F), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Log", &m_showLogWindow))
     {
         const auto entries = m_logger.Snapshot();
         if (ImGui::Button("Clear")) m_logger.Clear();
         ImGui::SameLine();
         ImGui::TextDisabled("%zu / %zu entries", entries.size(), m_logger.Capacity());
+
+        ImGui::SetNextItemWidth(180.0F);
+        ImGui::InputTextWithHint("##LogTextFilter", "Filter category or message", m_logTextFilter, sizeof(m_logTextFilter));
+        ImGui::SameLine();
+        static constexpr const char* levelNames[] = {
+            "All levels", "Trace", "Debug", "Info", "Warning", "Error", "Critical"
+        };
+        ImGui::SetNextItemWidth(130.0F);
+        ImGui::Combo("##LogLevelFilter", &m_logLevelFilter, levelNames,
+            static_cast<int>(std::size(levelNames)));
         ImGui::Separator();
+
+        const std::string filter = m_logTextFilter;
+        std::size_t visibleCount = 0;
         if (ImGui::BeginChild("EngineLogEntries", ImVec2(0.0F, 0.0F), ImGuiChildFlags_Borders))
         {
-            if (entries.empty()) ImGui::TextDisabled("No log entries yet.");
-            else
+            for (std::size_t index = 0; index < entries.size(); ++index)
             {
-                for (std::size_t index = 0; index < entries.size(); ++index)
-                {
-                    const LogEntry& entry = entries[index];
-                    ImGui::PushID(static_cast<int>(index));
-                    ImVec4 color(0.82F, 0.85F, 0.90F, 1.0F);
-                    if (entry.level == LogLevel::Warning) color = ImVec4(1.0F, 0.78F, 0.30F, 1.0F);
-                    else if (entry.level == LogLevel::Error || entry.level == LogLevel::Critical)
-                        color = ImVec4(1.0F, 0.38F, 0.32F, 1.0F);
-                    else if (entry.level == LogLevel::Debug || entry.level == LogLevel::Trace)
-                        color = ImVec4(0.58F, 0.64F, 0.72F, 1.0F);
-                    ImGui::TextColored(color, "[%llu] [%s] [%s]",
-                        static_cast<unsigned long long>(entry.sequence), ToString(entry.level), entry.category.c_str());
-                    ImGui::SameLine();
-                    ImGui::TextWrapped("%s", entry.message.c_str());
-                    ImGui::PopID();
-                }
+                const LogEntry& entry = entries[index];
+                if (m_logLevelFilter != 0 &&
+                    static_cast<int>(entry.level) != m_logLevelFilter - 1)
+                    continue;
+                if (!filter.empty() &&
+                    entry.category.find(filter) == std::string::npos &&
+                    entry.message.find(filter) == std::string::npos)
+                    continue;
+
+                ++visibleCount;
+                ImGui::PushID(static_cast<int>(index));
+                ImVec4 color(0.82F, 0.85F, 0.90F, 1.0F);
+                if (entry.level == LogLevel::Warning) color = ImVec4(1.0F, 0.78F, 0.30F, 1.0F);
+                else if (entry.level == LogLevel::Error || entry.level == LogLevel::Critical)
+                    color = ImVec4(1.0F, 0.38F, 0.32F, 1.0F);
+                else if (entry.level == LogLevel::Debug || entry.level == LogLevel::Trace)
+                    color = ImVec4(0.58F, 0.64F, 0.72F, 1.0F);
+                ImGui::TextColored(color, "[%llu] [%s] [%s]",
+                    static_cast<unsigned long long>(entry.sequence), ToString(entry.level), entry.category.c_str());
+                ImGui::SameLine();
+                ImGui::TextWrapped("%s", entry.message.c_str());
+                ImGui::PopID();
             }
+            if (visibleCount == 0)
+                ImGui::TextDisabled(entries.empty() ? "No log entries yet." : "No entries match the current filters.");
         }
         ImGui::EndChild();
     }
