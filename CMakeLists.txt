@@ -99,9 +99,9 @@ FetchContent_MakeAvailable(imgui)
 # libraries are compiled into the backend; filesystem/process libraries are omitted.
 FetchContent_Declare(
     lua
-    URL https://www.lua.org/ftp/lua-5.5.1.tar.gz
-    URL_HASH SHA256=1c4b4068d67061f2a2231ad2b5422e77acea1487ea9890f6320af614f4373dce
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    GIT_REPOSITORY https://github.com/lua/lua.git
+    GIT_TAG v5.5.1
+    GIT_SHALLOW TRUE
 )
 FetchContent_GetProperties(lua)
 if(NOT lua_POPULATED)
@@ -109,32 +109,32 @@ if(NOT lua_POPULATED)
 endif()
 
 add_library(ember_lua STATIC
-    ${lua_SOURCE_DIR}/src/lapi.c
-    ${lua_SOURCE_DIR}/src/lcode.c
-    ${lua_SOURCE_DIR}/src/lctype.c
-    ${lua_SOURCE_DIR}/src/ldebug.c
-    ${lua_SOURCE_DIR}/src/ldo.c
-    ${lua_SOURCE_DIR}/src/ldump.c
-    ${lua_SOURCE_DIR}/src/lfunc.c
-    ${lua_SOURCE_DIR}/src/lgc.c
-    ${lua_SOURCE_DIR}/src/llex.c
-    ${lua_SOURCE_DIR}/src/lmem.c
-    ${lua_SOURCE_DIR}/src/lobject.c
-    ${lua_SOURCE_DIR}/src/lopcodes.c
-    ${lua_SOURCE_DIR}/src/lparser.c
-    ${lua_SOURCE_DIR}/src/lstate.c
-    ${lua_SOURCE_DIR}/src/lstring.c
-    ${lua_SOURCE_DIR}/src/ltable.c
-    ${lua_SOURCE_DIR}/src/ltm.c
-    ${lua_SOURCE_DIR}/src/lundump.c
-    ${lua_SOURCE_DIR}/src/lvm.c
-    ${lua_SOURCE_DIR}/src/lzio.c
-    ${lua_SOURCE_DIR}/src/lauxlib.c
-    ${lua_SOURCE_DIR}/src/lbaselib.c
-    ${lua_SOURCE_DIR}/src/lmathlib.c
-    ${lua_SOURCE_DIR}/src/lstrlib.c
-    ${lua_SOURCE_DIR}/src/ltablib.c
-    ${lua_SOURCE_DIR}/src/lutf8lib.c
+    ${lua_SOURCE_DIR}/lapi.c
+    ${lua_SOURCE_DIR}/lcode.c
+    ${lua_SOURCE_DIR}/lctype.c
+    ${lua_SOURCE_DIR}/ldebug.c
+    ${lua_SOURCE_DIR}/ldo.c
+    ${lua_SOURCE_DIR}/ldump.c
+    ${lua_SOURCE_DIR}/lfunc.c
+    ${lua_SOURCE_DIR}/lgc.c
+    ${lua_SOURCE_DIR}/llex.c
+    ${lua_SOURCE_DIR}/lmem.c
+    ${lua_SOURCE_DIR}/lobject.c
+    ${lua_SOURCE_DIR}/lopcodes.c
+    ${lua_SOURCE_DIR}/lparser.c
+    ${lua_SOURCE_DIR}/lstate.c
+    ${lua_SOURCE_DIR}/lstring.c
+    ${lua_SOURCE_DIR}/ltable.c
+    ${lua_SOURCE_DIR}/ltm.c
+    ${lua_SOURCE_DIR}/lundump.c
+    ${lua_SOURCE_DIR}/lvm.c
+    ${lua_SOURCE_DIR}/lzio.c
+    ${lua_SOURCE_DIR}/lauxlib.c
+    ${lua_SOURCE_DIR}/lbaselib.c
+    ${lua_SOURCE_DIR}/lmathlib.c
+    ${lua_SOURCE_DIR}/lstrlib.c
+    ${lua_SOURCE_DIR}/ltablib.c
+    ${lua_SOURCE_DIR}/lutf8lib.c
 )
 target_include_directories(ember_lua PUBLIC ${lua_SOURCE_DIR}/src)
 set_target_properties(ember_lua PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON)
