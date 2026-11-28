@@ -26,11 +26,11 @@ int main()
     std::size_t validationLine = 0;
     std::size_t validationColumn = 0;
     Check(ember::LuaScriptRuntime::ValidateSource(
-        "function OnUpdate(dt)\\n  local value = 42\\nend\\n", "valid.lua",
+        "function OnUpdate(dt)\n  local value = 42\nend\n", "valid.lua",
         &validationError, &validationLine, &validationColumn),
         "Lua source validator accepts valid syntax");
     Check(!ember::LuaScriptRuntime::ValidateSource(
-        "function OnUpdate(dt)\\n  local = 42\\nend\\n", "invalid.lua",
+        "function OnUpdate(dt)\n  local = 42\nend\n", "invalid.lua",
         &validationError, &validationLine, &validationColumn) &&
         validationLine == 2 && validationColumn > 0,
         "Lua source validator reports syntax error line and column");

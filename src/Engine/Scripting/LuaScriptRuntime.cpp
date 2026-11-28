@@ -69,7 +69,7 @@ void ParseLuaDiagnosticLocation(const std::string& message, std::string_view sou
         std::size_t lineStart = 0;
         for (std::size_t current = 1; current < parsedLine; ++current)
         {
-            const std::size_t newline = source.find('\\n', lineStart);
+            const std::size_t newline = source.find('\n', lineStart);
             if (newline == std::string_view::npos)
             {
                 lineStart = source.size();
@@ -77,7 +77,7 @@ void ParseLuaDiagnosticLocation(const std::string& message, std::string_view sou
             }
             lineStart = newline + 1;
         }
-        const std::size_t lineEnd = source.find('\\n', lineStart);
+        const std::size_t lineEnd = source.find('\n', lineStart);
         const std::string_view sourceLine = source.substr(lineStart,
             (lineEnd == std::string_view::npos ? source.size() : lineEnd) - lineStart);
         const std::size_t near = message.rfind("near '");
