@@ -32,6 +32,11 @@ int main()
         script << R"lua(
 function OnCreate()
     entity:set_position(10, 20)
+    assert(string.dump == nil, "string.dump must be unavailable")
+    local textChunk = load("return 42", "text-only", "b")
+    assert(textChunk ~= nil and textChunk() == 42, "load must force text mode")
+    local binaryChunk = load("\\27Lua")
+    assert(binaryChunk == nil, "load must reject binary chunks")
 end
 
 function OnUpdate(deltaSeconds)
@@ -49,7 +54,17 @@ end
     }
     {
         std::ofstream script(root / "scripts" / "loop.lua");
-        script << "function OnUpdate(deltaSeconds) while true do end end\n";
+        script << "function OnUpdate(deltaSeconds)\n"
+                  "  local ok = pcall(function() while true do end end)\n"
+                  "  if not ok then entity:set_position(777, 777) end\n"
+                  "end\n";
+    }
+    {
+        std::ofstream script(root / "scripts" / "xloop.lua");
+        script << "function OnUpdate(deltaSeconds)\n"
+                  "  local ok = xpcall(function() while true do end end, function(err) return err end)\n"
+                  "  if not ok then entity:set_position(888, 888) end\n"
+                  "end\n";
     }
     {
         std::ofstream script(root / "scripts" / "invalid.lua");
@@ -70,6 +85,13 @@ end
     Check(ember::AssetMetadataStore::Save(
         root / "scripts" / "loop.lua.emberasset", loopMetadata), "Loop script metadata saved");
 
+    ember::AssetMetadata xloopMetadata;
+    xloopMetadata.assetId = "script-xloop";
+    xloopMetadata.type = ember::AssetType::Script;
+    xloopMetadata.source = "scripts/xloop.lua";
+    Check(ember::AssetMetadataStore::Save(
+        root / "scripts" / "xloop.lua.emberasset", xloopMetadata), "xpcall loop metadata saved");
+
     ember::AssetMetadata invalidMetadata;
     invalidMetadata.assetId = "script-invalid";
     invalidMetadata.type = ember::AssetType::Script;
@@ -89,13 +111,17 @@ end
     auto& loopScript = loopActor.AddComponent<ember::ScriptComponent>();
     loopScript.scriptAssetId = "script-loop";
 
+    auto& xloopActor = scene.CreateEntity("XLoop");
+    auto& xloopScript = xloopActor.AddComponent<ember::ScriptComponent>();
+    xloopScript.scriptAssetId = "script-xloop";
+
     auto& invalidActor = scene.CreateEntity("Invalid");
     auto& invalidScript = invalidActor.AddComponent<ember::ScriptComponent>();
     invalidScript.scriptAssetId = "script-invalid";
 
     ember::LuaScriptRuntime runtime(assets);
     scene.Start(nullptr, &assets, &runtime);
-    Check(scene.GetScriptInstanceCount() == 2,
+    Check(scene.GetScriptInstanceCount() == 3,
         "Lua creates independent instances and rejects invalid source during setup");
     Check(actor.GetTransform().position.x == 10.0F &&
           actor.GetTransform().position.y == 20.0F,
@@ -109,7 +135,13 @@ end
           actor.GetTransform().rotation == 1.5F,
         "OnUpdate receives delta time and named input action edges");
     Check(!scene.GetScriptDiagnostics().empty(),
-        "Infinite Lua loops are stopped by the per-callback instruction budget");
+        "Instruction budget violations escape nested pcall and stop the callback");
+    Check(loopActor.GetTransform().position.x == 0.0F &&
+          loopActor.GetTransform().position.y == 0.0F,
+        "pcall cannot swallow an instruction-budget violation and continue execution");
+    Check(xloopActor.GetTransform().position.x == 0.0F &&
+          xloopActor.GetTransform().position.y == 0.0F,
+        "xpcall cannot swallow an instruction-budget violation and continue execution");
 
     input.Update({});
     scene.Update(0.25F, input.GetActionState());

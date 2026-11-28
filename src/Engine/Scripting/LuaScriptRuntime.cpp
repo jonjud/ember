@@ -2,9 +2,12 @@
 
 #include "Engine/Scene/Entity.hpp"
 
+extern "C"
+{
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
+}
 
 #include <algorithm>
 #include <cmath>
@@ -12,6 +15,7 @@
 #include <fstream>
 #include <limits>
 #include <new>
+#include <random>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -51,6 +55,10 @@ struct LuaScriptRuntime::Instance
     const InputActionState* input = nullptr;
     std::size_t memoryUsed = 0;
     std::size_t instructionsRemaining = kInstructionBudget;
+    bool instructionBudgetExceeded = false;
+    int originalPCallRef = LUA_NOREF;
+    int originalXPCallRef = LUA_NOREF;
+    int originalLoadRef = LUA_NOREF;
 
     static void* Allocate(void* userData, void* pointer, std::size_t oldSize, std::size_t newSize)
     {
@@ -79,12 +87,105 @@ struct LuaScriptRuntime::Instance
         return static_cast<Instance*>(lua_touserdata(state, lua_upvalueindex(1)));
     }
 
+    static int Panic(lua_State*) noexcept
+    {
+        // Normal VM entry points are protected; never throw across Lua's C ABI.
+        return 0;
+    }
+
+    static int ProtectedPCall(lua_State* state)
+    {
+        auto* instance = *static_cast<Instance**>(lua_getextraspace(state));
+        if (instance == nullptr) return luaL_error(state, "Lua runtime context is unavailable.");
+        lua_rawgeti(state, LUA_REGISTRYINDEX, instance->originalPCallRef);
+        lua_rotate(state, 1, 1);
+        (void)lua_pcall(state, lua_gettop(state) - 1, LUA_MULTRET, 0);
+        if (instance->instructionBudgetExceeded)
+        {
+            lua_settop(state, 0);
+            return luaL_error(state, "Script instruction budget exceeded.");
+        }
+        return lua_gettop(state);
+    }
+
+    static int ProtectedXPCall(lua_State* state)
+    {
+        auto* instance = *static_cast<Instance**>(lua_getextraspace(state));
+        if (instance == nullptr) return luaL_error(state, "Lua runtime context is unavailable.");
+        lua_rawgeti(state, LUA_REGISTRYINDEX, instance->originalXPCallRef);
+        lua_rotate(state, 1, 1);
+        (void)lua_pcall(state, lua_gettop(state) - 1, LUA_MULTRET, 0);
+        if (instance->instructionBudgetExceeded)
+        {
+            lua_settop(state, 0);
+            return luaL_error(state, "Script instruction budget exceeded.");
+        }
+        return lua_gettop(state);
+    }
+
+    static int TextOnlyLoad(lua_State* state)
+    {
+        auto* instance = *static_cast<Instance**>(lua_getextraspace(state));
+        if (instance == nullptr) return luaL_error(state, "Lua runtime context is unavailable.");
+        while (lua_gettop(state) < 2) lua_pushnil(state);
+        lua_pushliteral(state, "t");
+        lua_replace(state, 3);
+        lua_rawgeti(state, LUA_REGISTRYINDEX, instance->originalLoadRef);
+        lua_rotate(state, 1, 1);
+        const int argumentCount = lua_gettop(state) - 1;
+        lua_call(state, argumentCount, LUA_MULTRET);
+        return lua_gettop(state);
+    }
+
+    static int InitializeProtected(lua_State* state)
+    {
+        auto* instance = FromUpvalue(state);
+        if (instance == nullptr) return luaL_error(state, "Lua runtime context is unavailable.");
+        OpenSafeLibrary(state, LUA_GNAME, luaopen_base);
+        OpenSafeLibrary(state, LUA_TABLIBNAME, luaopen_table);
+        OpenSafeLibrary(state, LUA_STRLIBNAME, luaopen_string);
+        OpenSafeLibrary(state, LUA_MATHLIBNAME, luaopen_math);
+        OpenSafeLibrary(state, LUA_UTF8LIBNAME, luaopen_utf8);
+
+        lua_getglobal(state, "pcall");
+        instance->originalPCallRef = luaL_ref(state, LUA_REGISTRYINDEX);
+        lua_getglobal(state, "xpcall");
+        instance->originalXPCallRef = luaL_ref(state, LUA_REGISTRYINDEX);
+        lua_getglobal(state, "load");
+        instance->originalLoadRef = luaL_ref(state, LUA_REGISTRYINDEX);
+
+        lua_pushnil(state);
+        lua_setglobal(state, "dofile");
+        lua_pushnil(state);
+        lua_setglobal(state, "loadfile");
+        lua_getglobal(state, "string");
+        lua_pushnil(state);
+        lua_setfield(state, -2, "dump");
+        lua_pop(state, 1);
+
+        lua_pushlightuserdata(state, instance);
+        lua_pushcclosure(state, ProtectedPCall, 1);
+        lua_setglobal(state, "pcall");
+        lua_pushlightuserdata(state, instance);
+        lua_pushcclosure(state, ProtectedXPCall, 1);
+        lua_setglobal(state, "xpcall");
+        lua_pushlightuserdata(state, instance);
+        lua_pushcclosure(state, TextOnlyLoad, 1);
+        lua_setglobal(state, "load");
+
+        RegisterHostApi(*instance);
+        return 0;
+    }
+
     static void InstructionHook(lua_State* state, lua_Debug*)
     {
         auto* instance = *static_cast<Instance**>(lua_getextraspace(state));
         if (instance == nullptr) return;
         if (instance->instructionsRemaining <= static_cast<std::size_t>(kInstructionHookInterval))
+        {
+            instance->instructionBudgetExceeded = true;
             luaL_error(state, "Script instruction budget exceeded.");
+        }
         instance->instructionsRemaining -= static_cast<std::size_t>(kInstructionHookInterval);
     }
 
@@ -327,7 +428,9 @@ std::optional<ScriptInstanceHandle> LuaScriptRuntime::CreateInstance(
 
     auto instance = std::make_unique<Instance>();
     instance->owner = &owner;
-    instance->state = lua_newstate(&Instance::Allocate, instance.get(), 0U);
+    // Lua 5.5 uses this seed for internal hash randomization; avoid a fixed hash layout.
+    const unsigned hashSeed = std::random_device{}();
+    instance->state = lua_newstate(&Instance::Allocate, instance.get(), hashSeed);
     if (instance->state == nullptr)
     {
         Fail(error, "Lua could not create a VM within the per-script memory budget.");
@@ -335,20 +438,19 @@ std::optional<ScriptInstanceHandle> LuaScriptRuntime::CreateInstance(
     }
     *static_cast<Instance**>(lua_getextraspace(instance->state)) = instance.get();
 
-    OpenSafeLibrary(instance->state, LUA_GNAME, luaopen_base);
-    OpenSafeLibrary(instance->state, LUA_TABLIBNAME, luaopen_table);
-    OpenSafeLibrary(instance->state, LUA_STRLIBNAME, luaopen_string);
-    OpenSafeLibrary(instance->state, LUA_MATHLIBNAME, luaopen_math);
-    OpenSafeLibrary(instance->state, LUA_UTF8LIBNAME, luaopen_utf8);
-
-    // The base library includes file-loading helpers; scripts may not access the host filesystem.
-    lua_pushnil(instance->state);
-    lua_setglobal(instance->state, "dofile");
-    lua_pushnil(instance->state);
-    lua_setglobal(instance->state, "loadfile");
-
-    Instance::RegisterHostApi(*instance);
+    lua_atpanic(instance->state, &Instance::Panic);
+    lua_pushlightuserdata(instance->state, instance.get());
+    lua_pushcclosure(instance->state, &Instance::InitializeProtected, 1);
+    if (lua_pcall(instance->state, 0, 0, 0) != LUA_OK)
+    {
+        const std::string message = LuaError(instance->state);
+        lua_close(instance->state);
+        instance->state = nullptr;
+        Fail(error, "Lua VM initialization failed: " + message);
+        return std::nullopt;
+    }
     instance->instructionsRemaining = kInstructionBudget;
+    instance->instructionBudgetExceeded = false;
     lua_sethook(instance->state, &Instance::InstructionHook, LUA_MASKCOUNT, kInstructionHookInterval);
     if (luaL_loadbufferx(instance->state, sourceText.data(), sourceText.size(),
             metadata->source.generic_string().c_str(), "t") != LUA_OK ||
@@ -389,6 +491,7 @@ bool LuaScriptRuntime::CallCallback(
     lua_State* state = instance.state;
     instance.input = input;
     instance.instructionsRemaining = kInstructionBudget;
+    instance.instructionBudgetExceeded = false;
     lua_sethook(state, &Instance::InstructionHook, LUA_MASKCOUNT, kInstructionHookInterval);
 
     lua_getglobal(state, callback);
