@@ -49,31 +49,26 @@ namespace ember::editor
     }
 
     std::size_t attempted = 0;
+    bool succeeded = true;
     try
     {
-        for (; attempted < components.size(); ++attempted)
+        for (std::size_t index = 0; index < components.size(); ++index)
         {
-            if (!property.set(*components[attempted], value))
+            // Count the current component before calling its setter because it
+            // may mutate and then return false or throw.
+            attempted = index + 1;
+            if (!property.set(*components[index], value))
             {
-                // A setter may mutate before reporting failure, so include the
-                // failing component in the rollback range.
-                ++attempted;
+                succeeded = false;
                 break;
             }
         }
     }
     catch (...)
     {
-        // The throwing setter may also have partially changed its component.
-        ++attempted;
+        succeeded = false;
     }
-    if (attempted == components.size() &&
-        std::all_of(components.begin(), components.end(),
-            [&property, &value](Component* component)
-            {
-                return property.get(*component) == value;
-            }))
-        return true;
+    if (succeeded) return true;
 
     while (attempted > 0)
     {
