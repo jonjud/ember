@@ -45,6 +45,19 @@ int main()
           "Project configuration can be saved");
     Check(error.empty(), "Successful save clears the error message");
 
+    ember::ProjectConfiguration updatedConfiguration = configuration;
+    updatedConfiguration.name = "Updated Game";
+    Check(ember::ProjectConfigurationStore::Save(
+        projectFile, updatedConfiguration, &error),
+        "Updating a project configuration succeeds");
+    std::filesystem::path backupFile = projectFile;
+    backupFile += ".bak";
+    const auto backup = ember::ProjectConfigurationStore::Load(backupFile, &error);
+    Check(backup.has_value() && backup->name == "Sample Game",
+        "Project save preserves the previous configuration in a .bak file");
+    Check(ember::ProjectConfigurationStore::Save(projectFile, configuration, &error),
+        "Original project configuration can be restored after backup verification");
+
     const auto loaded = ember::ProjectConfigurationStore::Load(projectFile, &error);
     Check(loaded.has_value(), "Project configuration can be loaded");
     if (loaded)
