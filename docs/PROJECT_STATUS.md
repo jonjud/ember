@@ -10,13 +10,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`cfb6058`](https://github.com/jonjud/ember/commit/cfb60580b952816c9fe570b9433745376b0e7720) — Runtime/Editor workflow hardening |
-| Latest repository HEAD | [`cfb6058`](https://github.com/jonjud/ember/commit/cfb60580b952816c9fe570b9433745376b0e7720) — Runtime/Editor workflow hardening |
-| Last verified code CI | [Windows CI](https://github.com/jonjud/ember/actions/runs/46152882245) — **Success**; Windows Debug and Release build/tests passed |
-| Latest CI | [Windows CI](https://github.com/jonjud/ember/actions/runs/46152882245) — **Success**; both jobs completed successfully |
-| Latest documentation CI | [Windows CI](https://github.com/jonjud/ember/actions/runs/46152882245) — **Success** |
-| Last completed milestone | Runtime/Editor workflow hardening: UTF-8 project argv/discovery, Editor Open Project, Release/static CRT, popup scope, Runtime UI/button routing/animation frame, physics body-mode separation, Release-safe tests and FetchContent cache |
-| Active milestone | Editor Undo / Redo: design bounded authoring-scene history using safe serialized snapshots and automated tests. Combined manual Windows project-template/export verification remains pending. |
+| Last code commit | [`f552c93`](https://github.com/jonjud/ember/commit/f552c937440a2e58991aa0c6a660a79b99f772f7) — Editor Scene Undo/Redo |
+| Latest repository HEAD | [`f552c93`](https://github.com/jonjud/ember/commit/f552c937440a2e58991aa0c6a660a79b99f772f7) — Editor Scene Undo/Redo |
+| Last verified code CI | [Windows CI](https://github.com/jonjud/ember/actions/runs/46156677787) — **Success**; Windows Debug and Release build/tests passed |
+| Latest CI | [Windows CI](https://github.com/jonjud/ember/actions/runs/46156677787) — **Success**; both jobs completed successfully |
+| Latest documentation CI | Pending documentation update CI |
+| Last completed milestone | Editor Scene Undo/Redo: bounded serialized Scene snapshots (100 entries / 16 MiB), in-memory serialization, Edit menu and keyboard shortcuts; CI #46156677787 Debug + Release Success |
+| Active milestone | Multi-selection and hierarchy organization. Combined manual Windows project-template/export verification remains pending. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -227,7 +227,8 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 | 2026-11-28 | [Script Source Editor external-change guard, `1089bd1`, CI run 46104170651](https://github.com/jonjud/ember/actions/runs/46104170651) | Success; external edits are detected before save, clean buffers can safely reload from disk, and Editor build/tests passed |
 | 2026-11-28 | [Failure-safe Script Source Editor file I/O, `c6f3c54`, CI run 46105718716](https://github.com/jonjud/ember/actions/runs/46105718716) | Success; reload preserves the in-memory buffer on read failure and save uses atomic replacement |
 | 2026-11-28 | [Bound external Script Source conflict reads, `3416971`, CI #285](https://github.com/jonjud/ember/actions/runs/46110556033) | Success; conflict comparison is capped at 64 KiB and detects file growth during the read |
+| 2026-11-28 | [Editor Scene Undo/Redo, `f552c93`, CI #46156677787](https://github.com/jonjud/ember/actions/runs/46156677787) | Success; Debug and Release passed. Bounded serialized snapshots, in-memory Scene restore, Edit menu and keyboard shortcuts |
 
 ---
 
-**Handoff:** Latest HEAD is `cfb60580b952816c9fe570b9433745376b0e7720`; Windows CI run `46152882245` passed both Debug and Release jobs. Runtime/Editor workflow hardening (eight requested changes) is complete at implementation/automated-test level. Active engineering milestone is Editor Undo / Redo using bounded serialized Scene snapshots; then multi-selection/hierarchy organization. Combined manual Windows verification of Blank 2D/2D Starter creation, Play Mode movement, Windows export contents and launching the exported runtime outside Editor remains pending. Do not mark interactive verification complete until the user confirms. Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md). Continue on `develop`; do not merge to `main`.
+**Handoff:** Latest HEAD is `f552c937440a2e58991aa0c6a660a79b99f772f7`; Windows CI run `46156677787` passed both Debug and Release jobs. Editor Undo/Redo is implemented and automated-tested using bounded serialized Scene snapshots; next active milestone is multi-selection and hierarchy organization. Combined manual Windows verification of Blank 2D/2D Starter creation, Play Mode movement, Windows export contents and launching the exported runtime outside Editor remains pending. Do not mark interactive verification complete until the user confirms. Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md). Continue on `develop`; do not merge to `main`.
