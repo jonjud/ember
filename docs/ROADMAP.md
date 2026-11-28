@@ -88,7 +88,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 
 ## Phase 5 — Packaging and Quality
 - [x] Windows game export / runtime executable: standalone `ember_runtime` target, safe Windows export service, runtime DLL staging and manifest, Editor `File > Export Windows Game...` workflow (Windows CI #320–#329 Success; manual export/run checklist remains pending)
-- [ ] Project templates
+- [x] Built-in Project Templates: Blank 2D and 2D Starter, atomic creation, default movement bindings and Editor New Project workflow (Windows CI #332–#336 Success)
 - [x] Automated tests executed in CI
 - [ ] Profiler
 - [ ] User documentation and samples
@@ -126,5 +126,6 @@ These are strategic goals after the core engine, scripting workflow and packagin
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- The scripting + Input Action Mapping milestone is complete and Windows Editor-verified. Structured Logging & Diagnostics is complete through Windows CI #318. Windows game export/runtime implementation is complete through CI #329. Built-in Project Templates are now implemented through Windows CI #336: Blank 2D and 2D Starter, atomic project creation, default movement bindings, and Editor New Project workflow. Next: combined manual Windows Editor/project creation/export-and-run verification. C++20 remains the primary language for Engine and Editor; Lua is an optional gameplay scripting language.
+- Windows Runtime/Editor workflow hardening is complete through commit `cfb6058` and Windows CI run `46152882245` (Debug and Release Success): UTF-8 project arguments, runtime project discovery, static-CRT Release export support, Editor Open Project, popup scope fixes, Runtime UI/button routing and SpriteAnimation frame selection, physics body-mode branching, Release-safe test checks/CRT setup and FetchContent caching.
+- Next Editor milestone: implement Undo / Redo with bounded history and safe Scene snapshot semantics. Keep Scene serialization/component registry as the canonical snapshot format; do not capture Play Mode state. Follow with multi-selection/hierarchy organization. Combined manual Windows verification of project templates and exported-game launch remains pending and must not be marked complete until user confirmation. C++20 remains the primary language for Engine and Editor; Lua is an optional gameplay scripting language.
 - After the scripting and packaging foundations are stable, begin the planned Phase 6 extensibility work: Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions.
