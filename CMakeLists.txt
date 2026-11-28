@@ -169,6 +169,7 @@ add_library(ember_engine STATIC
     src/Engine/Resources/AssetMetadataStore.cpp
     src/Engine/Project/ProjectConfigurationStore.cpp
     src/Engine/Project/ProjectExporter.cpp
+    src/Engine/Project/ProjectTemplateService.cpp
     src/Engine/Resources/TextureCache.cpp
     src/Engine/Scene/Scene.cpp
     src/Engine/Physics/PhysicsWorld.cpp
@@ -444,6 +445,21 @@ if(BUILD_TESTING)
     target_include_directories(ember_project_exporter_tests PRIVATE src)
     target_link_libraries(ember_project_exporter_tests PRIVATE nlohmann_json::nlohmann_json)
     add_test(NAME ember_project_exporter_tests COMMAND ember_project_exporter_tests)
+
+    add_executable(ember_project_template_tests
+        tests/ProjectTemplateTests.cpp
+    )
+    target_include_directories(ember_project_template_tests PRIVATE src)
+    target_link_libraries(ember_project_template_tests PRIVATE ember_engine)
+    add_custom_command(TARGET ember_project_template_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:SDL3::SDL3>
+            $<TARGET_FILE_DIR:ember_project_template_tests>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:SDL3_image::SDL3_image>
+            $<TARGET_FILE_DIR:ember_project_template_tests>
+    )
+    add_test(NAME ember_project_template_tests COMMAND ember_project_template_tests)
 
     add_executable(ember_project_configuration_tests
         tests/ProjectConfigurationTests.cpp
