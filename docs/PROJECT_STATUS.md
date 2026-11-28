@@ -10,13 +10,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | Scene scripting lifecycle integration — implementation pending CI |
-| Latest repository HEAD | Scene scripting lifecycle integration — implementation pending CI |
-| Last verified code CI | [Windows CI run 46085926100](https://github.com/jonjud/ember/actions/runs/46085926100) — **Success** (`02d6fb7`; all build/tests passed) |
-| Latest CI | [Windows CI run 46085926100](https://github.com/jonjud/ember/actions/runs/46085926100) — **Success** (`02d6fb7`) |
-| Latest documentation CI | [Windows CI run 46085926100](https://github.com/jonjud/ember/actions/runs/46085926100) — **Success** |
+| Last code commit | Scene scripting lifecycle integration + SDL3 runtime staging fix (`25f613d`) |
+| Latest repository HEAD | [`25f613d`](https://github.com/jonjud/ember/commit/25f613d52d5fe15dbc33cfd5e0c9c8fe38dbfed5) on `develop` |
+| Last verified code CI | [Windows CI run 46091385853](https://github.com/jonjud/ember/actions/runs/46091385853) — **Success**; Scene scripting lifecycle automated tests passed |
+| Latest CI | [Windows CI run 46091385853](https://github.com/jonjud/ember/actions/runs/46091385853) — **Success** (`25f613d`) |
+| Latest documentation CI | [Windows CI run 46091385853](https://github.com/jonjud/ember/actions/runs/46091385853) — **Success** |
 | Last completed milestone | UI System v1 + Audio Runtime + Physics Joints — Windows CI passed and combined Windows Editor verification user-confirmed passed |
-| Active milestone | Scripting: C++20 is the primary language; optional embedded scripting runtimes should ship with EMBER and require no separate Extension installation. Scene lifecycle integration is next. Input Action Mapping Editor verification remains deferred to the combined manual test session. |
+| Active milestone | Scripting asset workflow: implement script asset type/import pipeline and Editor assignment. C++20 remains primary; optional embedded runtimes must be bundled/managed by EMBER. Input Action Mapping Editor verification remains deferred to the combined manual test session. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -129,8 +129,8 @@
 - [x] Serializable ScriptComponent with script asset ID and enabled state
 - [x] ComponentRegistry registration and typed Inspector properties
 - [x] Automated ScriptComponent clone, validation and registry serialization tests
-- [x] Scene lifecycle integration: runtime initialization, instance ownership, lifecycle dispatch, fault isolation and diagnostics (CI pending)
-- [ ] Script asset import/type and Editor assignment workflow
+- [x] Scene lifecycle integration: runtime initialization, instance ownership, lifecycle dispatch, fault isolation and diagnostics (Windows CI run 46091385853 Success)
+- [ ] Script asset import/type and Editor assignment workflow (next focused milestone)
 - [ ] Evaluate and select an optional embedded scripting backend in accordance with the language policy
 
 See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy, backend boundaries and deferred decisions.
@@ -172,7 +172,8 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 | 2026-11-27 | [Docs refresh, `10ab998` and `4a80448`, CI #232/#233](https://github.com/jonjud/ember/actions/runs/46018916409) | Success |
 | 2026-11-27 | Combined Windows Editor verification: UI System v1, Audio Runtime, Physics Joints | User-confirmed PASS |
 | 2026-11-28 | [SDL3 runtime staging fix, `e92fe90`, CI run 46081947029](https://github.com/jonjud/ember/actions/runs/46081947029) | Success; all build/tests passed; Input Action Mapping Editor verification checklist prepared |
+| 2026-11-28 | [Scene scripting lifecycle + SDL3 runtime staging, `25f613d`, CI run 46091385853](https://github.com/jonjud/ember/actions/runs/46091385853) | Success; Scene script lifecycle automated tests passed |
 
 ---
 
-**Handoff:** UI System v1, Audio Runtime, and Physics Joints are complete and Windows Editor-verified. Input Action Mapping implementation and CI are complete; its manual Editor checklist is deferred to the combined verification session. Scripting foundation (language-neutral runtime contract + serializable ScriptComponent) is implemented. C++20 is the primary language; optional additional languages should use EMBER-bundled embedded runtimes without requiring separate Extensions. Next integrate Scene lifecycle and script diagnostics. Continue on `develop`; do not merge to `main`.
+**Handoff:** Scene scripting lifecycle integration is implemented and Windows CI run 46091385853 passed. Next: script asset import/type and Editor assignment workflow. C++20 remains the primary language; optional languages use EMBER-managed embedded runtimes behind the language-neutral host API. Long-term planned direction is documented in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, multi-language backends, Extension API/SDK and studio-custom Engine distributions. Input Action Mapping's final Editor checklist remains deferred to the combined manual verification session. Continue on `develop`; do not merge to `main`.

@@ -75,7 +75,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Runtime Input Action Mapping implementation: named actions, multiple physical-key bindings, edge states, Editor rebind/custom-action UI, project persistence, and Scene-to-Component input forwarding (Windows CI run 46081947029 Success)
 - [ ] Final Windows Editor verification for Input Action Mapping (checklist: [INPUT_ACTIONS_VERIFICATION.md](INPUT_ACTIONS_VERIFICATION.md))
 - [x] Scripting foundation: language-neutral ScriptRuntime host contract and serializable ScriptComponent
-- [x] Scene scripting lifecycle integration: runtime initialization, per-Entity ScriptComponent instance ownership, OnCreate/OnUpdate/OnDestroy, fault isolation and diagnostics (automated Windows CI pending)
+- [x] Scene scripting lifecycle integration: runtime initialization, per-Entity ScriptComponent instance ownership, OnCreate/OnUpdate/OnDestroy, fault isolation and diagnostics (Windows CI run 46091385853 Success)
 - [ ] Script asset type/import pipeline and Editor assignment workflow
 - [ ] Evaluate optional embedded scripting language/runtime candidates; keep C++ as the primary language
 
@@ -85,6 +85,23 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Automated tests executed in CI
 - [ ] Profiler
 - [ ] User documentation and samples
+
+## Phase 6 — Extensibility and Studio Customization (planned)
+These are strategic goals after the core engine, scripting workflow and packaging are stable. They are intentionally not prerequisites for the current scripting milestone.
+
+- [ ] Theme system: Dark, Light and Custom themes; consistent tokens for Editor panels, text, accents, borders, Inspector, Hierarchy and viewport
+- [ ] Theme persistence and exchange: project/user theme selection plus import/export of documented theme files
+- [ ] Studio themes and branding: studio-defined defaults and controlled Editor appearance customization
+- [ ] Multi-language scripting backends: add optional languages behind the language-neutral ScriptRuntime API; C++20 remains the primary engine/native language
+- [ ] Bundled scripting runtime distribution: supported language runtimes are packaged/managed by EMBER so end users do not install separate Extensions or runtimes
+- [ ] Extension API / SDK: stable, versioned public interfaces for third-party modules, with compatibility and lifecycle rules
+- [ ] Custom Engine Distribution: documented SDK/build workflow allowing studios to assemble branded EMBER-based engine distributions with selected modules and workflows
+
+### Extensibility design constraints
+- Preserve a small, stable C++ engine core and keep Editor-only systems out of runtime libraries.
+- Keep scripting VM details private behind ScriptRuntime; language backends are optional and independently testable.
+- Define API/ABI versioning, module compatibility, licensing, platform support and packaging before promising third-party binary extensions.
+- Treat studio-specific engine distributions as a long-term capability, not a requirement for the first usable EMBER release.
 
 ## Scripting language policy
 - C++20 is EMBER's primary and first-class implementation language for the Engine, Editor and native game code.
@@ -102,4 +119,5 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- Scripting foundation is in place: C++20 remains the primary language; optional additional languages should use EMBER-bundled embedded runtimes and must not require users to install Extensions. Next integrate script instance lifecycle with Scene, add diagnostics and script asset assignment, then evaluate concrete runtime candidates against the policy in [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md). Input Action Mapping implementation is complete; its final Editor checklist is deferred to the combined manual verification session. Keep VM types private and editor-only code out of `ember_engine`.
+- Scene scripting lifecycle integration is complete and passes Windows CI. Next implement the script asset type/import pipeline and Editor assignment workflow, including validation and persistence. Then evaluate concrete runtime candidates against [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md). Input Action Mapping implementation is complete; its final Editor checklist is deferred to the combined manual verification session. Keep VM types private and editor-only code out of `ember_engine`.
+- After the scripting and packaging foundations are stable, begin the planned Phase 6 extensibility work: Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions.
