@@ -269,9 +269,6 @@ void RuntimeApplication::Render()
         }
     });
 
-    int width = 0;
-    int height = 0;
-    (void)SDL_GetWindowSize(m_window, &width, &height);
     const Vector2 viewport{static_cast<float>(width), static_cast<float>(height)};
     const UICanvas2D* canvas = nullptr;
     m_scene.ForEachEntity([&canvas](const Entity& entity)
