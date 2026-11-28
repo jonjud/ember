@@ -5,7 +5,7 @@
 
 #define EMBER_CHECK(expression) do { \
     if (!(expression)) { \
-        std::cerr << "[FAIL] " #expression " at " << __FILE__ << ':' << __LINE__ << '\\n'; \
+        std::cerr << "[FAIL] " #expression " at " << __FILE__ << ':' << __LINE__ << '\n'; \
         std::abort(); \
     } \
 } while (false)
