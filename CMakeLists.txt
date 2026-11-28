@@ -356,7 +356,6 @@ if(BUILD_TESTING)
         src/Engine/Scene/Scene.cpp
         src/Engine/Physics/PhysicsWorld.cpp
         src/Engine/Scene/SceneSerializer.cpp
-        src/Engine/Core/FileSystem.cpp
     )
     target_include_directories(ember_scene_serializer_tests PRIVATE src)
     target_link_libraries(ember_scene_serializer_tests PRIVATE nlohmann_json::nlohmann_json box2d::box2d)
