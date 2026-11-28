@@ -1325,7 +1325,7 @@ void EditorApplication::DrawAssetBrowser()
                 ImGui::SameLine();
                 if (ImGui::Button("Set as Startup Scene"))
                 {
-                    const std::string path = projectRelativeScene.generic_string();
+                    const std::string path = PathToUtf8(projectRelativeScene);
                     std::snprintf(m_startupScenePath, sizeof(m_startupScenePath),
                         "%s", path.c_str());
                     if (SaveProjectSettings())
