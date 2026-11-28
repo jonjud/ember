@@ -2820,15 +2820,18 @@ void EditorApplication::OpenSelectedScriptSource()
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Could not open Script source");
         return;
     }
-    source.read(m_scriptSourceBuffer.data(), static_cast<std::streamsize>(sourceSize));
-    if (source.gcount() != static_cast<std::streamsize>(sourceSize))
+    // Read into a temporary buffer so a failed open/partial read cannot corrupt
+    // the currently displayed Script source or its dirty-state snapshot.
+    std::array<char, 65536> openedBuffer{};
+    source.read(openedBuffer.data(), static_cast<std::streamsize>(sourceSize));
+    if (source.gcount() != static_cast<std::streamsize>(sourceSize) || source.bad())
     {
-        m_scriptSourceBuffer.fill('\0');
         std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Could not read complete Script source");
         return;
     }
-    m_scriptSourceBuffer[static_cast<std::size_t>(sourceSize)] = '\0';
-    m_scriptSourceOriginal.assign(m_scriptSourceBuffer.data(), static_cast<std::size_t>(sourceSize));
+    openedBuffer[static_cast<std::size_t>(sourceSize)] = '\0';
+    m_scriptSourceBuffer = openedBuffer;
+    m_scriptSourceOriginal.assign(openedBuffer.data(), static_cast<std::size_t>(sourceSize));
     m_scriptSourceAssetId = selected->assetId;
     m_scriptSourcePath = selected->source;
     m_scriptSourceDirty = false;
