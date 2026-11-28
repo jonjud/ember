@@ -11,12 +11,12 @@
 | Active branch | `develop` |
 | Stable branch | `main` |
 | Last code commit | [`3416971`](https://github.com/jonjud/ember/commit/3416971973437431fe8f35cc0777001f38f8c11e) — bound external Script Source conflict reads |
-| Latest repository HEAD | [`0c373e8`](https://github.com/jonjud/ember/commit/0c373e8710cb0c4480f19232c680aa0b6e53e6c8) — documentation sync on `develop` |
-| Last verified code CI | [Windows CI run 46110556033](https://github.com/jonjud/ember/actions/runs/46110556033) — **Success**; bounded external Script Source conflict reads, Windows build and engine tests passed |
-| Latest CI | [Windows CI run 46110556033](https://github.com/jonjud/ember/actions/runs/46110556033) — **Success** |
-| Latest documentation CI | Not triggered for the documentation-only sync commit; latest code CI #285 is successful |
-| Last completed milestone | Script Source Editor authoring implementation: Lua syntax validation, dirty-state/close/exit protection, external-change detection, bounded conflict reads, failure-safe reload and atomic save — Windows CI run 46110556033 Success; combined manual Editor verification remains pending ([SCRIPTING_RUNTIME_VERIFICATION.md](SCRIPTING_RUNTIME_VERIFICATION.md)) |
-| Active milestone | Complete the combined Windows Editor verification in [SCRIPTING_RUNTIME_VERIFICATION.md](SCRIPTING_RUNTIME_VERIFICATION.md), covering Input Action Mapping, Lua authoring/Play Mode, diagnostics and unsaved-work protection. C++20 remains primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
+| Latest repository HEAD | [`d60aa4f`](https://github.com/jonjud/ember/commit/d60aa4f8a11288061dfab244a084079a21317b77) — combined scripting/input verification checklist |
+| Last verified code CI | [Windows CI run 46112250378](https://github.com/jonjud/ember/actions/runs/46112250378) — **Success**; Windows build and engine tests passed |
+| Latest CI | [Windows CI run 46112250378](https://github.com/jonjud/ember/actions/runs/46112250378) — **Success** |
+| Latest documentation CI | Windows CI #288 — **Success** |
+| Last completed milestone | Scripting + Input Action Mapping: Lua authoring/Play Mode, diagnostics, input rebinding, validation/save/reload and unsaved-work protection; combined Windows Editor checklist user-confirmed passed 2026-11-28 and CI #288 Success |
+| Active milestone | Add structured logging and diagnostics, beginning with a small engine-owned logging API and automated tests. Keep C++20 primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -110,7 +110,7 @@
 
 ## 4. Current limitations / next milestone
 
-### Runtime Input Action Mapping — implementation complete; Editor verification pending
+### Runtime Input Action Mapping — complete and Windows Editor-verified
 - [x] Named action bindings with multiple SDL physical scancodes, duplicate/unknown-key rejection, bind/unbind/clear/rename and default movement map
 - [x] Per-frame action state with Down / Pressed / Released edges
 - [x] Editor Input Settings: rebind, add secondary key, create/rename/delete custom actions, conflict prevention and reset-to-default
@@ -118,7 +118,7 @@
 - [x] Feed the current InputActionState into running Scene Components; Editor Play Mode uses named movement actions
 - [x] Automated coverage: InputMap transitions, project configuration persistence, and Scene-to-Component input forwarding
 - [x] Windows CI run [46081947029](https://github.com/jonjud/ember/actions/runs/46081947029) — Success
-- [ ] Final interactive Windows Editor verification: [INPUT_ACTIONS_VERIFICATION.md](INPUT_ACTIONS_VERIFICATION.md)
+- [x] Final interactive Windows Editor verification: combined checklist [SCRIPTING_RUNTIME_VERIFICATION.md](SCRIPTING_RUNTIME_VERIFICATION.md), user-confirmed passed 2026-11-28
 
 **UI System v1 is complete and Windows Editor-verified.** UI Canvas/Panel/Text/Button authoring, serialization, Inspector properties, aspect-preserving layout, Editor viewport preview, viewport-aware pointer routing, pointer capture, click generation and guarded runtime Component callback dispatch are implemented. Windows CI #225–#231 passed, including end-to-end callback coverage and rejection of invalid click targets. The user confirmed the final Windows Editor verification passed.
 
@@ -143,7 +143,7 @@
 - [x] Minimal Entity/Transform/Input API without exposing Lua types through public Engine interfaces
 - [x] Runtime limits and sandbox hardening: memory/instruction budgets, protected initialization, budget enforcement through pcall/xpcall, text-only load and no string.dump
 - [x] Automated lifecycle, transform/input, syntax-error, isolation, language-mismatch and sandbox tests (Windows CI run 46097066791 Success)
-- [ ] Combined Windows Editor verification for Lua Play Mode and Input Action Mapping (deferred until the scripting workflow milestone is ready)
+- [x] Combined Windows Editor verification for Lua Play Mode and Input Action Mapping, including Script Diagnostics, source validation/save/reload and unsaved-work protection (user-confirmed passed 2026-11-28; Windows CI #288 Success)
 
 See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy, candidate evaluation, selected Lua version, backend boundaries and deferred decisions.
 
@@ -193,4 +193,4 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 
 ---
 
-**Handoff:** Script Source Editor implementation is complete: Lua syntax validation, dirty-buffer and close protection, external-change detection with bounded 64 KiB conflict reads, failure-safe reload and atomic save replacement. Application exit and window close prompt to save or discard dirty Script/Scene changes. Windows CI run [46110556033](https://github.com/jonjud/ember/actions/runs/46110556033) passed. The Lua backend exposes Entity/Transform/Input operations through a narrow host API, enforces VM memory/instruction budgets, blocks binary chunks and prevents pcall/xpcall from swallowing budget violations. Next: complete the combined Windows Editor verification in [SCRIPTING_RUNTIME_VERIFICATION.md](SCRIPTING_RUNTIME_VERIFICATION.md). C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
+**Handoff:** Scripting + Input Action Mapping is complete. The combined Windows Editor checklist [SCRIPTING_RUNTIME_VERIFICATION.md](SCRIPTING_RUNTIME_VERIFICATION.md) was user-confirmed passed on 2026-11-28; Windows CI #288 ([run 46112250378](https://github.com/jonjud/ember/actions/runs/46112250378)) passed Configure, Build and Engine Tests. Lua authoring, runtime diagnostics, syntax validation, external-change handling, atomic save and unsaved Scene/Script exit protection are verified. Next milestone: structured logging and diagnostics, beginning with an engine-owned logging API and automated tests. C++20 remains the primary Engine/Editor/native language. Long-term planned direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md): Theme System, additional language backends, Extension API/SDK and studio-custom Engine distributions. Continue on `develop`; do not merge to `main`.
