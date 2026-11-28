@@ -7,7 +7,8 @@
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
-#include <cctype>\n#include <fstream>
+#include <cctype>
+#include <fstream>
 #include <system_error>
 #include <vector>
 
