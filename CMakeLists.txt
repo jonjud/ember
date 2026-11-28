@@ -204,6 +204,7 @@ if(BUILD_TESTING)
     add_executable(ember_audio_engine_tests
         tests/AudioEngineTests.cpp
         src/Engine/Audio/AudioEngine.cpp
+        src/Engine/Core/FileSystem.cpp
     )
     target_include_directories(ember_audio_engine_tests PRIVATE src ${miniaudio_SOURCE_DIR})
     target_link_libraries(ember_audio_engine_tests PRIVATE ember_miniaudio)
