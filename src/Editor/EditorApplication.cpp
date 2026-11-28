@@ -409,6 +409,7 @@ void EditorApplication::OpenProjectFromPath(const std::filesystem::path& path)
     m_scene.SetLogger(&m_logger);
     m_currentScenePath.clear();
     m_selectedEntity = 0;
+    m_entitySelection.Clear();
     m_sceneDirty = false;
     m_selectedAssetId.clear();
     m_importSettingsAssetId.clear();
@@ -500,6 +501,11 @@ void EditorApplication::ProcessEvents()
             if (!io.WantCaptureKeyboard && !io.WantTextInput)
             {
                 if (!m_isPlaying && (event.key.mod & SDL_KMOD_CTRL) != 0 &&
+                    event.key.key == SDLK_A)
+                {
+                    SelectAllEntities();
+                }
+                else if (!m_isPlaying && (event.key.mod & SDL_KMOD_CTRL) != 0 &&
                     event.key.key == SDLK_Z && (event.key.mod & SDL_KMOD_SHIFT) != 0)
                 {
                     RedoScene();
@@ -695,6 +701,7 @@ void EditorApplication::DrawNewProjectModal()
             m_projectLoadFailed = false;
             m_sceneDirty = false;
             m_selectedEntity = 0;
+            m_entitySelection.Clear();
             m_scriptSourceDirty = false;
             m_showScriptSourceEditor = false;
             m_scriptSourceAssetId.clear();
@@ -787,7 +794,8 @@ void EditorApplication::DrawMenuBar()
     {
         if (ImGui::MenuItem("Create Empty Entity")) CreateEntity();
         ImGui::Separator();
-        ImGui::BeginDisabled(m_isPlaying || m_selectedEntity == 0);
+        ImGui::BeginDisabled(m_isPlaying || m_entitySelection.Empty());
+        if (ImGui::MenuItem("Select All", "Ctrl+A")) SelectAllEntities();
         if (ImGui::MenuItem("Duplicate Selected", "Ctrl+D")) DuplicateSelectedEntity();
         if (ImGui::MenuItem("Delete Selected", "Delete")) DeleteSelectedEntity();
         ImGui::EndDisabled();
@@ -848,25 +856,37 @@ void EditorApplication::DrawSceneHierarchy()
         ImGui::EndDisabled();
         ImGui::Separator();
 
-        activeScene.ForEachEntity([this](Entity& entity)
+        const std::vector<EntityId> orderedIds = activeScene.GetEntityIds();
+        const ImGuiIO& selectionIO = ImGui::GetIO();
+        activeScene.ForEachEntity([this, &orderedIds, &selectionIO](Entity& entity)
         {
-            const bool selected = entity.GetId() == m_selectedEntity;
+            const EntityId id = entity.GetId();
             char label[160]{};
             std::snprintf(label, sizeof(label), "%s##%llu",
-                entity.GetName().c_str(),
-                static_cast<unsigned long long>(entity.GetId()));
-            if (ImGui::Selectable(label, selected)) m_selectedEntity = entity.GetId();
+                entity.GetName().c_str(), static_cast<unsigned long long>(id));
+            if (ImGui::Selectable(label, m_entitySelection.Contains(id)))
+            {
+                if (selectionIO.KeyShift)
+                    m_entitySelection.SelectRange(orderedIds, id, selectionIO.KeyCtrl);
+                else if (selectionIO.KeyCtrl)
+                    m_entitySelection.Toggle(id);
+                else
+                    m_entitySelection.SelectOnly(id);
+                m_selectedEntity = m_entitySelection.Primary();
+            }
         });
 
         if (activeScene.IsEmpty()) ImGui::TextDisabled("No entities. Press + to create one.");
         else if (!m_isPlaying)
         {
-            ImGui::BeginDisabled(m_selectedEntity == 0);
+            if (m_entitySelection.Size() > 1)
+                ImGui::TextDisabled("%zu entities selected", m_entitySelection.Size());
+            ImGui::BeginDisabled(m_entitySelection.Empty());
             if (ImGui::Button("Duplicate Selected")) DuplicateSelectedEntity();
             ImGui::SameLine();
             if (ImGui::Button("Delete Selected")) DeleteSelectedEntity();
             ImGui::EndDisabled();
-            ImGui::TextDisabled("Shortcuts: Ctrl+D duplicate | Delete remove");
+            ImGui::TextDisabled("Shortcuts: Ctrl/Shift+Click select | Ctrl+A all | Ctrl+D duplicate | Delete remove");
         }
         else
         {
@@ -928,7 +948,12 @@ void EditorApplication::DrawInspector()
         Scene& activeScene = GetActiveScene();
         ImGui::BeginDisabled(m_isPlaying);
         Entity* entity = activeScene.FindEntity(m_selectedEntity);
-        if (entity == nullptr)
+        if (m_entitySelection.Size() > 1)
+        {
+            ImGui::Text("%zu entities selected", m_entitySelection.Size());
+            ImGui::TextDisabled("Multi-edit is not available yet. Select one Entity to edit its components.");
+        }
+        else if (entity == nullptr)
         {
             ImGui::TextDisabled("Select an entity to inspect its properties.");
         }
@@ -1322,6 +1347,7 @@ void EditorApplication::DrawInspector()
                 const EntityId id = entity->GetId();
                 (void)m_scene.DestroyEntity(id);
                 m_selectedEntity = 0;
+                m_entitySelection.Clear();
                 MarkSceneDirty();
             }
         }
@@ -2217,7 +2243,9 @@ void EditorApplication::DrawViewport()
                         std::abs(localPoint.y) <= std::abs(scaledSize.y) * 0.5F)
                         hitEntity = entity.GetId();
                 });
-                m_selectedEntity = hitEntity;
+                if (hitEntity != 0) m_entitySelection.SelectOnly(hitEntity);
+                else m_entitySelection.Clear();
+                m_selectedEntity = m_entitySelection.Primary();
                 if (!m_isPlaying && hitEntity != 0)
                 {
                     if (Entity* entity = activeScene.FindEntity(hitEntity))
@@ -2880,6 +2908,7 @@ void EditorApplication::CreateEntity()
 {
     if (m_isPlaying) return;
     Entity& entity = m_scene.CreateEntity("Entity");
+    m_entitySelection.SelectOnly(entity.GetId());
     m_selectedEntity = entity.GetId();
     MarkSceneDirty();
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
@@ -2888,24 +2917,49 @@ void EditorApplication::CreateEntity()
 
 void EditorApplication::DuplicateSelectedEntity()
 {
-    if (m_isPlaying || m_selectedEntity == 0) return;
-    Entity* duplicate = m_scene.DuplicateEntity(m_selectedEntity);
-    if (duplicate == nullptr) return;
-    m_selectedEntity = duplicate->GetId();
+    if (m_isPlaying || m_entitySelection.Empty()) return;
+    const std::vector<EntityId> sourceIds = m_entitySelection.GetIds();
+    std::vector<EntityId> duplicateIds;
+    duplicateIds.reserve(sourceIds.size());
+    for (EntityId id : sourceIds)
+    {
+        if (Entity* duplicate = m_scene.DuplicateEntity(id))
+            duplicateIds.push_back(duplicate->GetId());
+    }
+    if (duplicateIds.empty()) return;
+    m_entitySelection.SelectAll(duplicateIds);
+    m_selectedEntity = m_entitySelection.Primary();
     MarkSceneDirty();
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-        "Duplicated entity %llu", static_cast<unsigned long long>(m_selectedEntity));
+        "Duplicated %zu Entity/Entities", duplicateIds.size());
 }
 
 void EditorApplication::DeleteSelectedEntity()
 {
-    if (m_isPlaying || m_selectedEntity == 0) return;
-    const EntityId deletedId = m_selectedEntity;
-    if (!m_scene.DestroyEntity(deletedId)) return;
+    if (m_isPlaying || m_entitySelection.Empty()) return;
+    const std::vector<EntityId> selectedIds = m_entitySelection.GetIds();
+    std::size_t deletedCount = 0;
+    for (EntityId id : selectedIds)
+        if (m_scene.DestroyEntity(id)) ++deletedCount;
+    if (deletedCount == 0) return;
+    m_entitySelection.Clear();
     m_selectedEntity = 0;
     MarkSceneDirty();
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-        "Deleted entity %llu", static_cast<unsigned long long>(deletedId));
+        "Deleted %zu Entity/Entities", deletedCount);
+}
+
+void EditorApplication::SelectAllEntities()
+{
+    if (m_isPlaying) return;
+    m_entitySelection.SelectAll(m_scene.GetEntityIds());
+    m_selectedEntity = m_entitySelection.Primary();
+}
+
+void EditorApplication::PruneEntitySelection()
+{
+    m_entitySelection.Prune([this](EntityId id) { return m_scene.FindEntity(id) != nullptr; });
+    m_selectedEntity = m_entitySelection.Primary();
 }
 
 bool EditorApplication::SaveScene()
@@ -2968,6 +3022,7 @@ bool EditorApplication::LoadSceneFromPath(const std::filesystem::path& path)
     m_currentScenePath = path;
     std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", PathToUtf8(path).c_str());
     m_selectedEntity = 0;
+    m_entitySelection.Clear();
     m_sceneDirty = false;
     ResetSceneHistory();
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
@@ -3001,6 +3056,7 @@ void EditorApplication::ApplyPendingSceneChange()
         m_scene.SetLogger(&m_logger);
         m_currentScenePath = path;
         m_selectedEntity = 0;
+        m_entitySelection.Clear();
         m_sceneDirty = true;
         ResetSceneHistory();
         std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", PathToUtf8(path).c_str());
@@ -3160,7 +3216,7 @@ void EditorApplication::UndoScene()
 
     restored.SetLogger(&m_logger);
     m_scene = std::move(restored);
-    if (m_scene.FindEntity(m_selectedEntity) == nullptr) m_selectedEntity = 0;
+    PruneEntitySelection();
     m_sceneDirty = true;
     std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Undo completed");
 }
@@ -3182,7 +3238,7 @@ void EditorApplication::RedoScene()
 
     restored.SetLogger(&m_logger);
     m_scene = std::move(restored);
-    if (m_scene.FindEntity(m_selectedEntity) == nullptr) m_selectedEntity = 0;
+    PruneEntitySelection();
     m_sceneDirty = true;
     std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Redo completed");
 }
@@ -3223,6 +3279,7 @@ void EditorApplication::LoadStartupScene()
     m_scene = std::move(loadedScene);
     m_scene.SetLogger(&m_logger);
     m_selectedEntity = 0;
+    m_entitySelection.Clear();
     m_sceneDirty = false;
     ResetSceneHistory();
     m_currentScenePath = m_projectConfiguration.startupScene;

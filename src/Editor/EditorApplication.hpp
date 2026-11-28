@@ -14,6 +14,7 @@
 #include "Engine/Project/ProjectExporter.hpp"
 #include "Engine/Scripting/ScriptRuntime.hpp"
 #include "Editor/SceneUndoHistory.hpp"
+#include "Editor/EntitySelection.hpp"
 
 #include <array>
 #include <cstddef>
@@ -72,6 +73,8 @@ private:
     void CreateEntity();
     void DuplicateSelectedEntity();
     void DeleteSelectedEntity();
+    void SelectAllEntities();
+    void PruneEntitySelection();
     void RequestNewScene(const std::filesystem::path& path);
     void RequestLoadScene(const std::filesystem::path& path);
     void ApplyPendingSceneChange();
@@ -140,6 +143,7 @@ private:
     AssetRegistry m_assetRegistry{"assets"};
     AssetImportService m_assetImportService{"assets"};
     EntityId m_selectedEntity = 0;
+    EntitySelection m_entitySelection;
     EntityId m_dragEntityId = 0;
     Vector2 m_dragStartMouseWorld{};
     Vector2 m_dragStartEntityPosition{};
