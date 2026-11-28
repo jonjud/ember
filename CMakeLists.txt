@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
+cmake_policy(SET CMP0091 NEW)
+
 project(EMBER
     VERSION 0.1.0
     DESCRIPTION "A lightweight, 2D-first game engine"
@@ -9,6 +11,11 @@ project(EMBER
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Use the static MSVC runtime for standalone Windows exports.
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 include(CTest)
 include(FetchContent)
@@ -39,6 +46,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(box2d)
 
+set(SDL_FORCE_STATIC_VCRT ON CACHE BOOL "" FORCE)
 set(SDL_TESTS OFF CACHE BOOL "" FORCE)
 set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
@@ -575,6 +583,14 @@ else()
         target_compile_options(ember_project_configuration_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_lua_script_runtime_tests PRIVATE -Wall -Wextra -Wpedantic)
     endif()
+
+    # Apply shared test startup setup to every test executable.
+    get_property(EMBER_DIRECTORY_TARGETS DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+    foreach(test_target IN LISTS EMBER_DIRECTORY_TARGETS)
+        if(test_target MATCHES "_tests$")
+            target_precompile_headers(${test_target} PRIVATE tests/TestSupport.hpp)
+        endif()
+    endforeach()
 endif()
 
 set_target_properties(ember_editor PROPERTIES

@@ -9,8 +9,13 @@ on:
 
 jobs:
   build:
+    name: Windows ${{ matrix.configuration }}
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
 
     steps:
       - name: Check out repository
@@ -28,7 +33,7 @@ jobs:
         run: cmake -S . -B build -A x64
 
       - name: Build EMBER
-        run: cmake --build build --config Debug --parallel
+        run: cmake --build build --config ${{ matrix.configuration }} --parallel
 
       - name: Run engine tests
-        run: ctest --test-dir build -C Debug --verbose --output-on-failure --timeout 60
+        run: ctest --test-dir build -C ${{ matrix.configuration }} --verbose --output-on-failure --timeout 60
