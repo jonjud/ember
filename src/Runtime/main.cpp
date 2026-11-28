@@ -10,10 +10,9 @@ namespace
 {
 std::filesystem::path FindProjectBesideExecutable()
 {
-    char* basePath = SDL_GetBasePath();
+    const char* basePath = SDL_GetBasePath();
     if (basePath == nullptr) return {};
     const std::filesystem::path directory = ember::PathFromUtf8(basePath);
-    SDL_free(basePath);
 
     std::error_code error;
     std::vector<std::filesystem::path> projects;
