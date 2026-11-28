@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <vector>
 
 namespace
 {
@@ -38,6 +39,10 @@ int main()
         "Blank project configuration is valid");
     Check(blankConfig.has_value() && blankConfig->startupScene == std::filesystem::path("scenes/main.emberscene"),
         "Blank project selects its startup scene");
+    Check(blankConfig.has_value() &&
+          blankConfig->inputBindings.at("MoveLeft") == std::vector<std::int32_t>{4, 80} &&
+          blankConfig->inputBindings.at("MoveRight") == std::vector<std::int32_t>{7, 79},
+        "Built-in movement actions and keyboard bindings are configured");
     ember::Scene blankScene;
     Check(ember::SceneSerializer::Load(blankScene, blank.startupScene, &error),
         "Blank startup scene can be loaded");
