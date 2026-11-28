@@ -10,11 +10,11 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`c1f55b5`](https://github.com/jonjud/ember/commit/c1f55b5f67f753bd6374199534ffcfd1d1c7f7e1) — clarify unsaved exit prompt and sync status |
-| Latest repository HEAD | [`3416971`](https://github.com/jonjud/ember/commit/3416971973437431fe8f35cc0777001f38f8c11e) on `develop` |
+| Last code commit | [`3416971`](https://github.com/jonjud/ember/commit/3416971973437431fe8f35cc0777001f38f8c11e) — bound external Script Source conflict reads |
+| Latest repository HEAD | [`0c373e8`](https://github.com/jonjud/ember/commit/0c373e8710cb0c4480f19232c680aa0b6e53e6c8) — documentation sync on `develop` |
 | Last verified code CI | [Windows CI run 46110556033](https://github.com/jonjud/ember/actions/runs/46110556033) — **Success**; bounded external Script Source conflict reads, Windows build and engine tests passed |
 | Latest CI | [Windows CI run 46110556033](https://github.com/jonjud/ember/actions/runs/46110556033) — **Success** |
-| Latest documentation CI | [Windows CI run 46110556033](https://github.com/jonjud/ember/actions/runs/46110556033) — **Success** |
+| Latest documentation CI | Not triggered for the documentation-only sync commit; latest code CI #285 is successful |
 | Last completed milestone | Script Source Editor authoring implementation: Lua syntax validation, dirty-state/close/exit protection, external-change detection, bounded conflict reads, failure-safe reload and atomic save — Windows CI run 46110556033 Success; combined manual Editor verification remains pending |
 | Active milestone | Prepare and complete the combined Windows Editor verification for Lua Play Mode and Input Action Mapping. C++20 remains primary for Engine/Editor; Lua is an optional gameplay scripting backend. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
