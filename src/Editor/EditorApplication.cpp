@@ -106,6 +106,7 @@ std::string FindConflictingAction(
     return {};
 }
 
+}
 
 namespace ember
 {
@@ -1520,7 +1521,8 @@ SDL_Texture* EditorApplication::GetPreviewTexture(const AssetMetadata& metadata)
         return nullptr;
     }
 
-    SDL_Surface* surface = IMG_Load(resolvedPath->string().c_str());
+    const std::string utf8Path = PathToUtf8(*resolvedPath);
+    SDL_Surface* surface = IMG_Load(utf8Path.c_str());
     if (surface == nullptr)
     {
         return nullptr;
@@ -1797,7 +1799,6 @@ void EditorApplication::DrawViewport()
                     else
                     {
                         const ImVec2 points[2]{ends[0], ends[1]};
-                        const Vector2 axes[2]{{1.0F, 0.0F}, {0.0F, 1.0F}};
                         for (int i = 0; i < 2; ++i)
                         {
                             const ImVec2 segment{points[i].x - originScreen.x, points[i].y - originScreen.y};

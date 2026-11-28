@@ -38,6 +38,7 @@ public:
 
     [[nodiscard]] AudioSoundHandle LoadSound(const std::filesystem::path& path, bool streaming = false);
     [[nodiscard]] bool Play(AudioSoundHandle sound) noexcept;
+    [[nodiscard]] bool SeekToStart(AudioSoundHandle sound) noexcept;
     [[nodiscard]] bool Stop(AudioSoundHandle sound) noexcept;
     [[nodiscard]] bool SetVolume(AudioSoundHandle sound, float volume) noexcept;
     [[nodiscard]] bool SetLooping(AudioSoundHandle sound, bool looping) noexcept;

@@ -12,6 +12,17 @@
 
 namespace ember
 {
+std::string PathToUtf8(const std::filesystem::path& path)
+{
+    const auto encoded = path.generic_u8string();
+    return std::string(reinterpret_cast<const char*>(encoded.data()), encoded.size());
+}
+
+std::filesystem::path PathFromUtf8(std::string_view path)
+{
+    return std::filesystem::u8path(path.begin(), path.end());
+}
+
 bool WriteFileAtomically(const std::filesystem::path& destination,
     std::string_view contents, bool createBackup, std::string* error)
 {

@@ -90,6 +90,14 @@ end
         std::ofstream script(root / "scripts" / "invalid.lua");
         script << "function OnUpdate(\n";
     }
+    {
+        std::ofstream script(root / "scripts" / "global_lookup.lua");
+        script << "function OnCreate()\\n"
+                  "  setmetatable(_G, { __index = function(_, key)\\n"
+                  "    if key == 'OnUpdate' then return function() entity:set_position(999, 999) end end\\n"
+                  "  end })\\n"
+                  "end\\n";
+    }
 
     ember::AssetMetadata moveMetadata;
     moveMetadata.assetId = "script-move";
@@ -114,6 +122,15 @@ end
     xloopMetadata.source = "scripts/xloop.lua";
     Check(ember::AssetMetadataStore::Save(
         root / "scripts" / "xloop.lua.emberasset", xloopMetadata), "xpcall loop metadata saved");
+
+    ember::AssetMetadata lookupMetadata;
+    lookupMetadata.assetId = "script-global-lookup";
+    lookupMetadata.type = ember::AssetType::Script;
+    lookupMetadata.scriptLanguage = "lua";
+    lookupMetadata.source = "scripts/global_lookup.lua";
+    Check(ember::AssetMetadataStore::Save(
+        root / "scripts" / "global_lookup.lua.emberasset", lookupMetadata),
+        "Global lookup script metadata saved");
 
     ember::AssetMetadata invalidMetadata;
     invalidMetadata.assetId = "script-invalid";
@@ -149,6 +166,10 @@ end
     auto& xloopScript = xloopActor.AddComponent<ember::ScriptComponent>();
     xloopScript.scriptAssetId = "script-xloop";
 
+    auto& lookupActor = scene.CreateEntity("Lookup");
+    auto& lookupScript = lookupActor.AddComponent<ember::ScriptComponent>();
+    lookupScript.scriptAssetId = "script-global-lookup";
+
     auto& pythonActor = scene.CreateEntity("Python");
     auto& pythonScript = pythonActor.AddComponent<ember::ScriptComponent>();
     pythonScript.scriptAssetId = "script-python";
@@ -159,8 +180,11 @@ end
 
     ember::LuaScriptRuntime runtime(assets);
     scene.Start(nullptr, &assets, &runtime);
-    Check(scene.GetScriptInstanceCount() == 3,
+    Check(scene.GetScriptInstanceCount() == 4,
         "Lua creates independent instances and rejects invalid source and mismatched languages");
+    Check(lookupActor.GetTransform().position.x == 0.0F &&
+          lookupActor.GetTransform().position.y == 0.0F,
+        "Lifecycle callback lookup ignores globals synthesized by a _G metatable");
     Check(pythonActor.GetTransform().position.x == 0.0F,
         "Lua backend refuses assets tagged for a different scripting language");
     Check(actor.GetTransform().position.x == 10.0F &&

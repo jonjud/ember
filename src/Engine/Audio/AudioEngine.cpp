@@ -1,4 +1,5 @@
 #include "Engine/Audio/AudioEngine.hpp"
+#include "Engine/Core/FileSystem.hpp"
 
 #include <miniaudio.h>
 
@@ -73,7 +74,8 @@ AudioSoundHandle AudioEngine::LoadSound(const std::filesystem::path& path, bool 
 
     auto sound = std::make_unique<Impl::Sound>();
     const ma_uint32 flags = streaming ? MA_SOUND_FLAG_STREAM : MA_SOUND_FLAG_DECODE;
-    if (ma_sound_init_from_file(&m_impl->engine, path.string().c_str(), flags,
+    const std::string utf8Path = PathToUtf8(path);
+    if (ma_sound_init_from_file(&m_impl->engine, utf8Path.c_str(), flags,
             nullptr, nullptr, &sound->value) != MA_SUCCESS)
         return {};
 
@@ -88,6 +90,14 @@ bool AudioEngine::Play(AudioSoundHandle sound) noexcept
     const auto it = m_impl->sounds.find(sound.id);
     return it != m_impl->sounds.end() &&
         ma_sound_start(&it->second->value) == MA_SUCCESS;
+}
+
+bool AudioEngine::SeekToStart(AudioSoundHandle sound) noexcept
+{
+    if (!IsInitialized() || !sound) return false;
+    const auto it = m_impl->sounds.find(sound.id);
+    return it != m_impl->sounds.end() &&
+        ma_sound_seek_to_pcm_frame(&it->second->value, 0) == MA_SUCCESS;
 }
 
 bool AudioEngine::Stop(AudioSoundHandle sound) noexcept

@@ -304,10 +304,26 @@ void Scene::StepPhysics(float deltaSeconds) noexcept
         const auto* bodyConfig = entity->GetComponent<PhysicsBody2D>();
         if (bodyConfig == nullptr || bodyConfig->type == PhysicsBodyType2D::Dynamic) continue;
         const Transform2D& transform = entity->GetTransform();
-        (void)m_physicsWorld->SetBodyTransform(handle, {
+        const PhysicsTransform2D desired{
             {transform.position.x / metersToPixels, transform.position.y / metersToPixels},
             transform.rotation
-        });
+        };
+        if (bodyConfig->type != PhysicsBodyType2D::Dynamic)
+        {
+            (void)m_physicsWorld->SetBodyTransform(handle, desired);
+        }
+        else
+        {
+            // Gameplay/scripts may directly edit a dynamic Entity transform.
+            // Only teleport the body when the Entity actually diverged from the
+            // last physics transform; otherwise let simulation remain authoritative.
+            const auto bodyTransform = m_physicsWorld->GetBodyTransform(handle);
+            if (bodyTransform &&
+                (std::abs(bodyTransform->position.x - desired.position.x) > 0.0001F ||
+                 std::abs(bodyTransform->position.y - desired.position.y) > 0.0001F ||
+                 std::abs(bodyTransform->rotation - desired.rotation) > 0.0001F))
+                (void)m_physicsWorld->SetBodyTransform(handle, desired);
+        }
     }
 
     const float safeDelta = std::clamp(deltaSeconds, 0.0F, maxFrameDelta);
@@ -644,7 +660,7 @@ bool Scene::PlayAudioSource(EntityId entity) noexcept
 {
     const auto it = m_audioSources.find(entity);
     return it != m_audioSources.end() && m_audioEngine != nullptr &&
-        m_audioEngine->Play(it->second);
+        m_audioEngine->SeekToStart(it->second) && m_audioEngine->Play(it->second);
 }
 
 bool Scene::StopAudioSource(EntityId entity) noexcept
