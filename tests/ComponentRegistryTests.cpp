@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace
 {
@@ -90,6 +91,25 @@ int main()
           "Registered types are listed in deterministic ID order");
     Check(registry.Size() == 2, "Registry reports its type count");
 
+    Check(registry.RegisterProperty<MarkerComponent>(
+        "example.marker", "value", "Value", &MarkerComponent::value),
+        "Integer component property can be registered");
+    Check(registry.RegisterProperty<MarkerComponent>(
+        "example.marker", "enabled", "Enabled", &MarkerComponent::enabled),
+        "Boolean component property can be registered");
+    Check(registry.RegisterProperty<MarkerComponent>(
+        "example.marker", "speed", "Speed", &MarkerComponent::speed),
+        "Float component property can be registered");
+    Check(registry.RegisterProperty<MarkerComponent>(
+        "example.marker", "label", "Label", &MarkerComponent::label),
+        "String component property can be registered");
+    Check(!registry.RegisterProperty<MarkerComponent>(
+        "example.marker", "value", "Duplicate", &MarkerComponent::value),
+        "Duplicate property IDs are rejected");
+    Check(!registry.RegisterProperty<OtherComponent>(
+        "example.marker", "wrong-owner", "Wrong Owner", &OtherComponent::otherValue),
+        "Properties cannot be registered against a different component type");
+
     Check(ember::editor::HasMixedValues({1, 1, 1}) == false,
         "Multi-edit detects uniform property values");
     Check(ember::editor::HasMixedValues({1, 2}) == true,
@@ -113,24 +133,6 @@ int main()
           first.value == 77 && second.value == 77,
           "Multi-edit rejects invalid values without partially changing components");
 
-    Check(registry.RegisterProperty<MarkerComponent>(
-        "example.marker", "value", "Value", &MarkerComponent::value),
-        "Integer component property can be registered");
-    Check(registry.RegisterProperty<MarkerComponent>(
-        "example.marker", "enabled", "Enabled", &MarkerComponent::enabled),
-        "Boolean component property can be registered");
-    Check(registry.RegisterProperty<MarkerComponent>(
-        "example.marker", "speed", "Speed", &MarkerComponent::speed),
-        "Float component property can be registered");
-    Check(registry.RegisterProperty<MarkerComponent>(
-        "example.marker", "label", "Label", &MarkerComponent::label),
-        "String component property can be registered");
-    Check(!registry.RegisterProperty<MarkerComponent>(
-        "example.marker", "value", "Duplicate", &MarkerComponent::value),
-        "Duplicate property IDs are rejected");
-    Check(!registry.RegisterProperty<OtherComponent>(
-        "example.marker", "wrong-owner", "Wrong Owner", &OtherComponent::otherValue),
-        "Properties cannot be registered against a different component type");
     const auto* markerProperties = registry.FindProperties(source);
     Check(markerProperties != nullptr && markerProperties->size() == 4,
         "Property metadata can be queried by component instance");
