@@ -1,4 +1,5 @@
 #include "Engine/Project/ProjectConfigurationStore.hpp"
+#include "Engine/Core/FileSystem.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -117,23 +118,9 @@ bool ProjectConfigurationStore::Save(
             {"input_bindings", configuration.inputBindings}
         };
 
-        const auto parent = projectFilePath.parent_path();
-        if (!parent.empty())
-        {
-            std::filesystem::create_directories(parent);
-        }
-
-        std::ofstream output(projectFilePath, std::ios::binary | std::ios::trunc);
-        if (!output)
-        {
-            return Fail(error, "Could not open project file for writing.");
-        }
-
-        output << document.dump(4) << '\n';
-        if (!output)
-        {
-            return Fail(error, "Could not write project configuration.");
-        }
+        const std::string serialized = document.dump(4) + "\n";
+        if (!WriteFileAtomically(projectFilePath, serialized, true, error))
+            return false;
     }
     catch (const std::exception& exception)
     {

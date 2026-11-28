@@ -1,5 +1,6 @@
 #include "Engine/Scene/SceneSerializer.hpp"
 #include "Engine/Physics/PhysicsComponents2D.hpp"
+#include "Engine/Core/FileSystem.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -201,23 +202,9 @@ bool SceneSerializer::Save(
             {"entities", std::move(entities)}
         };
 
-        const auto parent = filePath.parent_path();
-        if (!parent.empty())
-        {
-            std::filesystem::create_directories(parent);
-        }
-
-        std::ofstream output(filePath, std::ios::binary | std::ios::trunc);
-        if (!output)
-        {
-            return Fail(error, "Could not open scene file for writing.");
-        }
-
-        output << document.dump(4) << '\n';
-        if (!output)
-        {
-            return Fail(error, "Could not write scene file.");
-        }
+        const std::string serialized = document.dump(4) + "\n";
+        if (!WriteFileAtomically(filePath, serialized, false, error))
+            return false;
     }
     catch (const std::exception& exception)
     {

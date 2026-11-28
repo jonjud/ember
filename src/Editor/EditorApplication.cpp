@@ -1,6 +1,7 @@
 #include "Editor/EditorApplication.hpp"
 
 #include "Engine/Scene/SceneSerializer.hpp"
+#include "Engine/Core/FileSystem.hpp"
 #include "Engine/Physics/PhysicsComponentRegistration.hpp"
 #include "Engine/Physics/PhysicsComponents2D.hpp"
 #include "Engine/Scene/AnimationComponents2D.hpp"
@@ -105,41 +106,6 @@ std::string FindConflictingAction(
     return {};
 }
 
-bool WriteFileAtomically(const std::filesystem::path& destination, std::string_view contents)
-{
-    std::filesystem::path temporary = destination;
-    temporary += ".ember-tmp";
-
-    {
-        std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
-        if (!output) return false;
-        output.write(contents.data(), static_cast<std::streamsize>(contents.size()));
-        output.flush();
-        if (!output)
-        {
-            output.close();
-            std::error_code ignored;
-            std::filesystem::remove(temporary, ignored);
-            return false;
-        }
-    }
-
-#ifdef _WIN32
-    const bool replaced = MoveFileExW(temporary.c_str(), destination.c_str(),
-        MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
-#else
-    std::error_code replaceError;
-    std::filesystem::rename(temporary, destination, replaceError);
-    const bool replaced = !replaceError;
-#endif
-    if (!replaced)
-    {
-        std::error_code ignored;
-        std::filesystem::remove(temporary, ignored);
-    }
-    return replaced;
-}
-}
 
 namespace ember
 {
@@ -3009,7 +2975,7 @@ void EditorApplication::SaveScriptSource()
 
     const std::size_t sourceLength = std::char_traits<char>::length(m_scriptSourceBuffer.data());
     const std::string_view editedSource(m_scriptSourceBuffer.data(), sourceLength);
-    if (!WriteFileAtomically(*resolved, editedSource))
+    if (!ember::WriteFileAtomically(*resolved, editedSource))
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "Could not atomically replace Script source; original file was preserved");
