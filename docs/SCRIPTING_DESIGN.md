@@ -52,11 +52,11 @@ No additional language or concrete VM is selected by this document.
 
 The Scene does not own VM implementation details. A backend owns source compilation/loading, VM state, instance memory, native bindings and exception translation. Native C++ game code may use a separate native build/load path, but should integrate with the same engine-owned lifecycle and diagnostics concepts where appropriate.
 
-## Deliberately deferred
+## Scene host integration status\n- Scene accepts a non-owning `ScriptRuntime*` at Start; the caller must keep the backend alive until Scene Stop.\n- Scene initializes and shuts down the backend, owns opaque live handles, and invokes lifecycle callbacks.\n- Only active Entities with enabled, assigned ScriptComponents create instances. Empty IDs are treated as unassigned Editor state.\n- Failed setup/update calls are recorded as Scene diagnostics; failed update instances are faulted to prevent repeated calls.\n- Runtime handles and backend pointers are transient and are not cloned or serialized.\n\n## Deliberately deferred
 - Concrete optional scripting language and VM dependency selection.
 - Native C++ game-code project build pipeline and hot-reload strategy.
 - Script asset import/type registration and source editor.
-- Scene lifecycle integration and runtime instance ownership.
+- Script asset import/type registration and Editor assignment workflow.
 - Native API bindings, Entity/Transform/physics/audio access policy and sandbox/security limits.
 - Hot reload, debugging, breakpoints and packaging selected script runtimes with exported games.
 

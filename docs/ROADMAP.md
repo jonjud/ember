@@ -75,7 +75,7 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Runtime Input Action Mapping implementation: named actions, multiple physical-key bindings, edge states, Editor rebind/custom-action UI, project persistence, and Scene-to-Component input forwarding (Windows CI run 46081947029 Success)
 - [ ] Final Windows Editor verification for Input Action Mapping (checklist: [INPUT_ACTIONS_VERIFICATION.md](INPUT_ACTIONS_VERIFICATION.md))
 - [x] Scripting foundation: language-neutral ScriptRuntime host contract and serializable ScriptComponent
-- [ ] Scene scripting lifecycle integration, runtime instance ownership and diagnostics
+- [x] Scene scripting lifecycle integration: runtime initialization, per-Entity ScriptComponent instance ownership, OnCreate/OnUpdate/OnDestroy, fault isolation and diagnostics (automated Windows CI pending)
 - [ ] Script asset type/import pipeline and Editor assignment workflow
 - [ ] Evaluate optional embedded scripting language/runtime candidates; keep C++ as the primary language
 

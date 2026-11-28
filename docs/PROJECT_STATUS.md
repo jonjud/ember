@@ -10,8 +10,8 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`02d6fb7`](https://github.com/jonjud/ember/commit/02d6fb78f948cad0ffc2f94b4a6e3baa35c3b9ca) — correct scripting test character literals |
-| Latest repository HEAD | [`02d6fb7`](https://github.com/jonjud/ember/commit/02d6fb78f948cad0ffc2f94b4a6e3baa35c3b9ca) — scripting foundation fix |
+| Last code commit | Scene scripting lifecycle integration — implementation pending CI |
+| Latest repository HEAD | Scene scripting lifecycle integration — implementation pending CI |
 | Last verified code CI | [Windows CI run 46085926100](https://github.com/jonjud/ember/actions/runs/46085926100) — **Success** (`02d6fb7`; all build/tests passed) |
 | Latest CI | [Windows CI run 46085926100](https://github.com/jonjud/ember/actions/runs/46085926100) — **Success** (`02d6fb7`) |
 | Latest documentation CI | [Windows CI run 46085926100](https://github.com/jonjud/ember/actions/runs/46085926100) — **Success** |
@@ -129,7 +129,7 @@
 - [x] Serializable ScriptComponent with script asset ID and enabled state
 - [x] ComponentRegistry registration and typed Inspector properties
 - [x] Automated ScriptComponent clone, validation and registry serialization tests
-- [ ] Scene lifecycle integration, script instance ownership and per-instance diagnostics
+- [x] Scene lifecycle integration: runtime initialization, instance ownership, lifecycle dispatch, fault isolation and diagnostics (CI pending)
 - [ ] Script asset import/type and Editor assignment workflow
 - [ ] Evaluate and select an optional embedded scripting backend in accordance with the language policy
 

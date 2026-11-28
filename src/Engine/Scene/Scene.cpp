@@ -3,6 +3,7 @@
 #include "Engine/Resources/AssetRegistry.hpp"
 #include "Engine/Scene/AudioComponents2D.hpp"
 #include "Engine/UI/UIComponents2D.hpp"
+#include "Engine/Scripting/ScriptComponent.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -38,6 +39,10 @@ void Scene::MoveFrom(Scene&& other) noexcept
     m_physicsWorld = std::move(other.m_physicsWorld);
     m_audioEngine = other.m_audioEngine;
     m_audioSources = std::move(other.m_audioSources);
+    m_scriptRuntime = other.m_scriptRuntime;
+    m_scriptRuntimeInitialized = other.m_scriptRuntimeInitialized;
+    m_scriptInstances = std::move(other.m_scriptInstances);
+    m_scriptDiagnostics = std::move(other.m_scriptDiagnostics);
     m_audioDiagnostics = std::move(other.m_audioDiagnostics);
     m_physicsBodies = std::move(other.m_physicsBodies);
     m_physicsDiagnostics = std::move(other.m_physicsDiagnostics);
@@ -45,6 +50,9 @@ void Scene::MoveFrom(Scene&& other) noexcept
     m_activeContactCounts = std::move(other.m_activeContactCounts);
     m_physicsAccumulator = other.m_physicsAccumulator;
     other.m_audioEngine = nullptr;
+    other.m_scriptRuntime = nullptr;
+    other.m_scriptRuntimeInitialized = false;
+    other.m_scriptInstances.clear();
     other.m_audioSources.clear();
     other.m_nextEntityId = 1;
     other.m_started = false;
@@ -401,11 +409,39 @@ std::vector<EntityId> Scene::OverlapAABB(
     return entities;
 }
 
-void Scene::Start(AudioEngine* audioEngine, const AssetRegistry* assets) noexcept
+void Scene::Start(AudioEngine* audioEngine, const AssetRegistry* assets,
+    ScriptRuntime* scriptRuntime) noexcept
 {
     if (m_started) return;
     m_started = true;
     m_audioEngine = audioEngine;
+    m_scriptDiagnostics.clear();
+    m_scriptRuntime = scriptRuntime;
+    if (m_scriptRuntime != nullptr)
+    {
+        try
+        {
+            m_scriptRuntimeInitialized = m_scriptRuntime->Initialize(&m_scriptDiagnostics.emplace_back());
+            if (!m_scriptRuntimeInitialized)
+            {
+                if (m_scriptDiagnostics.back().empty())
+                    m_scriptDiagnostics.back() = "ScriptRuntime initialization failed.";
+                m_scriptRuntime = nullptr;
+            }
+            else if (m_scriptDiagnostics.back().empty())
+                m_scriptDiagnostics.pop_back();
+        }
+        catch (const std::exception& exception)
+        {
+            m_scriptDiagnostics.push_back(std::string("ScriptRuntime initialization threw: ") + exception.what());
+            m_scriptRuntime = nullptr;
+        }
+        catch (...)
+        {
+            m_scriptDiagnostics.push_back("ScriptRuntime initialization threw an unknown exception.");
+            m_scriptRuntime = nullptr;
+        }
+    }
     for (auto& [id, entity] : m_entities)
     {
         (void)id;
@@ -413,6 +449,112 @@ void Scene::Start(AudioEngine* audioEngine, const AssetRegistry* assets) noexcep
     }
     BuildPhysicsWorld();
     BuildAudioSources(assets);
+    BuildScriptInstances();
+}
+
+
+void Scene::BuildScriptInstances() noexcept
+{
+    if (m_scriptRuntime == nullptr || !m_scriptRuntimeInitialized) return;
+    for (auto& [entityId, entity] : m_entities)
+    {
+        if (!entity->IsActive()) continue;
+        for (const auto& base : entity->GetComponents())
+        {
+            auto* component = dynamic_cast<ScriptComponent*>(base.get());
+            if (component == nullptr || !component->enabled) continue;
+            if (!component->IsConfigurationValid())
+            {
+                m_scriptDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                    " has an invalid ScriptComponent configuration.");
+                continue;
+            }
+            if (component->scriptAssetId.empty()) continue;
+            try
+            {
+                std::string error;
+                const auto instance = m_scriptRuntime->CreateInstance(*component, *entity, &error);
+                if (!instance || !static_cast<bool>(*instance))
+                {
+                    m_scriptDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                        " could not create script '" + component->scriptAssetId + "': " +
+                        (error.empty() ? "backend returned no instance." : error));
+                    continue;
+                }
+                if (!m_scriptRuntime->InvokeOnCreate(*instance, *entity, &error))
+                {
+                    m_scriptRuntime->InvokeOnDestroy(*instance, *entity);
+                    m_scriptDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                        " OnCreate failed for script '" + component->scriptAssetId + "': " +
+                        (error.empty() ? "backend reported failure." : error));
+                    continue;
+                }
+                m_scriptInstances.push_back({entityId, component, *instance, false});
+            }
+            catch (const std::exception& exception)
+            {
+                m_scriptDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                    " script setup threw: " + exception.what());
+            }
+            catch (...)
+            {
+                m_scriptDiagnostics.push_back("Entity " + std::to_string(entityId) +
+                    " script setup threw an unknown exception.");
+            }
+        }
+    }
+}
+
+void Scene::UpdateScriptInstances(float deltaSeconds, const InputActionState& input) noexcept
+{
+    if (m_scriptRuntime == nullptr) return;
+    for (auto& instance : m_scriptInstances)
+    {
+        if (instance.faulted || instance.component == nullptr || !instance.component->enabled) continue;
+        Entity* entity = FindEntity(instance.entity);
+        if (entity == nullptr || !entity->IsActive()) continue;
+        try
+        {
+            std::string error;
+            const ScriptExecutionContext context{*entity, deltaSeconds, input};
+            if (!m_scriptRuntime->InvokeOnUpdate(instance.handle, context, &error))
+            {
+                instance.faulted = true;
+                m_scriptDiagnostics.push_back("Entity " + std::to_string(instance.entity) +
+                    " script OnUpdate failed: " +
+                    (error.empty() ? "backend reported failure; instance disabled." : error));
+            }
+        }
+        catch (const std::exception& exception)
+        {
+            instance.faulted = true;
+            m_scriptDiagnostics.push_back("Entity " + std::to_string(instance.entity) +
+                " script OnUpdate threw: " + exception.what());
+        }
+        catch (...)
+        {
+            instance.faulted = true;
+            m_scriptDiagnostics.push_back("Entity " + std::to_string(instance.entity) +
+                " script OnUpdate threw an unknown exception.");
+        }
+    }
+}
+
+void Scene::DestroyScriptInstances() noexcept
+{
+    if (m_scriptRuntime != nullptr)
+    {
+        for (auto it = m_scriptInstances.rbegin(); it != m_scriptInstances.rend(); ++it)
+        {
+            if (Entity* entity = FindEntity(it->entity))
+                m_scriptRuntime->InvokeOnDestroy(it->handle, *entity);
+        }
+    }
+    m_scriptInstances.clear();
+    if (m_scriptRuntime != nullptr && m_scriptRuntimeInitialized)
+        m_scriptRuntime->Shutdown();
+    m_scriptRuntime = nullptr;
+    m_scriptRuntimeInitialized = false;
 }
 
 void Scene::BuildAudioSources(const AssetRegistry* assets) noexcept
@@ -549,6 +691,8 @@ void Scene::UpdateInternal(float deltaSeconds, const InputActionState* input) no
 {
     if (!m_started || !std::isfinite(deltaSeconds)) return;
     const float safeDeltaSeconds = std::max(0.0F, deltaSeconds);
+    static const InputActionState emptyInput{};
+    const InputActionState& scriptInput = input != nullptr ? *input : emptyInput;
     for (auto& [id, entity] : m_entities)
     {
         (void)id;
@@ -556,6 +700,7 @@ void Scene::UpdateInternal(float deltaSeconds, const InputActionState* input) no
         if (input != nullptr) entity->UpdateComponents(safeDeltaSeconds, *input);
         else entity->UpdateComponents(safeDeltaSeconds);
     }
+    UpdateScriptInstances(safeDeltaSeconds, scriptInput);
     m_physicsContactEvents.clear();
     StepPhysics(safeDeltaSeconds);
 }
@@ -563,6 +708,7 @@ void Scene::UpdateInternal(float deltaSeconds, const InputActionState* input) no
 void Scene::Stop() noexcept
 {
     if (!m_started) return;
+    DestroyScriptInstances();
     DestroyAudioSources();
     DestroyPhysicsWorld();
     for (auto it = m_entities.rbegin(); it != m_entities.rend(); ++it)

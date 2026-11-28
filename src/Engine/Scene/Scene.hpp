@@ -3,6 +3,7 @@
 #include "Engine/Scene/Entity.hpp"
 #include "Engine/Physics/PhysicsWorld.hpp"
 #include "Engine/Audio/AudioEngine.hpp"
+#include "Engine/Scripting/ScriptRuntime.hpp"
 
 #include <cstddef>
 #include <map>
@@ -50,7 +51,8 @@ public:
     [[nodiscard]] const std::string& GetName() const { return m_name; }
     void SetName(std::string name);
 
-    void Start(AudioEngine* audioEngine = nullptr, const AssetRegistry* assets = nullptr) noexcept;
+    void Start(AudioEngine* audioEngine = nullptr, const AssetRegistry* assets = nullptr,
+        ScriptRuntime* scriptRuntime = nullptr) noexcept;
     void Update(float deltaSeconds) noexcept;
     void Update(float deltaSeconds, const InputActionState& input) noexcept;
     // Dispatches a UI Button click to components on the target Entity while running.
@@ -67,6 +69,8 @@ public:
     [[nodiscard]] bool StopAudioSource(EntityId entity) noexcept;
     [[nodiscard]] bool IsAudioSourcePlaying(EntityId entity) const noexcept;
     [[nodiscard]] const std::vector<std::string>& GetAudioDiagnostics() const { return m_audioDiagnostics; }
+    [[nodiscard]] const std::vector<std::string>& GetScriptDiagnostics() const { return m_scriptDiagnostics; }
+    [[nodiscard]] std::size_t GetScriptInstanceCount() const { return m_scriptInstances.size(); }
     [[nodiscard]] std::size_t GetPhysicsJointCount() const { return m_physicsWorld ? m_physicsWorld->GetJointCount() : 0; }
     [[nodiscard]] const std::vector<std::string>& GetPhysicsDiagnostics() const { return m_physicsDiagnostics; }
     // Events are collected during the most recent Update and remain available until the next Update.
@@ -117,6 +121,9 @@ private:
     void MoveFrom(Scene&& other) noexcept;
     void BuildPhysicsWorld() noexcept;
     void BuildAudioSources(const AssetRegistry* assets) noexcept;
+    void BuildScriptInstances() noexcept;
+    void UpdateScriptInstances(float deltaSeconds, const InputActionState& input) noexcept;
+    void DestroyScriptInstances() noexcept;
     void DestroyAudioSources() noexcept;
     void DestroyPhysicsWorld() noexcept;
     void StepPhysics(float deltaSeconds) noexcept;
@@ -130,6 +137,17 @@ private:
     AudioEngine* m_audioEngine = nullptr;
     std::map<EntityId, AudioSoundHandle> m_audioSources;
     std::vector<std::string> m_audioDiagnostics;
+    struct RuntimeScriptInstance
+    {
+        EntityId entity = 0;
+        ScriptComponent* component = nullptr;
+        ScriptInstanceHandle handle{};
+        bool faulted = false;
+    };
+    ScriptRuntime* m_scriptRuntime = nullptr;
+    bool m_scriptRuntimeInitialized = false;
+    std::vector<RuntimeScriptInstance> m_scriptInstances;
+    std::vector<std::string> m_scriptDiagnostics;
     std::map<EntityId, PhysicsBodyHandle> m_physicsBodies;
     std::vector<std::string> m_physicsDiagnostics;
     std::vector<SceneContactEvent2D> m_physicsContactEvents;
