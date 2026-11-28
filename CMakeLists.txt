@@ -155,6 +155,7 @@ add_library(ember_miniaudio STATIC ${miniaudio_SOURCE_DIR}/miniaudio.c)
 target_include_directories(ember_miniaudio PUBLIC ${miniaudio_SOURCE_DIR})
 
 add_library(ember_engine STATIC
+    src/Engine/Core/Logger.cpp
     src/Engine/Core/FileSystem.cpp
     src/Engine/Scripting/LuaScriptRuntime.cpp
     src/Engine/Core/Application.cpp
@@ -201,6 +202,15 @@ target_include_directories(ember_editor PRIVATE src)
 target_link_libraries(ember_editor PRIVATE ember_engine ember_imgui SDL3::SDL3)
 
 if(BUILD_TESTING)
+    add_executable(ember_logging_tests
+        tests/LoggingTests.cpp
+        src/Engine/Core/Logger.cpp
+    )
+    target_include_directories(ember_logging_tests PRIVATE src)
+    find_package(Threads REQUIRED)
+    target_link_libraries(ember_logging_tests PRIVATE Threads::Threads)
+    add_test(NAME ember_logging_tests COMMAND ember_logging_tests)
+
     add_executable(ember_audio_engine_tests
         tests/AudioEngineTests.cpp
         src/Engine/Audio/AudioEngine.cpp
