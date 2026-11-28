@@ -275,6 +275,11 @@ if(BUILD_TESTING)
     )
     target_include_directories(ember_script_runtime_scene_tests PRIVATE src)
     target_link_libraries(ember_script_runtime_scene_tests PRIVATE ember_engine)
+    add_custom_command(TARGET ember_script_runtime_scene_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:SDL3::SDL3>
+            $<TARGET_FILE_DIR:ember_script_runtime_scene_tests>
+    )
     add_test(NAME ember_script_runtime_scene_tests COMMAND ember_script_runtime_scene_tests)
 
     add_executable(ember_component_registry_tests
