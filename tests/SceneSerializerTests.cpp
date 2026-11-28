@@ -93,7 +93,7 @@ int main()
     second.GetTransform().position = {100.0F, 200.0F};
     auto& nestedDecoration = source.CreateEntity("Nested Decoration");
     nestedDecoration.GetTransform().position = {5.0F, 7.0F};
-    Check(source.SetParent(nestedDecoration.GetId(), second.GetId()),
+    Check(source.SetParent(nestedDecoration.GetId(), second.GetId(), false),
           "Serializer fixture supports parent-child relationships");
 
     auto& playerHinge = player.AddComponent<ember::RevoluteJoint2D>();
@@ -174,6 +174,10 @@ int main()
     const auto* loadedNested = loaded.FindEntity(nestedDecoration.GetId());
     Check(loadedNested != nullptr && loadedNested->GetParentId() == second.GetId(),
           "Parent-child relationships survive Scene serialization");
+    const auto loadedNestedWorld = loaded.GetWorldTransform(nestedDecoration.GetId());
+    Check(loadedNestedWorld && loadedNestedWorld->position.x == 105.0F &&
+          loadedNestedWorld->position.y == 207.0F,
+          "Serialized local transforms compose correctly after loading hierarchy links");
     const auto* loadedAnimationOwner = loaded.FindEntity(player.GetId());
     const auto* loadedAnimation = loadedAnimationOwner
         ? loadedAnimationOwner->GetComponent<ember::SpriteAnimation2D>() : nullptr;

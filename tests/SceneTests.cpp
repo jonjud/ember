@@ -78,17 +78,37 @@ int main()
     ember::Entity& hierarchyRoot = hierarchyScene.CreateEntity("Hierarchy Root");
     ember::Entity& hierarchyChild = hierarchyScene.CreateEntity("Hierarchy Child");
     ember::Entity& hierarchyGrandchild = hierarchyScene.CreateEntity("Hierarchy Grandchild");
-    Check(hierarchyScene.SetParent(hierarchyChild.GetId(), hierarchyRoot.GetId()),
-          "Scene assigns an Entity parent");
-    Check(hierarchyScene.SetParent(hierarchyGrandchild.GetId(), hierarchyChild.GetId()),
+    ember::Entity& secondRoot = hierarchyScene.CreateEntity("Second Root");
+    hierarchyRoot.GetTransform().position = {100.0F, 50.0F};
+    hierarchyRoot.GetTransform().scale = {2.0F, 2.0F};
+    hierarchyRoot.GetTransform().rotation = 1.57079632679F;
+    hierarchyChild.GetTransform().position = {10.0F, 0.0F};
+    secondRoot.GetTransform().position = {300.0F, 100.0F};
+    Check(hierarchyScene.SetParent(hierarchyChild.GetId(), hierarchyRoot.GetId(), false),
+          "Scene assigns an Entity parent while preserving local transform");
+    Check(hierarchyScene.SetParent(hierarchyGrandchild.GetId(), hierarchyChild.GetId(), false),
           "Scene supports nested parent-child relationships");
+    const auto childWorld = hierarchyScene.GetWorldTransform(hierarchyChild.GetId());
+    Check(childWorld && std::abs(childWorld->position.x - 100.0F) < 0.001F &&
+          std::abs(childWorld->position.y - 70.0F) < 0.001F &&
+          std::abs(childWorld->scale.x - 2.0F) < 0.001F,
+          "Child world transform composes parent position, rotation and scale");
+    Check(hierarchyScene.SetParent(hierarchyChild.GetId(), secondRoot.GetId()),
+          "Reparenting preserves world transform by default");
+    const auto reparentedWorld = hierarchyScene.GetWorldTransform(hierarchyChild.GetId());
+    Check(reparentedWorld && childWorld &&
+          std::abs(reparentedWorld->position.x - childWorld->position.x) < 0.001F &&
+          std::abs(reparentedWorld->position.y - childWorld->position.y) < 0.001F,
+          "Keep-world reparenting does not move the child");
+    Check(hierarchyScene.SetParent(hierarchyChild.GetId(), hierarchyRoot.GetId(), false),
+          "Child can be moved back under its original parent");
     Check(!hierarchyScene.SetParent(hierarchyRoot.GetId(), hierarchyGrandchild.GetId()),
           "Scene rejects hierarchy cycles");
     Check(!hierarchyScene.SetParent(hierarchyRoot.GetId(), hierarchyRoot.GetId()),
           "Scene rejects self-parenting");
     Check(!hierarchyScene.SetParent(hierarchyChild.GetId(), 999999),
           "Scene rejects missing parent IDs");
-    Check(hierarchyScene.GetRootEntityIds().size() == 3 &&
+    Check(hierarchyScene.GetRootEntityIds().size() == 2 &&
           hierarchyScene.GetChildren(hierarchyRoot.GetId()).size() == 1 &&
           hierarchyScene.GetChildren(hierarchyChild.GetId()).front() == hierarchyGrandchild.GetId(),
           "Scene returns roots and direct children in deterministic order");
@@ -153,10 +173,16 @@ int main()
     Check(scene.DestroyEntity(duplicateId),
           "Duplicate entity can be removed independently");
     Check(scene.DestroyEntity(enemyId), "DestroyEntity removes an existing entity");
+    const auto childWorldBeforeDelete = hierarchyScene.GetWorldTransform(hierarchyChildId);
     Check(hierarchyScene.DestroyEntity(hierarchyRootId) &&
           hierarchyScene.FindEntity(hierarchyChildId)->GetParentId() == 0 &&
           hierarchyScene.FindEntity(hierarchyGrandchildId)->GetParentId() == hierarchyChildId,
           "Destroying a parent detaches direct children without deleting descendants");
+    const auto childWorldAfterDelete = hierarchyScene.GetWorldTransform(hierarchyChildId);
+    Check(childWorldBeforeDelete && childWorldAfterDelete &&
+          std::abs(childWorldBeforeDelete->position.x - childWorldAfterDelete->position.x) < 0.001F &&
+          std::abs(childWorldBeforeDelete->position.y - childWorldAfterDelete->position.y) < 0.001F,
+          "Detaching children during parent deletion preserves their world transforms");
     Check(!scene.DestroyEntity(enemyId), "DestroyEntity reports missing entity");
     Check(scene.FindEntity(enemyId) == nullptr, "Destroyed entity cannot be found");
     Check(scene.GetEntityCount() == 1, "Scene count updates after entity destruction");
