@@ -50,7 +50,8 @@ bool CopyRegularFile(const std::filesystem::path& source,
 }
 
 bool CopyRuntimeLibraries(const std::filesystem::path& runtimeDirectory,
-    const std::filesystem::path& destinationDirectory, std::size_t& count, std::string* error)
+    const std::filesystem::path& destinationDirectory, std::size_t& count,
+    std::vector<std::string>& copiedLibraries, std::string* error)
 {
     std::error_code ec;
     std::filesystem::directory_iterator it(runtimeDirectory, ec), end;
@@ -65,7 +66,9 @@ bool CopyRuntimeLibraries(const std::filesystem::path& runtimeDirectory,
         if (extension != ".dll") continue;
         if (!CopyRegularFile(source, destinationDirectory / source.filename(), count, error))
             return false;
+        copiedLibraries.push_back(PathToUtf8(source.filename()));
     }
+    std::sort(copiedLibraries.begin(), copiedLibraries.end());
     return true;
 }
 
@@ -138,17 +141,16 @@ bool ProjectExporter::ExportWindows(
             std::filesystem::absolute(projectRoot).lexically_normal()))
         return Fail(error, "Asset directory must remain inside the project directory.");
 
+    if (configuration->startupScene.empty())
+        return Fail(error, "A startup scene is required for a Windows game export.");
     std::filesystem::path startupScene;
-    if (!configuration->startupScene.empty())
-    {
-        const auto resolved = ProjectConfigurationStore::ResolveStartupScene(project, *configuration);
-        if (!resolved || !IsWithin(std::filesystem::absolute(*resolved).lexically_normal(),
-                std::filesystem::absolute(projectRoot).lexically_normal()))
-            return Fail(error, "Startup scene must remain inside the project directory.");
-        startupScene = *resolved;
-        if (!std::filesystem::is_regular_file(startupScene, ec) || ec)
-            return Fail(error, "Configured startup scene does not exist.");
-    }
+    const auto resolvedScene = ProjectConfigurationStore::ResolveStartupScene(project, *configuration);
+    if (!resolvedScene || !IsWithin(std::filesystem::absolute(*resolvedScene).lexically_normal(),
+            std::filesystem::absolute(projectRoot).lexically_normal()))
+        return Fail(error, "Startup scene must remain inside the project directory.");
+    startupScene = *resolvedScene;
+    if (!std::filesystem::is_regular_file(startupScene, ec) || ec)
+        return Fail(error, "Configured startup scene does not exist.");
 
     AssetRegistry registry(*assetRoot);
     if (!registry.Scan()) return Fail(error, "Could not scan project assets.");
@@ -177,9 +179,10 @@ bool ProjectExporter::ExportWindows(
     }
 
     std::size_t copied = 0;
+    std::vector<std::string> runtimeLibraries;
     const auto runtimeDestination = output / "ember_runtime.exe";
     if (!CopyRegularFile(runtime, runtimeDestination, copied, error)) return false;
-    if (!CopyRuntimeLibraries(runtime.parent_path(), output, copied, error)) return false;
+    if (!CopyRuntimeLibraries(runtime.parent_path(), output, copied, runtimeLibraries, error)) return false;
 
     const auto projectDestination = output / project.filename();
     if (!CopyRegularFile(project, projectDestination, copied, error)) return false;
@@ -189,7 +192,7 @@ bool ProjectExporter::ExportWindows(
         return Fail(error, "Asset directory path is not project-relative.");
     if (!CopyDirectoryTree(*assetRoot, output / assetRelative, copied, error)) return false;
 
-    if (!startupScene.empty() && !IsWithin(startupScene, *assetRoot))
+    if (!IsWithin(startupScene, *assetRoot))
     {
         const auto sceneRelative = startupScene.lexically_relative(projectRoot);
         if (sceneRelative.empty() || sceneRelative.is_absolute() ||
@@ -201,8 +204,10 @@ bool ProjectExporter::ExportWindows(
         {"format_version", 1},
         {"platform", "windows-x64"},
         {"runtime", "ember_runtime.exe"},
+        {"runtime_dependencies", runtimeLibraries},
         {"project", PathToUtf8(project.filename())},
         {"project_name", configuration->name},
+        {"startup_scene", PathToUtf8(startupScene.lexically_relative(projectRoot))},
         {"copied_files", copied}
     };
     const auto manifestText = manifest.dump(4) + "\n";
