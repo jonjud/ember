@@ -880,13 +880,13 @@ void EditorApplication::DrawSceneHierarchy()
                 m_selectedEntity = m_entitySelection.Primary();
             }
 
-            if (ImGui::BeginDragDropSource())
+            if (!m_isPlaying && ImGui::BeginDragDropSource())
             {
                 ImGui::SetDragDropPayload("EMBER_ENTITY_ID", &id, sizeof(id));
                 ImGui::TextUnformatted(entity->GetName().c_str());
                 ImGui::EndDragDropSource();
             }
-            if (ImGui::BeginDragDropTarget())
+            if (!m_isPlaying && ImGui::BeginDragDropTarget())
             {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EMBER_ENTITY_ID"))
                 {
