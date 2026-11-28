@@ -794,8 +794,10 @@ void EditorApplication::DrawMenuBar()
     {
         if (ImGui::MenuItem("Create Empty Entity")) CreateEntity();
         ImGui::Separator();
-        ImGui::BeginDisabled(m_isPlaying || m_entitySelection.Empty());
+        ImGui::BeginDisabled(m_isPlaying || m_scene.IsEmpty());
         if (ImGui::MenuItem("Select All", "Ctrl+A")) SelectAllEntities();
+        ImGui::EndDisabled();
+        ImGui::BeginDisabled(m_isPlaying || m_entitySelection.Empty());
         if (ImGui::MenuItem("Duplicate Selected", "Ctrl+D")) DuplicateSelectedEntity();
         if (ImGui::MenuItem("Delete Selected", "Delete")) DeleteSelectedEntity();
         ImGui::EndDisabled();

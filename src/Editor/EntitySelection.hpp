@@ -3,6 +3,7 @@
 #include "Engine/Scene/Entity.hpp"
 
 #include <algorithm>
+#include <iterator>
 #include <vector>
 
 namespace ember
