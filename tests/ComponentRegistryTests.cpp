@@ -6,6 +6,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <stdexcept>
 #include <vector>
 
 namespace
@@ -133,6 +134,39 @@ int main()
           !ember::editor::ApplyComponentPropertyAtomically(multiComponents, *editableValue, "invalid") &&
           first.value == 77 && second.value == 77,
           "Multi-edit rejects invalid values without partially changing components");
+
+    first.value = 10;
+    second.value = 20;
+    auto failingProperty = *editableValue;
+    int failingSetterCalls = 0;
+    failingProperty.set = [&failingSetterCalls](ember::Component& component,
+        const nlohmann::json& value) {
+        auto& target = static_cast<MarkerComponent&>(component);
+        target.value = value.get<int>();
+        ++failingSetterCalls;
+        return failingSetterCalls != 4; // Fail after mutating the second live component.
+    };
+    Check(!ember::editor::ApplyComponentPropertyAtomically(
+        multiComponents, failingProperty, 99) &&
+        first.value == 10 && second.value == 20,
+        "Multi-edit rolls back the component whose setter mutates before returning failure");
+
+    first.value = 30;
+    second.value = 40;
+    failingSetterCalls = 0;
+    failingProperty.set = [&failingSetterCalls](ember::Component& component,
+        const nlohmann::json& value) {
+        auto& target = static_cast<MarkerComponent&>(component);
+        target.value = value.get<int>();
+        ++failingSetterCalls;
+        if (failingSetterCalls == 4)
+            throw std::runtime_error("simulated setter failure");
+        return true;
+    };
+    Check(!ember::editor::ApplyComponentPropertyAtomically(
+        multiComponents, failingProperty, 123) &&
+        first.value == 30 && second.value == 40,
+        "Multi-edit rolls back partial changes when a live property setter throws");
 
     const auto* markerProperties = registry.FindProperties(source);
     Check(markerProperties != nullptr && markerProperties->size() == 4,

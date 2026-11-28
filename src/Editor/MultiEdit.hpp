@@ -28,29 +28,66 @@ namespace ember::editor
 
     std::vector<std::unique_ptr<Component>> validationCopies;
     std::vector<nlohmann::json> previousValues;
-    validationCopies.reserve(components.size());
-    previousValues.reserve(components.size());
-
-    for (Component* component : components)
+    try
     {
-        if (component == nullptr) return false;
-        auto copy = component->Clone();
-        if (!copy || !property.set(*copy, value)) return false;
-        previousValues.push_back(property.get(*component));
-        validationCopies.push_back(std::move(copy));
+        validationCopies.reserve(components.size());
+        previousValues.reserve(components.size());
+
+        for (Component* component : components)
+        {
+            if (component == nullptr) return false;
+            auto copy = component->Clone();
+            if (!copy || !property.set(*copy, value)) return false;
+            previousValues.push_back(property.get(*component));
+            validationCopies.push_back(std::move(copy));
+        }
+    }
+    catch (...)
+    {
+        // Cloning, getters and validation setters run before live mutation.
+        return false;
     }
 
-    std::size_t applied = 0;
-    for (; applied < components.size(); ++applied)
+    std::size_t attempted = 0;
+    try
     {
-        if (!property.set(*components[applied], value)) break;
+        for (; attempted < components.size(); ++attempted)
+        {
+            if (!property.set(*components[attempted], value))
+            {
+                // A setter may mutate before reporting failure, so include the
+                // failing component in the rollback range.
+                ++attempted;
+                break;
+            }
+        }
     }
-    if (applied == components.size()) return true;
-
-    while (applied > 0)
+    catch (...)
     {
-        --applied;
-        (void)property.set(*components[applied], previousValues[applied]);
+        // The throwing setter may also have partially changed its component.
+        ++attempted;
+    }
+    if (attempted == components.size() &&
+        std::all_of(components.begin(), components.end(),
+            [&property, &value](Component* component)
+            {
+                return property.get(*component) == value;
+            }))
+        return true;
+
+    while (attempted > 0)
+    {
+        --attempted;
+        try
+        {
+            (void)property.set(*components[attempted], previousValues[attempted]);
+        }
+        catch (...)
+        {
+            // Continue restoring earlier components even if one rollback setter
+            // itself fails. Built-in registry setters are non-throwing in normal
+            // operation; custom descriptors should support restoring old values.
+        }
     }
     return false;
 }
