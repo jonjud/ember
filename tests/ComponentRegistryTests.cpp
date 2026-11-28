@@ -187,6 +187,18 @@ int main()
     Check(ember::editor::RemoveComponentFromEntities(selectedEntities, registry, "example.marker") &&
         firstEntity.GetComponents().empty() && secondEntity.GetComponents().empty(),
         "Multi-edit removes a registered Component from every selected Entity");
+    (void)firstEntity.AddComponent<MarkerComponent>();
+    (void)secondEntity.AddComponent<MarkerComponent>();
+    multiScene.Start();
+    Check(!ember::editor::RemoveComponentFromEntities(
+        selectedEntities, registry, "example.marker") &&
+        firstEntity.GetComponents().size() == 1 && secondEntity.GetComponents().size() == 1,
+        "Multi-edit refuses removal from a running Scene without partial mutation");
+    Check(!ember::editor::AddComponentToEntities(
+        selectedEntities, registry, "example.other") &&
+        firstEntity.GetComponents().size() == 1 && secondEntity.GetComponents().size() == 1,
+        "Multi-edit refuses component addition to a running Scene");
+    multiScene.Stop();
 
     Check(registry.Register<MigratingComponent>("example.migrating", "Migrating",
         [](const ember::Component& component) -> nlohmann::json {
