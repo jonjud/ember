@@ -81,6 +81,7 @@ private:
     void ApplyPendingSceneChange();
     [[nodiscard]] bool LoadSceneFromPath(const std::filesystem::path& path);
     void MarkSceneDirty();
+    void CommitViewportTransformHistory();
     void ResetSceneHistory();
     void UndoScene();
     void RedoScene();
@@ -174,6 +175,7 @@ private:
     float m_scaleSnap = 0.1F;
     bool m_draggingRotationGizmo = false;
     bool m_draggingScaleGizmo = false;
+    bool m_viewportTransformChanged = false;
     float m_dragStartEntityRotation = 0.0F;
     float m_dragStartMouseAngle = 0.0F;
     Vector2 m_dragStartEntityScale{1.0F, 1.0F};

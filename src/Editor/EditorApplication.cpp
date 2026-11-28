@@ -2638,6 +2638,7 @@ void EditorApplication::DrawViewport()
                 }
             }
 
+            CommitViewportTransformHistory();
             m_dragEntityId = 0;
             m_draggingGizmoAxis = false;
             m_draggingRotationGizmo = false;
@@ -2786,7 +2787,8 @@ void EditorApplication::DrawViewport()
                     current.scale.x != m_dragStartEntityScale.x ||
                     current.scale.y != m_dragStartEntityScale.y))
                 {
-                    MarkSceneDirty();
+                    m_viewportTransformChanged = true;
+                    m_sceneDirty = true;
                 }
             }
             else
@@ -2795,6 +2797,7 @@ void EditorApplication::DrawViewport()
                 m_draggingGizmoAxis = false;
                 m_draggingRotationGizmo = false;
                 m_draggingScaleGizmo = false;
+                CommitViewportTransformHistory();
             }
         }
 
@@ -2804,6 +2807,7 @@ void EditorApplication::DrawViewport()
             m_draggingGizmoAxis = false;
             m_draggingRotationGizmo = false;
             m_draggingScaleGizmo = false;
+            CommitViewportTransformHistory();
         }
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -3614,6 +3618,13 @@ void EditorApplication::DrawUnsavedScriptExitModal()
         }
         ImGui::EndPopup();
     }
+}
+
+void EditorApplication::CommitViewportTransformHistory()
+{
+    if (!m_viewportTransformChanged) return;
+    m_viewportTransformChanged = false;
+    MarkSceneDirty();
 }
 
 void EditorApplication::MarkSceneDirty()
