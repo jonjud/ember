@@ -121,28 +121,38 @@ bool EditorApplication::Initialize()
 {
     m_logger.AddSink(std::make_shared<ConsoleLogSink>());
 
-    std::error_code logDirectoryError;
-    const auto workingDirectory = std::filesystem::current_path(logDirectoryError);
-    if (!logDirectoryError)
+    char* preferencePath = SDL_GetPrefPath("EMBER", "EMBER");
+    if (preferencePath != nullptr)
     {
-        const auto logDirectory = workingDirectory / "logs";
+        const std::filesystem::path logDirectory =
+            std::filesystem::u8path(preferencePath) / "logs";
+        SDL_free(preferencePath);
+        std::error_code logDirectoryError;
         std::filesystem::create_directories(logDirectory, logDirectoryError);
         if (!logDirectoryError)
         {
-            auto fileSink = std::make_shared<FileLogSink>(logDirectory / "ember-editor.log");
-            if (fileSink->IsOpen())
-                m_logger.AddSink(std::move(fileSink));
+            auto editorFileSink = std::make_shared<FileLogSink>(
+                logDirectory / "ember-editor.log");
+            if (editorFileSink->IsOpen())
+                m_logger.AddSink(std::move(editorFileSink));
             else
-                m_logger.Warning("Logging", "Could not open logs/ember-editor.log; console logging remains active");
+                m_logger.Warning("Logging", "Could not open the Editor log file; console logging remains active");
+
+            auto runtimeFileSink = std::make_shared<FileLogSink>(
+                logDirectory / "ember-runtime.log");
+            if (runtimeFileSink->IsOpen())
+                m_runtimeLogger.AddSink(std::move(runtimeFileSink));
+            else
+                m_logger.Warning("Logging", "Could not open the game-runtime log file");
         }
         else
         {
-            m_logger.Warning("Logging", "Could not create the logs directory; console logging remains active");
+            m_logger.Warning("Logging", "Could not create the per-user log directory; console logging remains active");
         }
     }
     else
     {
-        m_logger.Warning("Logging", "Could not resolve the working directory; console logging remains active");
+        m_logger.Warning("Logging", "Could not resolve the per-user log directory; console logging remains active");
     }
 
     m_logger.Info("Editor", "Initializing EMBER Editor");
@@ -2543,7 +2553,7 @@ void EditorApplication::StartPlayMode()
     m_uiInputRouter.Reset();
     m_playScene = m_scene.Clone();
     m_scriptRuntime = std::make_unique<LuaScriptRuntime>(m_assetRegistry);
-    m_playScene.SetLogger(&m_logger);
+    m_playScene.SetLogger(&m_runtimeLogger);
     m_playScene.Start(&m_audio, &m_assetRegistry, m_scriptRuntime.get());
     m_isPlaying = true;
     m_logger.Info("Scene", "Play Mode started");

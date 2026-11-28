@@ -88,6 +88,7 @@ private:
     SDL_Window* m_window = nullptr;
     AudioEngine m_audio;
     Logger m_logger{2048};
+    Logger m_runtimeLogger{2048};
     char m_logTextFilter[128]{};
     int m_logLevelFilter = 0;
     AudioSoundHandle m_audioPreviewSound{};

@@ -54,13 +54,16 @@ public:
 class FileLogSink final : public LogSink
 {
 public:
-    explicit FileLogSink(const std::filesystem::path& path);
+    explicit FileLogSink(const std::filesystem::path& path, std::uintmax_t maxBytes = 5U * 1024U * 1024U);
     [[nodiscard]] bool IsOpen() const noexcept;
     void Flush();
     void Write(const LogEntry& entry) override;
 
 private:
+    void RotateIfNeededLocked();
     mutable std::mutex m_mutex;
+    std::filesystem::path m_path;
+    std::uintmax_t m_maxBytes;
     std::ofstream m_stream;
 };
 

@@ -109,6 +109,34 @@ void FileSinkTest() {
     Check(!error, "remove test log file");
     std::cerr << "FileSink: completed" << std::endl;
 }
+void FileSinkRotationTest() {
+    std::error_code error;
+    const auto directory = std::filesystem::temp_directory_path(error);
+    Check(!error, "resolve temp directory for rotation");
+    if (error) return;
+    const auto path = directory / "ember_logging_rotation_tests.log";
+    const auto backup = std::filesystem::path(path.string() + ".1");
+    std::filesystem::remove(path, error); error.clear();
+    std::filesystem::remove(backup, error); error.clear();
+    {
+        auto sink = std::make_shared<ember::FileLogSink>(path, 1);
+        Check(sink->IsOpen(), "rotation sink opens");
+        ember::Logger logger(4);
+        logger.AddSink(sink);
+        logger.Info("Rotation", "first entry");
+        logger.Info("Rotation", "second entry");
+        sink->Flush();
+    }
+    std::ifstream current(path);
+    std::ifstream previous(backup);
+    const std::string currentText((std::istreambuf_iterator<char>(current)), {});
+    const std::string previousText((std::istreambuf_iterator<char>(previous)), {});
+    Check(currentText.find("second entry") != std::string::npos, "new log remains current after rotation");
+    Check(previousText.find("first entry") != std::string::npos, "previous log is retained as one backup");
+    current.close(); previous.close();
+    std::filesystem::remove(path, error); error.clear();
+    std::filesystem::remove(backup, error);
+}
 void ZeroCapacitySinkTest() {
     ember::Logger disabled(0);
     auto disabledSink = std::make_shared<RecordingSink>();
@@ -155,6 +183,7 @@ int main(int argc, char** argv) {
     else if (stage == "recording") RecordingSinkTest();
     else if (stage == "file") FileSinkTest();
     else if (stage == "zero-capacity") ZeroCapacitySinkTest();
+    else if (stage == "rotation") FileSinkRotationTest();
     else if (stage == "concurrency") Concurrency();
     else return EXIT_FAILURE;
     if (failures) { std::cerr << failures << " logger test(s) failed\n"; return EXIT_FAILURE; }

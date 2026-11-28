@@ -25,8 +25,8 @@ void ConsoleLogSink::Write(const LogEntry& entry)
     std::clog << FormatLogEntry(entry) << '\n';
 }
 
-FileLogSink::FileLogSink(const std::filesystem::path& path)
-    : m_stream(path, std::ios::out | std::ios::app)
+FileLogSink::FileLogSink(const std::filesystem::path& path, std::uintmax_t maxBytes)
+    : m_path(path), m_maxBytes(maxBytes), m_stream(path, std::ios::out | std::ios::app)
 {
 }
 
@@ -42,9 +42,29 @@ void FileLogSink::Flush()
     if (m_stream.is_open()) m_stream.flush();
 }
 
+void FileLogSink::RotateIfNeededLocked()
+{
+    if (m_maxBytes == 0 || !m_stream.is_open()) return;
+    std::error_code error;
+    const auto size = std::filesystem::file_size(m_path, error);
+    if (error || size < m_maxBytes) return;
+
+    m_stream.close();
+    const auto backupPath = std::filesystem::path(m_path.string() + ".1");
+    error.clear();
+    std::filesystem::remove(backupPath, error);
+    if (error) { m_stream.open(m_path, std::ios::out | std::ios::app); return; }
+    error.clear();
+    std::filesystem::rename(m_path, backupPath, error);
+    if (error) { m_stream.open(m_path, std::ios::out | std::ios::app); return; }
+    m_stream.open(m_path, std::ios::out | std::ios::trunc);
+}
+
 void FileLogSink::Write(const LogEntry& entry)
 {
     std::lock_guard lock(m_mutex);
+    if (!m_stream.is_open() || !m_stream.good()) return;
+    RotateIfNeededLocked();
     if (!m_stream.is_open() || !m_stream.good()) return;
     m_stream << FormatLogEntry(entry) << '\n';
     m_stream.flush();
