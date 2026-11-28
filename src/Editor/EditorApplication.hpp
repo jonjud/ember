@@ -12,6 +12,7 @@
 #include "Engine/Project/ProjectConfiguration.hpp"
 #include "Engine/Scripting/ScriptRuntime.hpp"
 
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -49,6 +50,9 @@ private:
     void DrawInputSettings();
     void DrawProjectSettings();
     void DrawScriptDiagnostics();
+    void DrawScriptSourceEditor();
+    void OpenSelectedScriptSource();
+    void SaveScriptSource();
     void DrawViewport();
     void DrawUnsavedChangesModal();
     void CreateEntity();
@@ -119,6 +123,11 @@ private:
     bool m_snapTransforms = false;
     bool m_showPhysicsDebugOverlay = false;
     bool m_showScriptDiagnostics = true;
+    bool m_showScriptSourceEditor = false;
+    bool m_scriptSourceDirty = false;
+    std::string m_scriptSourceAssetId;
+    std::filesystem::path m_scriptSourcePath;
+    std::array<char, 65536> m_scriptSourceBuffer{};
     float m_positionSnap = 16.0F;
     float m_rotationSnapDegrees = 15.0F;
     float m_scaleSnap = 0.1F;

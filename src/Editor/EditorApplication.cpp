@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <vector>
@@ -388,6 +389,7 @@ void EditorApplication::Render()
     DrawInputSettings();
     DrawProjectSettings();
     DrawScriptDiagnostics();
+    DrawScriptSourceEditor();
     DrawViewport();
     DrawUnsavedChangesModal();
 
@@ -447,6 +449,7 @@ void EditorApplication::DrawMenuBar()
     if (ImGui::BeginMenu("Window"))
     {
         ImGui::MenuItem("Script Diagnostics", nullptr, &m_showScriptDiagnostics);
+        ImGui::MenuItem("Script Source Editor", nullptr, &m_showScriptSourceEditor);
         ImGui::EndMenu();
     }
 
@@ -1266,6 +1269,18 @@ void EditorApplication::DrawAssetBrowser()
                 ImGui::TextDisabled("%s", selected->scriptLanguage == "lua"
                     ? "Runtime backend: Lua 5.5.1 (available in Play Mode)"
                     : "Runtime backend: no matching backend is currently available");
+            }
+
+            if (selected->type == AssetType::Script)
+            {
+                ImGui::SeparatorText("Script Actions");
+                ImGui::BeginDisabled(m_isPlaying);
+                if (ImGui::Button("Open in Script Source Editor"))
+                {
+                    OpenSelectedScriptSource();
+                }
+                ImGui::EndDisabled();
+                ImGui::TextDisabled("Edit text-based Script assets directly in the Editor (64 KiB limit).");
             }
 
             if (selected->type == AssetType::Scene)
@@ -2642,6 +2657,153 @@ void EditorApplication::LoadStartupScene()
         m_projectConfiguration.startupScene.generic_string().c_str());
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Startup scene loaded: %.190s", startupScene->string().c_str());
+}
+
+void EditorApplication::OpenSelectedScriptSource()
+{
+    const AssetMetadata* selected = m_assetRegistry.Find(m_selectedAssetId);
+    if (selected == nullptr || selected->type != AssetType::Script)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Select a Script asset first");
+        return;
+    }
+
+    if (m_scriptSourceDirty && m_scriptSourceAssetId != selected->assetId)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Save the current Script before opening another asset");
+        return;
+    }
+    if (m_scriptSourceAssetId == selected->assetId && !m_scriptSourcePath.empty())
+    {
+        m_showScriptSourceEditor = true;
+        return;
+    }
+
+    const auto resolved = m_assetRegistry.GetDirectory().Resolve(selected->source);
+    if (!resolved)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script source path is invalid or outside the asset directory");
+        return;
+    }
+
+    std::error_code filesystemError;
+    const auto sourceSize = std::filesystem::file_size(*resolved, filesystemError);
+    if (filesystemError || sourceSize > m_scriptSourceBuffer.size() - 1)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script source is unavailable or exceeds the 64 KiB Editor limit");
+        return;
+    }
+
+    std::ifstream source(*resolved, std::ios::binary);
+    if (!source)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Could not open Script source");
+        return;
+    }
+    source.read(m_scriptSourceBuffer.data(), static_cast<std::streamsize>(sourceSize));
+    if (source.gcount() != static_cast<std::streamsize>(sourceSize))
+    {
+        m_scriptSourceBuffer.fill('\0');
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Could not read complete Script source");
+        return;
+    }
+    m_scriptSourceBuffer[static_cast<std::size_t>(sourceSize)] = '\0';
+    m_scriptSourceAssetId = selected->assetId;
+    m_scriptSourcePath = selected->source;
+    m_scriptSourceDirty = false;
+    m_showScriptSourceEditor = true;
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+        "Opened Script source: %.180s", selected->assetId.c_str());
+}
+
+void EditorApplication::SaveScriptSource()
+{
+    if (m_scriptSourceAssetId.empty() || m_scriptSourcePath.empty())
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "No Script source is open");
+        return;
+    }
+    if (m_isPlaying)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Stop Play Mode before saving Script source");
+        return;
+    }
+
+    const AssetMetadata* metadata = m_assetRegistry.Find(m_scriptSourceAssetId);
+    if (metadata == nullptr || metadata->type != AssetType::Script ||
+        metadata->source != m_scriptSourcePath)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script asset changed or is no longer indexed; refresh before saving");
+        return;
+    }
+
+    const auto resolved = m_assetRegistry.GetDirectory().Resolve(m_scriptSourcePath);
+    if (!resolved)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script source path is invalid or outside the asset directory");
+        return;
+    }
+
+    const std::size_t sourceLength = std::char_traits<char>::length(m_scriptSourceBuffer.data());
+    std::ofstream destination(*resolved, std::ios::binary | std::ios::trunc);
+    if (!destination)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Could not write Script source");
+        return;
+    }
+    destination.write(m_scriptSourceBuffer.data(), static_cast<std::streamsize>(sourceLength));
+    destination.flush();
+    if (!destination)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Script source write failed");
+        return;
+    }
+
+    m_scriptSourceDirty = false;
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+        "Saved Script source: %.180s", m_scriptSourceAssetId.c_str());
+}
+
+void EditorApplication::DrawScriptSourceEditor()
+{
+    if (!m_showScriptSourceEditor) return;
+    if (ImGui::Begin("Script Source Editor", &m_showScriptSourceEditor))
+    {
+        if (m_scriptSourceAssetId.empty())
+        {
+            ImGui::TextDisabled("Choose a Script asset in Asset Browser and open it here.");
+        }
+        else
+        {
+            ImGui::Text("%s%s", m_scriptSourceAssetId.c_str(),
+                m_scriptSourceDirty ? " *" : "");
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", m_scriptSourcePath.generic_string().c_str());
+            ImGui::BeginDisabled(!m_scriptSourceDirty || m_isPlaying);
+            if (ImGui::Button("Save"))
+                SaveScriptSource();
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            ImGui::TextDisabled("Text source only | 64 KiB max");
+            if (ImGui::InputTextMultiline("##ScriptSource",
+                m_scriptSourceBuffer.data(), m_scriptSourceBuffer.size(),
+                ImVec2(-1.0F, 420.0F), ImGuiInputTextFlags_AllowTabInput))
+            {
+                m_scriptSourceDirty = true;
+            }
+            if (m_scriptSourceDirty)
+                ImGui::TextColored(ImVec4(1.0F, 0.75F, 0.25F, 1.0F),
+                    "Unsaved changes — save before opening another Script asset.");
+            if (m_isPlaying)
+                ImGui::TextDisabled("Stop Play Mode to edit or save source files.");
+        }
+    }
+    ImGui::End();
 }
 
 void EditorApplication::RefreshAssets()
