@@ -2787,6 +2787,52 @@ void EditorApplication::ReloadScriptSourceFromDisk()
         "Reloaded Script source from disk: %.160s", m_scriptSourceAssetId.c_str());
 }
 
+void EditorApplication::ValidateScriptSource()
+{
+    if (m_scriptSourceAssetId.empty() || m_scriptSourcePath.empty())
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage), "No Script source is open");
+        return;
+    }
+    const AssetMetadata* metadata = m_assetRegistry.Find(m_scriptSourceAssetId);
+    if (metadata == nullptr || metadata->type != AssetType::Script ||
+        metadata->source != m_scriptSourcePath)
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script asset changed or is no longer indexed; refresh before validating");
+        return;
+    }
+    if (metadata->scriptLanguage != "lua")
+    {
+        m_hasScriptValidationResult = false;
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "No validator is available for Script language: %.150s",
+            metadata->scriptLanguage.c_str());
+        return;
+    }
+
+    const std::size_t sourceLength =
+        std::char_traits<char>::length(m_scriptSourceBuffer.data());
+    m_scriptValidationSucceeded = LuaScriptRuntime::ValidateSource(
+        std::string_view(m_scriptSourceBuffer.data(), sourceLength),
+        m_scriptSourcePath.generic_string(), &m_scriptValidationMessage,
+        &m_scriptValidationLine, &m_scriptValidationColumn);
+    m_hasScriptValidationResult = true;
+    if (m_scriptValidationSucceeded)
+    {
+        m_scriptValidationLine = 0;
+        m_scriptValidationColumn = 0;
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script syntax is valid: %.170s", m_scriptSourceAssetId.c_str());
+    }
+    else
+    {
+        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
+            "Script syntax error at line %zu, column %zu",
+            m_scriptValidationLine, m_scriptValidationColumn);
+    }
+}
+
 void EditorApplication::SaveScriptSource()
 {
     if (m_scriptSourceAssetId.empty() || m_scriptSourcePath.empty())
@@ -2876,6 +2922,11 @@ void EditorApplication::DrawScriptSourceEditor()
                 SaveScriptSource();
             ImGui::EndDisabled();
             ImGui::SameLine();
+            ImGui::BeginDisabled(m_isPlaying);
+            if (ImGui::Button("Validate"))
+                ValidateScriptSource();
+            ImGui::EndDisabled();
+            ImGui::SameLine();
             ImGui::BeginDisabled(m_scriptSourceDirty);
             if (ImGui::Button("Reload from Disk"))
                 ReloadScriptSourceFromDisk();
@@ -2887,6 +2938,23 @@ void EditorApplication::DrawScriptSourceEditor()
                 ImVec2(-1.0F, 420.0F), ImGuiInputTextFlags_AllowTabInput))
             {
                 m_scriptSourceDirty = true;
+                m_hasScriptValidationResult = false;
+                m_scriptValidationMessage.clear();
+            }
+            if (m_hasScriptValidationResult)
+            {
+                if (m_scriptValidationSucceeded)
+                {
+                    ImGui::TextColored(ImVec4(0.35F, 0.85F, 0.45F, 1.0F),
+                        "Syntax valid — Lua source parsed successfully.");
+                }
+                else
+                {
+                    ImGui::TextColored(ImVec4(1.0F, 0.35F, 0.30F, 1.0F),
+                        "Syntax error at line %zu, column %zu",
+                        m_scriptValidationLine, m_scriptValidationColumn);
+                    ImGui::TextWrapped("%s", m_scriptValidationMessage.c_str());
+                }
             }
             if (m_scriptSourceDirty)
             {

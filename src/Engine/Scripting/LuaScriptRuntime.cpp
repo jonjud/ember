@@ -41,6 +41,68 @@ std::string LuaError(lua_State* state)
     return message != nullptr ? std::string(message) : std::string("Unknown Lua error.");
 }
 
+void ParseLuaDiagnosticLocation(const std::string& message, std::string_view source,
+    std::size_t* line, std::size_t* column)
+{
+    std::size_t parsedLine = 0;
+    const std::size_t locationEnd = message.find(": ");
+    if (locationEnd != std::string::npos && locationEnd > 0)
+    {
+        const std::size_t separator = message.rfind(':', locationEnd - 1);
+        if (separator != std::string::npos && separator + 1 < locationEnd)
+        {
+            try
+            {
+                parsedLine = static_cast<std::size_t>(
+                    std::stoull(message.substr(separator + 1, locationEnd - separator - 1)));
+            }
+            catch (...)
+            {
+                parsedLine = 0;
+            }
+        }
+    }
+
+    std::size_t parsedColumn = 1;
+    if (parsedLine > 0)
+    {
+        std::size_t lineStart = 0;
+        for (std::size_t current = 1; current < parsedLine; ++current)
+        {
+            const std::size_t newline = source.find('\\n', lineStart);
+            if (newline == std::string_view::npos)
+            {
+                lineStart = source.size();
+                break;
+            }
+            lineStart = newline + 1;
+        }
+        const std::size_t lineEnd = source.find('\\n', lineStart);
+        const std::string_view sourceLine = source.substr(lineStart,
+            (lineEnd == std::string_view::npos ? source.size() : lineEnd) - lineStart);
+        const std::size_t near = message.rfind("near '");
+        if (near != std::string::npos)
+        {
+            const std::size_t tokenStart = near + 6;
+            const std::size_t tokenEnd = message.find('\'', tokenStart);
+            if (tokenEnd != std::string::npos)
+            {
+                const std::string token = message.substr(tokenStart, tokenEnd - tokenStart);
+                if (token == "<eof>")
+                    parsedColumn = sourceLine.size() + 1;
+                else if (!token.empty())
+                {
+                    const std::size_t tokenPosition = sourceLine.rfind(token);
+                    parsedColumn = tokenPosition == std::string_view::npos
+                        ? 1 : tokenPosition + 1;
+                }
+            }
+        }
+    }
+    if (line != nullptr) *line = parsedLine;
+    if (column != nullptr) *column = parsedColumn;
+}
+
 void OpenSafeLibrary(lua_State* state, const char* name, lua_CFunction openFunction)
 {
     luaL_requiref(state, name, openFunction, 1);
@@ -340,6 +402,36 @@ LuaScriptRuntime::LuaScriptRuntime(const AssetRegistry& assets)
 LuaScriptRuntime::~LuaScriptRuntime()
 {
     Shutdown();
+}
+
+bool LuaScriptRuntime::ValidateSource(std::string_view source, std::string_view chunkName,
+    std::string* error, std::size_t* errorLine, std::size_t* errorColumn)
+{
+    if (errorLine != nullptr) *errorLine = 0;
+    if (errorColumn != nullptr) *errorColumn = 0;
+    if (source.size() > kMaximumScriptBytes)
+        return Fail(error, "Script source exceeds the 1 MiB validation limit.");
+
+    Instance validator;
+    const unsigned hashSeed = std::random_device{}();
+    lua_State* state = lua_newstate(&Instance::Allocate, &validator, hashSeed);
+    if (state == nullptr)
+        return Fail(error, "Lua could not allocate a validation VM within its memory budget.");
+
+    const std::string chunkNameString(chunkName);
+    const int result = luaL_loadbufferx(state, source.data(), source.size(),
+        chunkNameString.c_str(), "t");
+    if (result != LUA_OK)
+    {
+        const std::string message = LuaError(state);
+        ParseLuaDiagnosticLocation(message, source, errorLine, errorColumn);
+        lua_close(state);
+        return Fail(error, message);
+    }
+
+    lua_close(state);
+    if (error != nullptr) error->clear();
+    return true;
 }
 
 bool LuaScriptRuntime::Initialize(std::string* error)

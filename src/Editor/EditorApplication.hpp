@@ -54,6 +54,7 @@ private:
     void OpenSelectedScriptSource();
     void SaveScriptSource();
     void ReloadScriptSourceFromDisk();
+    void ValidateScriptSource();
     void DrawViewport();
     void DrawUnsavedChangesModal();
     void CreateEntity();
@@ -129,6 +130,11 @@ private:
     bool m_allowScriptSourceClose = false;
     std::string m_scriptSourceAssetId;
     std::string m_scriptSourceOriginal;
+    std::string m_scriptValidationMessage;
+    std::size_t m_scriptValidationLine = 0;
+    std::size_t m_scriptValidationColumn = 0;
+    bool m_hasScriptValidationResult = false;
+    bool m_scriptValidationSucceeded = false;
     std::filesystem::path m_scriptSourcePath;
     std::array<char, 65536> m_scriptSourceBuffer{};
     float m_positionSnap = 16.0F;

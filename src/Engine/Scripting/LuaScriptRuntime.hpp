@@ -3,7 +3,9 @@
 #include "Engine/Resources/AssetRegistry.hpp"
 #include "Engine/Scripting/ScriptRuntime.hpp"
 
+#include <cstddef>
 #include <cstdint>
+#include <string_view>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -21,6 +23,9 @@ public:
     LuaScriptRuntime& operator=(const LuaScriptRuntime&) = delete;
 
     [[nodiscard]] bool Initialize(std::string* error = nullptr) override;
+    [[nodiscard]] static bool ValidateSource(std::string_view source,
+        std::string_view chunkName, std::string* error = nullptr,
+        std::size_t* errorLine = nullptr, std::size_t* errorColumn = nullptr);
     void Shutdown() noexcept override;
 
     [[nodiscard]] std::optional<ScriptInstanceHandle> CreateInstance(
