@@ -2727,6 +2727,8 @@ void EditorApplication::OpenSelectedScriptSource()
     m_scriptSourceAssetId = selected->assetId;
     m_scriptSourcePath = selected->source;
     m_scriptSourceDirty = false;
+    m_hasScriptValidationResult = false;
+    m_scriptValidationMessage.clear();
     m_showScriptSourceEditor = true;
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Opened Script source: %.180s", selected->assetId.c_str());
@@ -2783,6 +2785,8 @@ void EditorApplication::ReloadScriptSourceFromDisk()
     }
     m_scriptSourceBuffer[static_cast<std::size_t>(sourceSize)] = '\0';
     m_scriptSourceOriginal.assign(m_scriptSourceBuffer.data(), static_cast<std::size_t>(sourceSize));
+    m_hasScriptValidationResult = false;
+    m_scriptValidationMessage.clear();
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Reloaded Script source from disk: %.160s", m_scriptSourceAssetId.c_str());
 }
@@ -2963,6 +2967,8 @@ void EditorApplication::DrawScriptSourceEditor()
                 if (ImGui::Button("Discard Changes"))
                 {
                     m_scriptSourceDirty = false;
+                    m_hasScriptValidationResult = false;
+                    m_scriptValidationMessage.clear();
                     m_scriptSourceBuffer.fill('\0');
                     m_scriptSourceOriginal.clear();
                     m_scriptSourceAssetId.clear();

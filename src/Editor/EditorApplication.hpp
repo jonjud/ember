@@ -13,6 +13,7 @@
 #include "Engine/Scripting/ScriptRuntime.hpp"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
