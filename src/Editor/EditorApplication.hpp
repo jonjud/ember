@@ -48,6 +48,7 @@ private:
     void DrawAssetBrowser();
     void DrawInputSettings();
     void DrawProjectSettings();
+    void DrawScriptDiagnostics();
     void DrawViewport();
     void DrawUnsavedChangesModal();
     void CreateEntity();
@@ -117,6 +118,7 @@ private:
     int m_dragGizmoAxisIndex = 0;
     bool m_snapTransforms = false;
     bool m_showPhysicsDebugOverlay = false;
+    bool m_showScriptDiagnostics = true;
     float m_positionSnap = 16.0F;
     float m_rotationSnapDegrees = 15.0F;
     float m_scaleSnap = 0.1F;

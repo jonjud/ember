@@ -387,6 +387,7 @@ void EditorApplication::Render()
     DrawAssetBrowser();
     DrawInputSettings();
     DrawProjectSettings();
+    DrawScriptDiagnostics();
     DrawViewport();
     DrawUnsavedChangesModal();
 
@@ -440,6 +441,12 @@ void EditorApplication::DrawMenuBar()
     {
         if (!m_isPlaying && ImGui::MenuItem("Play", "F5")) StartPlayMode();
         if (m_isPlaying && ImGui::MenuItem("Stop", "Shift+F5")) StopPlayMode();
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Window"))
+    {
+        ImGui::MenuItem("Script Diagnostics", nullptr, &m_showScriptDiagnostics);
         ImGui::EndMenu();
     }
 
@@ -2334,6 +2341,45 @@ void EditorApplication::DrawViewport()
         const char* toolName = m_gizmoMode == 1 ? "Rotate" : (m_gizmoMode == 2 ? "Scale" : "Move");
         ImGui::TextDisabled("%zu entities | Active tool: %s | Drag the handles to edit the selected transform.",
             activeScene.GetEntityCount(), toolName);
+    }
+    ImGui::End();
+}
+
+void EditorApplication::DrawScriptDiagnostics()
+{
+    if (!m_showScriptDiagnostics) return;
+
+    ImGui::SetNextWindowSize(ImVec2(420.0F, 220.0F), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Script Diagnostics", &m_showScriptDiagnostics))
+    {
+        if (!m_isPlaying)
+        {
+            ImGui::TextDisabled("Start Play Mode to inspect script runtime diagnostics.");
+        }
+        else
+        {
+            const auto& diagnostics = m_playScene.GetScriptDiagnostics();
+            ImGui::Text("Runtime instances: %zu", m_playScene.GetScriptInstanceCount());
+            ImGui::SameLine();
+            ImGui::Text("Diagnostics: %zu", diagnostics.size());
+            ImGui::Separator();
+
+            if (diagnostics.empty())
+            {
+                ImGui::TextDisabled("No script diagnostics. All active scripts are healthy.");
+            }
+            else
+            {
+                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 150, 110, 255));
+                for (std::size_t index = 0; index < diagnostics.size(); ++index)
+                {
+                    ImGui::PushID(static_cast<int>(index));
+                    ImGui::BulletText("%s", diagnostics[index].c_str());
+                    ImGui::PopID();
+                }
+                ImGui::PopStyleColor();
+            }
+        }
     }
     ImGui::End();
 }
