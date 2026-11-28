@@ -32,7 +32,8 @@ int main()
     const auto output = root / "export";
     const auto projectFile = projectRoot / "demo.emberproject";
     const auto runtime = root / "ember_runtime.exe";
-    Write(runtime, "runtime-binary");\n    Write(root / "SDL3.dll", "sdl-runtime");
+    Write(runtime, "runtime-binary");
+    Write(root / "SDL3.dll", "sdl-runtime");
     Write(projectRoot / "assets" / "textures" / "hero.png", "fake-image");
     Write(projectRoot / "scenes" / "main.ember", "scene-data");
 
@@ -54,7 +55,8 @@ int main()
     ember::ProjectExportResult result;
     Check(ember::ProjectExporter::ExportWindows(projectFile, runtime, output, &result, &error),
         "export valid project");
-    Check(std::filesystem::exists(output / "ember_runtime.exe"), "runtime copied");\n    Check(std::filesystem::exists(output / "SDL3.dll"), "runtime DLL copied");
+    Check(std::filesystem::exists(output / "ember_runtime.exe"), "runtime copied");
+    Check(std::filesystem::exists(output / "SDL3.dll"), "runtime DLL copied");
     Check(std::filesystem::exists(output / "demo.emberproject"), "project file copied");
     Check(std::filesystem::exists(output / "assets" / "textures" / "hero.png"), "asset source copied");
     Check(std::filesystem::exists(output / "assets" / "textures" / "hero.png.emberasset"), "asset metadata copied");
