@@ -68,6 +68,8 @@ int main()
     auto& inactiveScript = inactive.AddComponent<ember::ScriptComponent>();
     inactiveScript.scriptAssetId = "scripts/inactive";
 
+    ember::Logger scriptLogger;
+    scene.SetLogger(&scriptLogger);
     MockScriptRuntime runtime;
     scene.Start(nullptr, nullptr, &runtime);
     Check(runtime.initialize == 1, "Scene initializes the supplied script runtime once");
@@ -91,6 +93,10 @@ int main()
         "Script diagnostics identify the owning Entity by name");
     Check(scene.GetScriptDiagnostics().front().find("scripts/player") != std::string::npos,
         "Script diagnostics identify the assigned Script asset");
+    const auto scriptLogs = scriptLogger.Snapshot();
+    Check(scriptLogs.size() == 1 && scriptLogs.front().category == "Scripting" &&
+        scriptLogs.front().level == ember::LogLevel::Error,
+        "Scene forwards script runtime diagnostics to the Engine Logger");
 
     scene.Stop();
     Check(runtime.destroys == 1 && runtime.shutdown == 1,

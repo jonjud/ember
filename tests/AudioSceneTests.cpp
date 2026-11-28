@@ -133,9 +133,16 @@ int main()
     auto& noEngineEntity = missingEngineScene.CreateEntity("No Engine");
     auto& noEngineSource = noEngineEntity.AddComponent<ember::AudioSource2D>();
     noEngineSource.audioAssetId = "audio-ambience";
+    ember::Logger audioLogger;
+    missingEngineScene.SetLogger(&audioLogger);
     missingEngineScene.Start(nullptr, &assets);
     assert(missingEngineScene.GetAudioSourceCount() == 0);
     assert(missingEngineScene.GetAudioDiagnostics().size() == 1);
+    const auto audioLogs = audioLogger.Snapshot();
+    assert(audioLogs.size() == 1 && audioLogs.front().category == "Audio" &&
+        audioLogs.front().level == ember::LogLevel::Warning);
+    missingEngineScene.Update(1.0F / 60.0F);
+    assert(audioLogger.Size() == 1);
     missingEngineScene.Stop();
 
     ember::Scene missingRegistryScene("Missing Asset Registry");

@@ -211,11 +211,20 @@ int main()
     ambiguous.AddComponent<ember::PhysicsBody2D>();
     ambiguous.AddComponent<ember::BoxCollider2D>();
     ambiguous.AddComponent<ember::CircleCollider2D>();
+    ember::Logger physicsLogger;
+    invalidScene.SetLogger(&physicsLogger);
     invalidScene.Start();
     Check(invalidScene.GetPhysicsBodyCount() == 0,
         "Scene skips colliders without a body and ambiguous dual-collider entities");
     Check(invalidScene.GetPhysicsDiagnostics().size() == 2,
         "Scene reports both invalid physics configurations");
+    const auto physicsLogs = physicsLogger.Snapshot();
+    Check(physicsLogs.size() == 2 && physicsLogs[0].category == "Physics" &&
+        physicsLogs[0].level == ember::LogLevel::Error && physicsLogs[1].category == "Physics",
+        "Scene forwards Physics diagnostics to the Engine Logger with Error severity");
+    invalidScene.Update(1.0F / 60.0F);
+    Check(physicsLogger.Size() == 2,
+        "Scene does not forward the same Physics diagnostics more than once");
     invalidScene.Stop();
 
     ember::Scene validationScene("Physics Validation Test");
