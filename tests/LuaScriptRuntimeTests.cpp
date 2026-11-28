@@ -34,6 +34,11 @@ int main()
         &validationError, &validationLine, &validationColumn) &&
         validationLine == 2 && validationColumn > 0,
         "Lua source validator reports syntax error line and column");
+    Check(!ember::LuaScriptRuntime::ValidateSource(
+        "function OnUpdate()\n  local value = 1\n", "incomplete.lua",
+        &validationError, &validationLine, &validationColumn) &&
+        validationLine >= 2 && validationColumn > 0,
+        "Lua source validator reports a useful location for near <eof> errors");
 
     const auto root = std::filesystem::temp_directory_path() / "ember_lua_script_runtime_tests";
     std::error_code filesystemError;
@@ -46,6 +51,8 @@ int main()
 function OnCreate()
     entity:set_position(10, 20)
     assert(string.dump == nil, "string.dump must be unavailable")
+    local ok = pcall(setmetatable, {}, { __gc = function() end })
+    assert(not ok, "script metatables must not install __gc finalizers")
     local textChunk = load("return 42", "text-only", "b")
     assert(textChunk ~= nil and textChunk() == 42, "load must force text mode")
     local binaryChunk = load("\27Lua")

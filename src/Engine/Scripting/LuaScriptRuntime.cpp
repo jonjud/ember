@@ -80,22 +80,28 @@ void ParseLuaDiagnosticLocation(const std::string& message, std::string_view sou
         const std::size_t lineEnd = source.find('\n', lineStart);
         const std::string_view sourceLine = source.substr(lineStart,
             (lineEnd == std::string_view::npos ? source.size() : lineEnd) - lineStart);
-        const std::size_t near = message.rfind("near '");
+        const std::size_t near = message.rfind("near ");
         if (near != std::string::npos)
         {
-            const std::size_t tokenStart = near + 6;
-            const std::size_t tokenEnd = message.find('\'', tokenStart);
-            if (tokenEnd != std::string::npos)
+            std::string token = message.substr(near + 5);
+            if (!token.empty() && token.front() == '\'')
             {
-                const std::string token = message.substr(tokenStart, tokenEnd - tokenStart);
-                if (token == "<eof>")
-                    parsedColumn = sourceLine.size() + 1;
-                else if (!token.empty())
-                {
-                    const std::size_t tokenPosition = sourceLine.rfind(token);
-                    parsedColumn = tokenPosition == std::string_view::npos
-                        ? 1 : tokenPosition + 1;
-                }
+                token.erase(token.begin());
+                const std::size_t quote = token.find('\'');
+                if (quote != std::string::npos) token.resize(quote);
+            }
+            else
+            {
+                const std::size_t end = token.find_first_of(" .");
+                if (end != std::string::npos) token.resize(end);
+            }
+            if (token == "<eof>")
+                parsedColumn = sourceLine.size() + 1;
+            else if (!token.empty())
+            {
+                const std::size_t tokenPosition = sourceLine.rfind(token);
+                parsedColumn = tokenPosition == std::string_view::npos
+                    ? 1 : tokenPosition + 1;
             }
         }
     }
@@ -121,6 +127,7 @@ struct LuaScriptRuntime::Instance
     int originalPCallRef = LUA_NOREF;
     int originalXPCallRef = LUA_NOREF;
     int originalLoadRef = LUA_NOREF;
+    int originalSetMetatableRef = LUA_NOREF;
 
     static void* Allocate(void* userData, void* pointer, std::size_t oldSize, std::size_t newSize)
     {
@@ -199,6 +206,26 @@ struct LuaScriptRuntime::Instance
         return lua_gettop(state);
     }
 
+    static int SafeSetMetatable(lua_State* state)
+    {
+        auto* instance = *static_cast<Instance**>(lua_getextraspace(state));
+        if (instance == nullptr)
+            return luaL_error(state, "Lua runtime context is unavailable.");
+        if (lua_istable(state, 2))
+        {
+            lua_pushliteral(state, "__gc");
+            lua_rawget(state, 2);
+            const bool hasFinalizer = !lua_isnil(state, -1);
+            lua_pop(state, 1);
+            if (hasFinalizer)
+                return luaL_error(state, "Script metatables may not define __gc.");
+        }
+        lua_rawgeti(state, LUA_REGISTRYINDEX, instance->originalSetMetatableRef);
+        lua_rotate(state, 1, 1);
+        lua_call(state, lua_gettop(state) - 1, 1);
+        return 1;
+    }
+
     static int InitializeProtected(lua_State* state)
     {
         auto* instance = FromUpvalue(state);
@@ -215,6 +242,8 @@ struct LuaScriptRuntime::Instance
         instance->originalXPCallRef = luaL_ref(state, LUA_REGISTRYINDEX);
         lua_getglobal(state, "load");
         instance->originalLoadRef = luaL_ref(state, LUA_REGISTRYINDEX);
+        lua_getglobal(state, "setmetatable");
+        instance->originalSetMetatableRef = luaL_ref(state, LUA_REGISTRYINDEX);
 
         lua_pushnil(state);
         lua_setglobal(state, "dofile");
@@ -234,6 +263,9 @@ struct LuaScriptRuntime::Instance
         lua_pushlightuserdata(state, instance);
         lua_pushcclosure(state, TextOnlyLoad, 1);
         lua_setglobal(state, "load");
+        lua_pushlightuserdata(state, instance);
+        lua_pushcclosure(state, SafeSetMetatable, 1);
+        lua_setglobal(state, "setmetatable");
 
         RegisterHostApi(*instance);
         return 0;
@@ -591,7 +623,12 @@ bool LuaScriptRuntime::CallCallback(
     instance.instructionBudgetExceeded = false;
     lua_sethook(state, &Instance::InstructionHook, LUA_MASKCOUNT, kInstructionHookInterval);
 
-    lua_getglobal(state, callback);
+    // Resolve callbacks with a raw lookup so a script-defined _G metatable
+    // cannot intercept lifecycle dispatch.
+    lua_pushglobaltable(state);
+    lua_pushstring(state, callback);
+    lua_rawget(state, -2);
+    lua_remove(state, -2);
     if (lua_isnil(state, -1))
     {
         lua_pop(state, 1);
