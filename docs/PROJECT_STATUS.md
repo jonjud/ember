@@ -11,11 +11,12 @@
 | Active branch | `develop` |
 | Stable branch | `main` |
 | Last code commit | [`e92fe90`](https://github.com/jonjud/ember/commit/e92fe9077b62c0f27c571deebd1a61ec8caea1cc) — stage SDL3 runtime for component tests |
+| Latest repository HEAD | [`95254a4`](https://github.com/jonjud/ember/commit/95254a43d9246d49ee5ab8a4896362c31f99eb27) — roadmap handoff to Scripting |
 | Last verified code CI | [Windows CI run 46081947029](https://github.com/jonjud/ember/actions/runs/46081947029) — **Success** (`e92fe90`; all build/tests passed) |
-| Latest CI | [Windows CI run 46081947029](https://github.com/jonjud/ember/actions/runs/46081947029) — **Success** (latest verified code HEAD) |
-| Latest documentation CI | Pending documentation refresh commit |
+| Latest CI | [Windows CI run 46084251955](https://github.com/jonjud/ember/actions/runs/46084251955) — **Success** (documentation HEAD `95254a4`) |
+| Latest documentation CI | [Windows CI run 46084251955](https://github.com/jonjud/ember/actions/runs/46084251955) — **Success** |
 | Last completed milestone | UI System v1 + Audio Runtime + Physics Joints — Windows CI passed and combined Windows Editor verification user-confirmed passed |
-| Active milestone | Runtime Input Action Mapping implementation complete; final Windows Editor verification pending. |
+| Active milestone | Scripting foundation: language-neutral runtime contract and serializable ScriptComponent. Input Action Mapping Editor verification deferred to the combined manual test session. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -114,6 +115,19 @@
 
 **Audio Runtime is complete and Windows Editor-verified.** The miniaudio 0.11.26 runtime facade, Application/Editor audio lifecycle, device-less generated-WAV tests, serializable `AudioSource2D`, typed Inspector properties and safe Audio-asset picker, Scene asset-resolution/playback lifecycle, runtime Play/Stop controls, safe Scene move/Stop lifetime, and Editor Asset Browser preview are implemented. Windows CI #219 passed. Automated coverage includes unavailable/uninitialized devices, missing dependencies/assets, inactive/disabled sources, invalid volume, wrong asset types and hand-edited traversal metadata. The final Windows Editor checklist in [AUDIO_RUNTIME_VERIFICATION.md](AUDIO_RUNTIME_VERIFICATION.md) was user-confirmed passed. Sprite Animation is complete (CI #199 Success and user-confirmed checks passed). Physics Joints automated tests passed CI #191 and final Windows Editor verification was user-confirmed passed.
 
+### Scripting foundation — first slice implemented
+- [x] Language-neutral ScriptRuntime interface: Initialize/Shutdown, instance creation and lifecycle invocation contract
+- [x] Opaque ScriptInstanceHandle; backend/VM pointers remain private
+- [x] ScriptExecutionContext carries Entity, delta time and InputActionState
+- [x] Serializable ScriptComponent with script asset ID and enabled state
+- [x] ComponentRegistry registration and typed Inspector properties
+- [x] Automated ScriptComponent clone, validation and registry serialization tests
+- [ ] Scene lifecycle integration, script instance ownership and per-instance diagnostics
+- [ ] Script asset import/type and Editor assignment workflow
+- [ ] Choose and integrate a concrete scripting backend
+
+See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for boundaries and deferred decisions.
+
 ## 5. Development rules
 1. Work on `develop` only. Never merge to `main` without explicit approval.
 2. Inspect latest `develop` HEAD before every implementation change.
@@ -154,4 +168,4 @@
 
 ---
 
-**Handoff:** UI System v1, Audio Runtime, and Physics Joints are complete and Windows Editor-verified. Runtime Input Action Mapping implementation is complete and Windows CI run 46081947029 passed; only the final Editor checklist remains. After that, the next roadmap milestone is the Scripting interface. Continue on `develop`; do not merge to `main`.
+**Handoff:** UI System v1, Audio Runtime, and Physics Joints are complete and Windows Editor-verified. Input Action Mapping implementation and CI are complete; its manual Editor checklist is deferred to the combined verification session. Scripting foundation (language-neutral runtime contract + serializable ScriptComponent) is now implemented; next integrate the Scene lifecycle and script diagnostics. Continue on `develop`; do not merge to `main`.

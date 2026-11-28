@@ -74,7 +74,10 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 - [x] Complete Windows Editor UI verification session (checklist: [UI_RUNTIME_VERIFICATION.md](UI_RUNTIME_VERIFICATION.md); user-confirmed passed)
 - [x] Runtime Input Action Mapping implementation: named actions, multiple physical-key bindings, edge states, Editor rebind/custom-action UI, project persistence, and Scene-to-Component input forwarding (Windows CI run 46081947029 Success)
 - [ ] Final Windows Editor verification for Input Action Mapping (checklist: [INPUT_ACTIONS_VERIFICATION.md](INPUT_ACTIONS_VERIFICATION.md))
-- [ ] Scripting interface
+- [x] Scripting foundation: language-neutral ScriptRuntime host contract and serializable ScriptComponent
+- [ ] Scene scripting lifecycle integration, runtime instance ownership and diagnostics
+- [ ] Script asset type/import pipeline and Editor assignment workflow
+- [ ] Select and integrate a concrete scripting backend
 
 ## Phase 5 — Packaging and Quality
 - [ ] Windows game export / runtime executable
@@ -91,4 +94,4 @@ EMBER is a 2D-first C++20 engine. Each milestone should produce a buildable, tes
 5. Update [PROJECT_STATUS.md](PROJECT_STATUS.md) whenever the active milestone, current HEAD or CI status changes.
 
 ## Next focused milestone
-- UI System v1, Audio Runtime, and Physics Joints implementation plus Windows Editor verification are complete. Runtime Input Action Mapping implementation is complete; finish its final Windows Editor checklist, then begin the Scripting interface milestone. Keyboard/controller UI focus navigation can be a later enhancement. Keep miniaudio types private and editor-only code out of `ember_engine`.
+- Scripting foundation is in place: the runtime boundary is language-neutral and ScriptComponent is serializable/Inspector-editable. Next integrate script instance lifecycle with Scene, add diagnostics and script asset assignment, then choose a concrete backend after reviewing the desired language and API surface. Input Action Mapping implementation is complete; its final Editor checklist is deferred to the combined manual verification session. Keep VM types private and editor-only code out of `ember_engine`.

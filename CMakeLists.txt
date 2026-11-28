@@ -263,6 +263,13 @@ if(BUILD_TESTING)
     add_test(NAME ember_component_tests COMMAND ember_component_tests)
     set_tests_properties(ember_component_tests PROPERTIES TIMEOUT 60)
 
+    add_executable(ember_script_component_tests
+        tests/ScriptComponentTests.cpp
+    )
+    target_include_directories(ember_script_component_tests PRIVATE src)
+    target_link_libraries(ember_script_component_tests PRIVATE nlohmann_json::nlohmann_json)
+    add_test(NAME ember_script_component_tests COMMAND ember_script_component_tests)
+
     add_executable(ember_component_registry_tests
         tests/ComponentRegistryTests.cpp
     )
@@ -382,6 +389,7 @@ if(MSVC)
         target_compile_options(ember_scene_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_component_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_component_registry_tests PRIVATE /W4 /permissive-)
+        target_compile_options(ember_script_component_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_texture_cache_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_directory_tests PRIVATE /W4 /permissive-)
         target_compile_options(ember_asset_manager_tests PRIVATE /W4 /permissive-)
@@ -405,6 +413,7 @@ else()
         target_compile_options(ember_scene_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_component_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_component_registry_tests PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(ember_script_component_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_texture_cache_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_directory_tests PRIVATE -Wall -Wextra -Wpedantic)
         target_compile_options(ember_asset_manager_tests PRIVATE -Wall -Wextra -Wpedantic)
