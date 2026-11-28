@@ -413,6 +413,12 @@ if(BUILD_TESTING)
     target_include_directories(ember_scene_undo_history_tests PRIVATE src)
     add_test(NAME ember_scene_undo_history_tests COMMAND ember_scene_undo_history_tests)
 
+    add_executable(ember_entity_selection_tests
+        tests/EntitySelectionTests.cpp
+    )
+    target_include_directories(ember_entity_selection_tests PRIVATE src)
+    add_test(NAME ember_entity_selection_tests COMMAND ember_entity_selection_tests)
+
     add_executable(ember_asset_metadata_tests
         tests/AssetMetadataTests.cpp
         src/Engine/Resources/AssetMetadataStore.cpp
