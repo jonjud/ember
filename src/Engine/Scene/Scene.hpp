@@ -4,6 +4,7 @@
 #include "Engine/Physics/PhysicsWorld.hpp"
 #include "Engine/Audio/AudioEngine.hpp"
 #include "Engine/Scripting/ScriptRuntime.hpp"
+#include "Engine/Core/Logger.hpp"
 
 #include <cstddef>
 #include <map>
@@ -50,6 +51,7 @@ public:
 
     [[nodiscard]] const std::string& GetName() const { return m_name; }
     void SetName(std::string name);
+    void SetLogger(Logger* logger) noexcept;
 
     void Start(AudioEngine* audioEngine = nullptr, const AssetRegistry* assets = nullptr,
         ScriptRuntime* scriptRuntime = nullptr) noexcept;
@@ -128,7 +130,12 @@ private:
     void DestroyPhysicsWorld() noexcept;
     void StepPhysics(float deltaSeconds) noexcept;
     void UpdateInternal(float deltaSeconds, const InputActionState* input) noexcept;
+    void FlushDiagnosticsToLogger() noexcept;
 
+    Logger* m_logger = nullptr;
+    std::size_t m_loggedAudioDiagnostics = 0;
+    std::size_t m_loggedPhysicsDiagnostics = 0;
+    std::size_t m_loggedScriptDiagnostics = 0;
     std::string m_name;
     EntityId m_nextEntityId = 1;
     std::map<EntityId, std::unique_ptr<Entity>> m_entities;

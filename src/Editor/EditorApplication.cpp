@@ -117,6 +117,7 @@ EditorApplication::~EditorApplication()
 
 bool EditorApplication::Initialize()
 {
+    m_logger.AddSink(std::make_shared<ConsoleLogSink>());
     m_logger.Info("Editor", "Initializing EMBER Editor");
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
@@ -2495,11 +2496,10 @@ void EditorApplication::StartPlayMode()
     m_uiInputRouter.Reset();
     m_playScene = m_scene.Clone();
     m_scriptRuntime = std::make_unique<LuaScriptRuntime>(m_assetRegistry);
+    m_playScene.SetLogger(&m_logger);
     m_playScene.Start(&m_audio, &m_assetRegistry, m_scriptRuntime.get());
     m_isPlaying = true;
     m_logger.Info("Scene", "Play Mode started");
-    for (const std::string& diagnostic : m_playScene.GetScriptDiagnostics())
-        m_logger.Error("Scripting", diagnostic);
     if (m_playScene.GetScriptDiagnostics().empty())
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),

@@ -33,6 +33,10 @@ Scene& Scene::operator=(Scene&& other) noexcept
 void Scene::MoveFrom(Scene&& other) noexcept
 {
     m_name = std::move(other.m_name);
+    m_logger = other.m_logger;
+    m_loggedAudioDiagnostics = other.m_loggedAudioDiagnostics;
+    m_loggedPhysicsDiagnostics = other.m_loggedPhysicsDiagnostics;
+    m_loggedScriptDiagnostics = other.m_loggedScriptDiagnostics;
     m_nextEntityId = other.m_nextEntityId;
     m_entities = std::move(other.m_entities);
     m_started = other.m_started;
@@ -60,6 +64,31 @@ void Scene::MoveFrom(Scene&& other) noexcept
 }
 
 void Scene::SetName(std::string name) { m_name = std::move(name); }
+
+void Scene::SetLogger(Logger* logger) noexcept
+{
+    m_logger = logger;
+    m_loggedAudioDiagnostics = 0;
+    m_loggedPhysicsDiagnostics = 0;
+    m_loggedScriptDiagnostics = 0;
+    FlushDiagnosticsToLogger();
+}
+
+void Scene::FlushDiagnosticsToLogger() noexcept
+{
+    if (m_logger == nullptr) return;
+
+    if (m_loggedAudioDiagnostics > m_audioDiagnostics.size()) m_loggedAudioDiagnostics = 0;
+    if (m_loggedPhysicsDiagnostics > m_physicsDiagnostics.size()) m_loggedPhysicsDiagnostics = 0;
+    if (m_loggedScriptDiagnostics > m_scriptDiagnostics.size()) m_loggedScriptDiagnostics = 0;
+
+    for (; m_loggedAudioDiagnostics < m_audioDiagnostics.size(); ++m_loggedAudioDiagnostics)
+        m_logger->Warning("Audio", m_audioDiagnostics[m_loggedAudioDiagnostics]);
+    for (; m_loggedPhysicsDiagnostics < m_physicsDiagnostics.size(); ++m_loggedPhysicsDiagnostics)
+        m_logger->Error("Physics", m_physicsDiagnostics[m_loggedPhysicsDiagnostics]);
+    for (; m_loggedScriptDiagnostics < m_scriptDiagnostics.size(); ++m_loggedScriptDiagnostics)
+        m_logger->Error("Scripting", m_scriptDiagnostics[m_loggedScriptDiagnostics]);
+}
 
 void Scene::BuildPhysicsWorld() noexcept
 {
@@ -466,6 +495,7 @@ void Scene::Start(AudioEngine* audioEngine, const AssetRegistry* assets,
     BuildPhysicsWorld();
     BuildAudioSources(assets);
     BuildScriptInstances();
+    FlushDiagnosticsToLogger();
 }
 
 
@@ -719,6 +749,7 @@ void Scene::UpdateInternal(float deltaSeconds, const InputActionState* input) no
     UpdateScriptInstances(safeDeltaSeconds, scriptInput);
     m_physicsContactEvents.clear();
     StepPhysics(safeDeltaSeconds);
+    FlushDiagnosticsToLogger();
 }
 
 void Scene::Stop() noexcept
