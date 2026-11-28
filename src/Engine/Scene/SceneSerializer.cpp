@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <fstream>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <string>
@@ -248,7 +249,7 @@ bool SceneSerializer::LoadFromString(
 {
     try
     {
-        const Json document = Json::parse(serialized);
+        const Json document = Json::parse(serialized.begin(), serialized.end());
         if (document.at("schema_version").get<std::uint32_t>() != kSceneSchemaVersion)
         {
             return Fail(error, "Unsupported scene schema version.");

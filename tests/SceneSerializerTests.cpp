@@ -149,6 +149,23 @@ int main()
     Check(ember::SceneSerializer::Load(loaded, scenePath, &error, &registry),
           "Saved scene can be loaded");
     Check(loaded.GetName() == "Forest Level", "Scene name survives round-trip");
+    std::string inMemorySnapshot;
+    Check(ember::SceneSerializer::SerializeToString(source, inMemorySnapshot, &error, &registry),
+          "Scene can be serialized to an in-memory snapshot");
+    ember::Scene restoredFromSnapshot("Snapshot Target");
+    Check(ember::SceneSerializer::LoadFromString(
+              restoredFromSnapshot, inMemorySnapshot, &error, &registry),
+          "In-memory snapshot can restore a Scene");
+    Check(restoredFromSnapshot.GetName() == "Forest Level" &&
+          restoredFromSnapshot.GetEntityCount() == source.GetEntityCount(),
+          "In-memory snapshot preserves Scene identity and Entity count");
+    const auto snapshotTargetName = restoredFromSnapshot.GetName();
+    Check(!ember::SceneSerializer::LoadFromString(
+              restoredFromSnapshot, "{ invalid json", &error, &registry),
+          "Invalid in-memory snapshots are rejected");
+    Check(restoredFromSnapshot.GetName() == snapshotTargetName &&
+          restoredFromSnapshot.GetEntityCount() == source.GetEntityCount(),
+          "Failed in-memory restore leaves the destination Scene unchanged");
     Check(loaded.GetEntityCount() == 3, "All entities survive round-trip");
     const auto* loadedAnimationOwner = loaded.FindEntity(player.GetId());
     const auto* loadedAnimation = loadedAnimationOwner
