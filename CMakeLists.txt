@@ -211,6 +211,18 @@ add_executable(ember_runtime
 target_include_directories(ember_runtime PRIVATE src)
 target_link_libraries(ember_runtime PRIVATE ember_engine SDL3::SDL3)
 
+# Stage shared runtime dependencies beside the standalone executable. The
+# exporter collects DLLs from this directory into the final game package.
+add_custom_command(TARGET ember_runtime POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:SDL3::SDL3>
+        $<TARGET_FILE_DIR:ember_runtime>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:SDL3_image::SDL3_image>
+        $<TARGET_FILE_DIR:ember_runtime>
+    VERBATIM
+)
+
 if(BUILD_TESTING)
     add_executable(ember_logging_tests
         tests/LoggingTests.cpp

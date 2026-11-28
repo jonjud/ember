@@ -6,7 +6,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include <fstream>
+#include <algorithm>\n#include <cctype>\n#include <fstream>
 #include <system_error>
 #include <vector>
 
@@ -44,6 +44,26 @@ bool CopyRegularFile(const std::filesystem::path& source,
     std::filesystem::copy_file(source, destination, std::filesystem::copy_options::overwrite_existing, ec);
     if (ec) return Fail(error, "Could not copy project file: " + PathToUtf8(source) + " (" + ec.message() + ")");
     ++count;
+    return true;
+}
+
+bool CopyRuntimeLibraries(const std::filesystem::path& runtimeDirectory,
+    const std::filesystem::path& destinationDirectory, std::size_t& count, std::string* error)
+{
+    std::error_code ec;
+    std::filesystem::directory_iterator it(runtimeDirectory, ec), end;
+    if (ec) return Fail(error, "Could not inspect runtime directory: " + ec.message());
+    for (; it != end; it.increment(ec))
+    {
+        if (ec) return Fail(error, "Could not continue runtime dependency scan: " + ec.message());
+        const auto source = it->path();
+        auto extension = PathToUtf8(source.extension());
+        std::transform(extension.begin(), extension.end(), extension.begin(),
+            [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+        if (extension != ".dll") continue;
+        if (!CopyRegularFile(source, destinationDirectory / source.filename(), count, error))
+            return false;
+    }
     return true;
 }
 
@@ -156,7 +176,7 @@ bool ProjectExporter::ExportWindows(
 
     std::size_t copied = 0;
     const auto runtimeDestination = output / "ember_runtime.exe";
-    if (!CopyRegularFile(runtime, runtimeDestination, copied, error)) return false;
+    if (!CopyRegularFile(runtime, runtimeDestination, copied, error)) return false;\n    if (!CopyRuntimeLibraries(runtime.parent_path(), output, copied, error)) return false;
 
     const auto projectDestination = output / project.filename();
     if (!CopyRegularFile(project, projectDestination, copied, error)) return false;
