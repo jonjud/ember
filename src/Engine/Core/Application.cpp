@@ -213,11 +213,12 @@ void Application::Render()
             return;
         }
 
+        const Transform2D worldTransform = m_scene.GetWorldTransform(entity.GetId()).value_or(entity.GetTransform());
         if (visual.texture)
         {
             m_renderer.DrawTexture(
                 visual.texture,
-                entity.GetTransform(),
+                worldTransform,
                 m_camera,
                 visual.size,
                 visual.red,
@@ -228,7 +229,7 @@ void Application::Render()
         else
         {
             m_renderer.DrawFilledRect(
-                entity.GetTransform(),
+                worldTransform,
                 m_camera,
                 visual.size,
                 visual.red,

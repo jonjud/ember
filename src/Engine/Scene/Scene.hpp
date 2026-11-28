@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -97,7 +98,9 @@ public:
 
     // Set parent to zero to make child a root. Rejects missing IDs, self-parenting,
     // cycles and structural changes while the Scene is running.
-    [[nodiscard]] bool SetParent(EntityId child, EntityId parent);
+    [[nodiscard]] bool SetParent(EntityId child, EntityId parent, bool keepWorldTransform = true);
+    [[nodiscard]] std::optional<Transform2D> GetWorldTransform(EntityId entity) const;
+    [[nodiscard]] bool SetWorldTransform(EntityId entity, const Transform2D& worldTransform);
     [[nodiscard]] std::vector<EntityId> GetChildren(EntityId parent) const;
     [[nodiscard]] std::vector<EntityId> GetRootEntityIds() const;
 

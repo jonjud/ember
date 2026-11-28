@@ -254,17 +254,18 @@ void RuntimeApplication::Render()
         if (!visual.textureAssetId.empty() && texture != m_textures.end())
         {
             const auto* animation = entity.GetComponent<SpriteAnimation2D>();
+            const Transform2D worldTransform = m_scene.GetWorldTransform(entity.GetId()).value_or(entity.GetTransform());
             if (animation != nullptr && animation->IsConfigurationValid())
-                m_renderer.DrawTexture(texture->second, entity.GetTransform(), m_camera,
+                m_renderer.DrawTexture(texture->second, worldTransform, m_camera,
                     visual.size, animation->GetSourcePosition(), animation->GetSourceSize(),
                     visual.red, visual.green, visual.blue, visual.alpha);
             else
-                m_renderer.DrawTexture(texture->second, entity.GetTransform(), m_camera,
+                m_renderer.DrawTexture(texture->second, worldTransform, m_camera,
                     visual.size, visual.red, visual.green, visual.blue, visual.alpha);
         }
         else if (visual.textureAssetId.empty())
         {
-            m_renderer.DrawFilledRect(entity.GetTransform(), m_camera, visual.size,
+            m_renderer.DrawFilledRect(worldTransform, m_camera, visual.size,
                 visual.red, visual.green, visual.blue, visual.alpha);
         }
     });

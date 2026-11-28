@@ -2147,7 +2147,7 @@ void EditorApplication::DrawViewport()
             {
                 if (const Entity* selected = activeScene.FindEntity(m_selectedEntity))
                 {
-                    const auto& transform = selected->GetTransform();
+                    const auto transform = activeScene.GetWorldTransform(selected->GetId()).value_or(selected->GetTransform());
                     const auto& render = selected->GetRenderComponent();
                     const Vector2 origin{
                         transform.position.x + render.size.x * transform.scale.x * 0.5F,
@@ -2242,7 +2242,7 @@ void EditorApplication::DrawViewport()
                 m_dragStartMouseWorld = worldMouse;
                 if (const Entity* entity = activeScene.FindEntity(gizmoEntity))
                 {
-                    const auto& transform = entity->GetTransform();
+                    const auto transform = activeScene.GetWorldTransform(entity->GetId()).value_or(entity->GetTransform());
                     m_dragStartEntityPosition = transform.position;
                     m_dragStartEntityRotation = transform.rotation;
                     m_dragStartEntityScale = transform.scale;
@@ -2263,7 +2263,7 @@ void EditorApplication::DrawViewport()
                     const auto& render = entity.GetRenderComponent();
                     if (!entity.IsActive() || !render.visible) return;
 
-                    const auto& transform = entity.GetTransform();
+                    const auto transform = activeScene.GetWorldTransform(entity.GetId()).value_or(entity.GetTransform());
                     const Vector2 scaledSize{
                         render.size.x * transform.scale.x,
                         render.size.y * transform.scale.y
@@ -2292,7 +2292,7 @@ void EditorApplication::DrawViewport()
                     {
                         m_dragEntityId = hitEntity;
                         m_dragStartMouseWorld = worldMouse;
-                        m_dragStartEntityPosition = entity->GetTransform().position;
+                        m_dragStartEntityPosition = activeScene.GetWorldTransform(entity->GetId()).value_or(entity->GetTransform()).position;
                     }
                 }
             }
@@ -2304,7 +2304,7 @@ void EditorApplication::DrawViewport()
             if (Entity* entity = activeScene.FindEntity(m_dragEntityId))
             {
                 const Vector2 movement = worldMouse - m_dragStartMouseWorld;
-                auto& transform = entity->GetTransform();
+                Transform2D transform = activeScene.GetWorldTransform(entity->GetId()).value_or(entity->GetTransform());
                 if (m_draggingRotationGizmo)
                 {
                     const auto& render = entity->GetRenderComponent();
@@ -2368,12 +2368,13 @@ void EditorApplication::DrawViewport()
                     }
                 }
 
-                const auto& current = entity->GetTransform();
-                if (current.position.x != m_dragStartEntityPosition.x ||
+                const bool transformApplied = activeScene.SetWorldTransform(entity->GetId(), transform);
+                const auto current = activeScene.GetWorldTransform(entity->GetId()).value_or(transform);
+                if (transformApplied && (current.position.x != m_dragStartEntityPosition.x ||
                     current.position.y != m_dragStartEntityPosition.y ||
                     current.rotation != m_dragStartEntityRotation ||
                     current.scale.x != m_dragStartEntityScale.x ||
-                    current.scale.y != m_dragStartEntityScale.y)
+                    current.scale.y != m_dragStartEntityScale.y))
                 {
                     MarkSceneDirty();
                 }
@@ -2440,7 +2441,7 @@ void EditorApplication::DrawViewport()
             const auto& render = entity.GetRenderComponent();
             if (!entity.IsActive() || !render.visible) return;
 
-            const auto& transform = entity.GetTransform();
+            const auto transform = activeScene.GetWorldTransform(entity.GetId()).value_or(entity.GetTransform());
             const Vector2 scaledSize{
                 render.size.x * transform.scale.x,
                 render.size.y * transform.scale.y
@@ -2676,7 +2677,7 @@ void EditorApplication::DrawViewport()
                 const auto* body = entity.GetComponent<PhysicsBody2D>();
                 if (body == nullptr || !body->enabled) return;
 
-                const Transform2D& transform = entity.GetTransform();
+                const Transform2D transform = activeScene.GetWorldTransform(entity.GetId()).value_or(entity.GetTransform());
                 const float bodyCosine = std::cos(transform.rotation);
                 const float bodySine = std::sin(transform.rotation);
                 const auto localToWorld = [&](const Vector2& local)
@@ -2749,7 +2750,7 @@ void EditorApplication::DrawViewport()
         {
             if (const Entity* selected = activeScene.FindEntity(m_selectedEntity))
             {
-                const auto& transform = selected->GetTransform();
+                const auto transform = activeScene.GetWorldTransform(selected->GetId()).value_or(selected->GetTransform());
                 const auto& render = selected->GetRenderComponent();
                 const Vector2 origin{
                     transform.position.x + render.size.x * transform.scale.x * 0.5F,

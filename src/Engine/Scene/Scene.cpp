@@ -14,6 +14,26 @@
 
 namespace ember
 {
+namespace
+{
+Vector2 RotateVector(const Vector2& value, float radians)
+{
+    const float cosine = std::cos(radians);
+    const float sine = std::sin(radians);
+    return {value.x * cosine - value.y * sine, value.x * sine + value.y * cosine};
+}
+
+Transform2D CombineTransforms(const Transform2D& parent, const Transform2D& local)
+{
+    Transform2D world;
+    world.position = parent.position + RotateVector(
+        {local.position.x * parent.scale.x, local.position.y * parent.scale.y}, parent.rotation);
+    world.scale = {parent.scale.x * local.scale.x, parent.scale.y * local.scale.y};
+    world.rotation = parent.rotation + local.rotation;
+    return world;
+}
+} // namespace
+
 Scene::Scene(std::string name) : m_name(std::move(name)) {}
 Scene::~Scene() { Stop(); }
 
@@ -137,7 +157,7 @@ void Scene::BuildPhysicsWorld() noexcept
         PhysicsBodyHandle handle{};
         try
         {
-            const Transform2D& transform = entity->GetTransform();
+            const Transform2D transform = GetWorldTransform(entityId).value_or(entity->GetTransform());
             PhysicsBodyDefinition2D bodyDefinition;
             bodyDefinition.type = bodyConfig->type;
             bodyDefinition.position = {transform.position.x * pixelsToMeters,
@@ -333,7 +353,7 @@ void Scene::StepPhysics(float deltaSeconds) noexcept
         const auto* bodyConfig = entity->GetComponent<PhysicsBody2D>();
         if (bodyConfig == nullptr) continue;
 
-        const Transform2D& transform = entity->GetTransform();
+        const Transform2D transform = GetWorldTransform(entityId).value_or(entity->GetTransform());
         const PhysicsTransform2D desired{
             {transform.position.x / metersToPixels, transform.position.y / metersToPixels},
             transform.rotation
@@ -414,9 +434,11 @@ void Scene::StepPhysics(float deltaSeconds) noexcept
         if (bodyConfig == nullptr || bodyConfig->type != PhysicsBodyType2D::Dynamic) continue;
         const auto transform = m_physicsWorld->GetBodyTransform(handle);
         if (!transform.has_value()) continue;
-        entity->GetTransform().position = {transform->position.x * metersToPixels,
+        Transform2D world = GetWorldTransform(entityId).value_or(entity->GetTransform());
+        world.position = {transform->position.x * metersToPixels,
             transform->position.y * metersToPixels};
-        entity->GetTransform().rotation = transform->rotation;
+        world.rotation = transform->rotation;
+        (void)SetWorldTransform(entityId, world);
     }
 }
 
@@ -788,11 +810,16 @@ bool Scene::DestroyEntity(EntityId id)
     if (found == m_entities.end()) return false;
 
     // Deleting an Entity never implicitly deletes its descendants. Direct children
-    // become roots so no relationship is left pointing at a missing Entity.
+    // become roots while retaining their current world-space transforms.
     for (auto& [childId, entity] : m_entities)
     {
         (void)childId;
-        if (entity->m_parentId == id) entity->m_parentId = 0;
+        if (entity->m_parentId == id)
+        {
+            const auto world = GetWorldTransform(entity->m_id);
+            entity->m_parentId = 0;
+            if (world) entity->m_transform = *world;
+        }
     }
     m_entities.erase(found);
     return true;
@@ -836,7 +863,7 @@ std::vector<EntityId> Scene::GetEntityIds() const
     return ids;
 }
 
-bool Scene::SetParent(EntityId child, EntityId parent)
+bool Scene::SetParent(EntityId child, EntityId parent, bool keepWorldTransform)
 {
     if (m_started)
         throw std::logic_error("Entity hierarchy cannot be changed while its Scene is running.");
@@ -854,7 +881,65 @@ bool Scene::SetParent(EntityId child, EntityId parent)
         ancestor = ancestorIt->second->m_parentId;
     }
 
+    const auto previousWorld = keepWorldTransform ? GetWorldTransform(child) : std::nullopt;
+    if (keepWorldTransform && parent != 0)
+    {
+        const auto parentWorld = GetWorldTransform(parent);
+        constexpr float minimumScale = 0.000001F;
+        if (!parentWorld || std::abs(parentWorld->scale.x) < minimumScale ||
+            std::abs(parentWorld->scale.y) < minimumScale) return false;
+    }
+
     childIt->second->m_parentId = parent;
+    if (previousWorld && !SetWorldTransform(child, *previousWorld))
+        return false;
+    return true;
+}
+
+std::optional<Transform2D> Scene::GetWorldTransform(EntityId id) const
+{
+    const Entity* entity = FindEntity(id);
+    if (entity == nullptr) return std::nullopt;
+
+    std::vector<const Entity*> chain;
+    for (const Entity* current = entity; current != nullptr;)
+    {
+        chain.push_back(current);
+        if (current->m_parentId == 0) break;
+        current = FindEntity(current->m_parentId);
+        if (current == nullptr) return std::nullopt;
+    }
+
+    Transform2D world = chain.back()->m_transform;
+    for (auto it = chain.rbegin() + 1; it != chain.rend(); ++it)
+        world = CombineTransforms(world, (*it)->m_transform);
+    return world;
+}
+
+bool Scene::SetWorldTransform(EntityId id, const Transform2D& worldTransform)
+{
+    const auto found = m_entities.find(id);
+    if (found == m_entities.end()) return false;
+    if (found->second->m_parentId == 0)
+    {
+        found->second->m_transform = worldTransform;
+        return true;
+    }
+
+    const auto parentWorld = GetWorldTransform(found->second->m_parentId);
+    constexpr float minimumScale = 0.000001F;
+    if (!parentWorld || std::abs(parentWorld->scale.x) < minimumScale ||
+        std::abs(parentWorld->scale.y) < minimumScale) return false;
+
+    Transform2D local;
+    local.scale = {worldTransform.scale.x / parentWorld->scale.x,
+        worldTransform.scale.y / parentWorld->scale.y};
+    local.rotation = worldTransform.rotation - parentWorld->rotation;
+    const Vector2 offset = worldTransform.position - parentWorld->position;
+    const Vector2 unrotated = RotateVector(offset, -parentWorld->rotation);
+    local.position = {unrotated.x / parentWorld->scale.x,
+        unrotated.y / parentWorld->scale.y};
+    found->second->m_transform = local;
     return true;
 }
 

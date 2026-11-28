@@ -399,7 +399,7 @@ bool SceneSerializer::LoadFromString(
         // references and cycles while preserving the all-or-nothing load contract.
         for (const auto& [childId, parentId] : parentIds)
         {
-            if (parentId != 0 && !loadedScene.SetParent(childId, parentId))
+            if (parentId != 0 && !loadedScene.SetParent(childId, parentId, false))
                 return Fail(error, "Scene contains an invalid or cyclic Entity hierarchy.");
         }
 
