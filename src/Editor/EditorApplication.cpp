@@ -1181,17 +1181,6 @@ void EditorApplication::DrawInspector()
                                 for (const Component* match : matchingComponents)
                                     values.push_back(property.get(*match));
                                 const bool mixed = editor::HasMixedValues(values);
-                                const auto applyProperty = [&]()
-                                {
-                                    if (editor::ApplyComponentPropertyAtomically(
-                                        matchingComponents, property, editedValue))
-                                        MarkSceneDirty();
-                                    else
-                                        std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-                                            "Could not apply %s to every selected Entity",
-                                            property.displayName.c_str());
-                                };
-
                                 ImGui::PushID(property.id.c_str());
                                 switch (property.type)
                                 {
