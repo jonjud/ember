@@ -2689,6 +2689,7 @@ void EditorApplication::DrawUnsavedScriptExitModal()
         ImGui::TextUnformatted("Save your script before exiting EMBER?");
         if (ImGui::Button("Save and Exit", ImVec2(130.0F, 0.0F)))
         {
+            if (m_isPlaying) StopPlayMode();
             SaveScriptSource();
             if (!m_scriptSourceDirty)
             {
