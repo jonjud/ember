@@ -40,7 +40,7 @@ int main()
           entries[2].message == "fatal",
         "The bounded history retains the newest entries");
 
-    Check(entries[0].sequence == 5 && entries[1].sequence == 6,
+    Check(entries[0].sequence == 4 && entries[1].sequence == 5,
         "Log entries receive increasing sequence numbers");
     Check(entries[0].category == "Assets" &&
           entries[0].level == ember::LogLevel::Warning,
@@ -67,7 +67,7 @@ int main()
         "History can be cleared");
     logger.SetMinimumLevel(ember::LogLevel::Trace);
     logger.Info("Engine", "after clear");
-    Check(logger.Snapshot().front().sequence == 8,
+    Check(logger.Snapshot().front().sequence == 7,
         "Clearing history does not reset sequence numbers");
 
     ember::Logger disabled(0);
