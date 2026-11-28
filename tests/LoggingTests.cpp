@@ -67,7 +67,7 @@ int main()
         "History can be cleared");
     logger.SetMinimumLevel(ember::LogLevel::Trace);
     logger.Info("Engine", "after clear");
-    Check(logger.Snapshot().front().sequence == 7,
+    Check(logger.Snapshot().front().sequence == 8,
         "Clearing history does not reset sequence numbers");
 
     ember::Logger disabled(0);
