@@ -1,6 +1,7 @@
 #include "Engine/Scene/Scene.hpp"
 
 #include <cstddef>
+#include <cmath>
 #include <iostream>
 #include <vector>
 
