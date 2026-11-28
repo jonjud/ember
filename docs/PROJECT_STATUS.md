@@ -10,13 +10,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | [`c92306b`](https://github.com/jonjud/ember/commit/c92306b7f5c9559f75242297b97221a2f4e524b9) — Parent/Child Hierarchy and world transforms |
-| Latest repository HEAD | [`c92306b`](https://github.com/jonjud/ember/commit/c92306b7f5c9559f75242297b97221a2f4e524b9) — Parent/Child Hierarchy and world transforms |
-| Last verified code CI | [Windows CI #375](https://github.com/jonjud/ember/actions/runs/46160846388) — **Success**; Windows Debug and Release build/tests passed |
-| Latest CI | [Windows CI #375](https://github.com/jonjud/ember/actions/runs/46160846388) — **Success**; both jobs completed successfully |
-| Latest documentation CI | Pending documentation update CI |
-| Last completed milestone | Parent/Child Scene Hierarchy: validated hierarchy, drag/drop reparenting, keep-world transform behavior, world-transform integration and serialization; CI #46160846388 Debug + Release Success |
-| Active milestone | Multi-edit Inspector for shared properties across selected Entities. Combined manual Windows project-template/export verification remains pending. |
+| Last code commit | [`440c729`](https://github.com/jonjud/ember/commit/440c729223b0db6480dd05e0522f57939848ab29) — Multi-edit asset references |
+| Latest repository HEAD | [`440c729`](https://github.com/jonjud/ember/commit/440c729223b0db6480dd05e0522f57939848ab29) — Multi-edit asset references |
+| Last verified code CI | [Windows CI #388](https://github.com/jonjud/ember/actions/runs/46166314445) — **Success**; Windows Debug and Release build/tests passed |
+| Latest CI | [Windows CI #388](https://github.com/jonjud/ember/actions/runs/46166314445) — **Success**; both jobs completed successfully |
+| Latest documentation CI | Will be recorded after this status refresh |
+| Last completed milestone | Multi-edit Inspector: mixed values, atomic shared-property edits, multi-Entity Component add/remove, Play Mode guards and Audio/Script asset references; CI #46166314445 Debug + Release Success |
+| Active milestone | Editor workflow quality/reliability audit. Combined manual Windows project-template/export verification remains pending. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -229,8 +229,9 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 | 2026-11-28 | [Bound external Script Source conflict reads, `3416971`, CI #285](https://github.com/jonjud/ember/actions/runs/46110556033) | Success; conflict comparison is capped at 64 KiB and detects file growth during the read |
 | 2026-11-28 | [Editor Scene Undo/Redo, `f552c93`, CI #46156677787](https://github.com/jonjud/ember/actions/runs/46156677787) | Success; Debug and Release passed. Bounded serialized snapshots, in-memory Scene restore, Edit menu and keyboard shortcuts |
 | 2026-11-28 | [Editor multi-selection foundation, `92e73f1`, CI #46157659408](https://github.com/jonjud/ember/actions/runs/46157659408) | Success; Debug and Release passed. Ctrl/Shift selection, Select All, multi-Entity Duplicate/Delete and selection-aware Inspector |
+| 2026-11-28 | [Multi-edit Inspector, `440c729`, CI #388](https://github.com/jonjud/ember/actions/runs/46166314445) | Success; Debug and Release build/tests passed. Shared properties/mixed values, atomic multi-edit, Component add/remove with Play Mode guards, and Audio/Script asset references |
 | 2026-11-28 | [Parent/Child Scene Hierarchy, `c92306b`, CI #46160846388](https://github.com/jonjud/ember/actions/runs/46160846388) | Success; Debug and Release passed. Validated parent links, cycle prevention, drag/drop reparenting, keep-world transforms, Runtime/Editor/Physics world transforms and serialization |
 
 ---
 
-**Handoff:** Latest code HEAD is `c92306b7f5c9559f75242297b97221a2f4e524b9`; Windows CI run `46160846388` passed both Debug and Release build/tests. Editor Undo/Redo, multi-selection and Parent/Child Scene Hierarchy are implemented and automated-tested. Next active milestone: multi-edit Inspector for selected Entities, including mixed-value display and safe shared-property edits. Combined manual Windows verification of Blank 2D/2D Starter creation, Play Mode movement, Windows export contents and launching the exported runtime outside Editor remains pending. Do not mark interactive verification complete until the user confirms. Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md). Continue on `develop`; do not merge to `main`.
+**Handoff:** Latest code HEAD is `440c729223b0db6480dd05e0522f57939848ab29`; Windows CI run `46166314445` passed both Debug and Release build/tests. Editor Undo/Redo, multi-selection, Parent/Child Scene Hierarchy and Multi-edit Inspector are implemented and automated-tested. Multi-edit supports shared Entity names, mixed values, safe atomic shared-property changes, multi-Entity Component add/remove (blocked safely during Play Mode), and AudioSource2D/ScriptComponent asset selection. Next active focus: Editor workflow quality/reliability, beginning with Undo/Redo transaction boundaries for continuous gestures and remaining multi-edit edge cases. Combined manual Windows verification of Blank 2D/2D Starter creation, Play Mode movement, Windows export contents and launching the exported runtime outside Editor remains pending. Do not mark interactive verification complete until the user confirms. Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md). Continue on `develop`; do not merge to `main`.
