@@ -92,11 +92,11 @@ end
     }
     {
         std::ofstream script(root / "scripts" / "global_lookup.lua");
-        script << "function OnCreate()\\n"
-                  "  setmetatable(_G, { __index = function(_, key)\\n"
-                  "    if key == 'OnUpdate' then return function() entity:set_position(999, 999) end end\\n"
-                  "  end })\\n"
-                  "end\\n";
+        script << "function OnCreate()\n"
+                  "  setmetatable(_G, { __index = function(_, key)\n"
+                  "    if key == 'OnUpdate' then return function() entity:set_position(999, 999) end end\n"
+                  "  end })\n"
+                  "end\n";
     }
 
     ember::AssetMetadata moveMetadata;

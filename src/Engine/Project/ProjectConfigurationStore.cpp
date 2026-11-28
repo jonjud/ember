@@ -1,5 +1,6 @@
 #include "Engine/Project/ProjectConfigurationStore.hpp"
 #include "Engine/Core/FileSystem.hpp"
+#include "Engine/Core/FileSystem.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -113,8 +114,8 @@ bool ProjectConfigurationStore::Save(
         const Json document{
             {"schema_version", configuration.schemaVersion},
             {"name", configuration.name},
-            {"asset_directory", configuration.assetDirectory.generic_string()},
-            {"startup_scene", configuration.startupScene.generic_string()},
+            {"asset_directory", PathToUtf8(configuration.assetDirectory)},
+            {"startup_scene", PathToUtf8(configuration.startupScene)},
             {"input_bindings", configuration.inputBindings}
         };
 
@@ -166,9 +167,9 @@ std::optional<ProjectConfiguration> ProjectConfigurationStore::Load(
         configuration.schemaVersion = ProjectConfiguration::CurrentSchemaVersion;
         configuration.name = document.at("name").get<std::string>();
         configuration.assetDirectory =
-            document.at("asset_directory").get<std::string>();
+            PathFromUtf8(document.at("asset_directory").get<std::string>());
         configuration.startupScene =
-            document.at("startup_scene").get<std::string>();
+            PathFromUtf8(document.at("startup_scene").get<std::string>());
         if (storedSchemaVersion >= 2 && document.contains("input_bindings"))
         {
             configuration.inputBindings =

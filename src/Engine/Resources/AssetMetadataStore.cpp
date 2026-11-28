@@ -1,5 +1,6 @@
 #include "Engine/Resources/AssetMetadataStore.hpp"
 #include "Engine/Core/FileSystem.hpp"
+#include "Engine/Core/FileSystem.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -89,7 +90,7 @@ bool AssetMetadataStore::Save(
         {"schema_version", metadata.schemaVersion},
         {"asset_id", metadata.assetId},
         {"type", type},
-        {"source", metadata.source.generic_string()}
+        {"source", PathToUtf8(metadata.source)}
     };
 
     if (metadata.type == AssetType::Script && !metadata.scriptLanguage.empty())
@@ -144,7 +145,7 @@ std::optional<AssetMetadata> AssetMetadataStore::Load(
         }
 
         metadata.assetId = document.at("asset_id").get<std::string>();
-        metadata.source = document.at("source").get<std::string>();
+        metadata.source = PathFromUtf8(document.at("source").get<std::string>());
         const std::string type = document.at("type").get<std::string>();
 
         if (type == "texture")

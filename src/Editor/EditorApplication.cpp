@@ -1493,7 +1493,7 @@ void EditorApplication::DrawAssetBrowser()
         if (ImGui::Button("Set Current as Startup"))
         {
             std::snprintf(m_startupScenePath, sizeof(m_startupScenePath),
-                "%s", m_currentScenePath.generic_string().c_str());
+                "%s", PathToUtf8(m_currentScenePath).c_str());
             if (SaveProjectSettings())
             {
                 std::snprintf(m_statusMessage, sizeof(m_statusMessage),
@@ -2522,7 +2522,7 @@ bool EditorApplication::SaveScene()
     {
         m_sceneDirty = false;
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-            "Saved scene: %.200s", m_currentScenePath.generic_string().c_str());
+            "Saved scene: %.200s", PathToUtf8(m_currentScenePath).c_str());
         (void)m_assetRegistry.Scan();
         return true;
     }
@@ -2535,7 +2535,7 @@ bool EditorApplication::SaveScene()
 void EditorApplication::LoadScene()
 {
     if (m_isPlaying) return;
-    RequestLoadScene(m_scenePath);
+    RequestLoadScene(PathFromUtf8(m_scenePath));
 }
 
 bool EditorApplication::LoadSceneFromPath(const std::filesystem::path& path)
@@ -2560,11 +2560,11 @@ bool EditorApplication::LoadSceneFromPath(const std::filesystem::path& path)
 
     m_scene = std::move(loadedScene);
     m_currentScenePath = path;
-    std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", path.generic_string().c_str());
+    std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", PathToUtf8(path).c_str());
     m_selectedEntity = 0;
     m_sceneDirty = false;
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
-        "Loaded scene: %.200s", path.generic_string().c_str());
+        "Loaded scene: %.200s", PathToUtf8(path).c_str());
     return true;
 }
 
@@ -2594,7 +2594,7 @@ void EditorApplication::ApplyPendingSceneChange()
         m_currentScenePath = path;
         m_selectedEntity = 0;
         m_sceneDirty = true;
-        std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", path.generic_string().c_str());
+        std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", PathToUtf8(path).c_str());
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "New empty scene created (not saved yet)");
     }
@@ -2743,7 +2743,7 @@ void EditorApplication::LoadStartupScene()
     m_sceneDirty = false;
     m_currentScenePath = m_projectConfiguration.startupScene;
     std::snprintf(m_scenePath, sizeof(m_scenePath), "%s",
-        m_projectConfiguration.startupScene.generic_string().c_str());
+        PathToUtf8(m_projectConfiguration.startupScene).c_str());
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Startup scene loaded: %.190s", startupScene->string().c_str());
 }
@@ -3142,7 +3142,7 @@ void EditorApplication::LoadInputSettings()
 
         m_projectConfiguration = ProjectConfiguration{};
         std::snprintf(m_projectName, sizeof(m_projectName), "%s", m_projectConfiguration.name.c_str());
-        std::snprintf(m_assetDirectory, sizeof(m_assetDirectory), "%s", m_projectConfiguration.assetDirectory.generic_string().c_str());
+        std::snprintf(m_assetDirectory, sizeof(m_assetDirectory), "%s", PathToUtf8(m_projectConfiguration.assetDirectory).c_str());
         m_startupScenePath[0] = '\0';
         m_inputMap = InputMap::CreateDefaultMovementMap();
         (void)SaveInputSettings();
@@ -3151,9 +3151,9 @@ void EditorApplication::LoadInputSettings()
 
     m_projectConfiguration = std::move(*loaded);
     std::snprintf(m_projectName, sizeof(m_projectName), "%s", m_projectConfiguration.name.c_str());
-    std::snprintf(m_assetDirectory, sizeof(m_assetDirectory), "%s", m_projectConfiguration.assetDirectory.generic_string().c_str());
+    std::snprintf(m_assetDirectory, sizeof(m_assetDirectory), "%s", PathToUtf8(m_projectConfiguration.assetDirectory).c_str());
     std::snprintf(m_startupScenePath, sizeof(m_startupScenePath), "%s",
-        m_projectConfiguration.startupScene.generic_string().c_str());
+        PathToUtf8(m_projectConfiguration.startupScene).c_str());
 
     const auto resolvedAssetDirectory = ProjectConfigurationStore::ResolveAssetDirectory(
         m_projectFilePath, m_projectConfiguration);
@@ -3244,8 +3244,8 @@ bool EditorApplication::SaveProjectSettings()
         return false;
     }
     const std::string name = m_projectName;
-    const std::filesystem::path assetDirectory = m_assetDirectory;
-    const std::filesystem::path startupScene = m_startupScenePath;
+    const std::filesystem::path assetDirectory = PathFromUtf8(m_assetDirectory);
+    const std::filesystem::path startupScene = PathFromUtf8(m_startupScenePath);
     if (name.empty())
     {
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
@@ -3292,7 +3292,7 @@ bool EditorApplication::SaveProjectSettings()
         if (resolvedStartupScene)
         {
             std::snprintf(m_scenePath, sizeof(m_scenePath), "%s",
-                m_projectConfiguration.startupScene.generic_string().c_str());
+                PathToUtf8(m_projectConfiguration.startupScene).c_str());
         }
     }
     RefreshAssets();
