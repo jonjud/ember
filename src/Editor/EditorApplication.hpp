@@ -13,6 +13,7 @@
 #include "Engine/Project/ProjectConfiguration.hpp"
 #include "Engine/Project/ProjectExporter.hpp"
 #include "Engine/Scripting/ScriptRuntime.hpp"
+#include "Editor/SceneUndoHistory.hpp"
 
 #include <array>
 #include <cstddef>
@@ -76,6 +77,9 @@ private:
     void ApplyPendingSceneChange();
     [[nodiscard]] bool LoadSceneFromPath(const std::filesystem::path& path);
     void MarkSceneDirty();
+    void ResetSceneHistory();
+    void UndoScene();
+    void RedoScene();
     void StartPlayMode();
     void StopPlayMode();
     [[nodiscard]] Scene& GetActiveScene();
@@ -110,6 +114,7 @@ private:
     UIInputRouter2D m_uiInputRouter;
     bool m_isPlaying = false;
     bool m_sceneDirty = false;
+    SceneUndoHistory m_sceneUndoHistory;
     int m_pendingSceneChange = 0;
     std::filesystem::path m_pendingScenePath;
     std::filesystem::path m_currentScenePath{"assets/scenes/untitled.emberscene"};

@@ -272,6 +272,7 @@ bool EditorApplication::Initialize(const std::filesystem::path& projectFile)
     LoadInputSettings();
     RefreshAssets();
     LoadStartupScene();
+    ResetSceneHistory();
     m_isRunning = true;
     m_logger.Info("Editor", "EMBER Editor initialized successfully");
     return true;
@@ -405,6 +406,7 @@ void EditorApplication::OpenProjectFromPath(const std::filesystem::path& path)
     m_projectConfiguration = *configuration;
     m_projectLoadFailed = false;
     m_scene = Scene("Untitled Scene");
+    m_scene.SetLogger(&m_logger);
     m_currentScenePath.clear();
     m_selectedEntity = 0;
     m_sceneDirty = false;
@@ -424,6 +426,7 @@ void EditorApplication::OpenProjectFromPath(const std::filesystem::path& path)
     if (m_projectLoadFailed) return;
     RefreshAssets();
     LoadStartupScene();
+    ResetSceneHistory();
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Opened project: %.190s", PathToUtf8(absolutePath).c_str());
     m_logger.Info("Project", "Opened project: " + PathToUtf8(absolutePath));
@@ -496,7 +499,22 @@ void EditorApplication::ProcessEvents()
             const ImGuiIO& io = ImGui::GetIO();
             if (!io.WantCaptureKeyboard && !io.WantTextInput)
             {
-                if (!m_isPlaying && event.key.key == SDLK_S &&
+                if (!m_isPlaying && (event.key.mod & SDL_KMOD_CTRL) != 0 &&
+                    event.key.key == SDLK_Z && (event.key.mod & SDL_KMOD_SHIFT) != 0)
+                {
+                    RedoScene();
+                }
+                else if (!m_isPlaying && (event.key.mod & SDL_KMOD_CTRL) != 0 &&
+                    event.key.key == SDLK_Z)
+                {
+                    UndoScene();
+                }
+                else if (!m_isPlaying && (event.key.mod & SDL_KMOD_CTRL) != 0 &&
+                    event.key.key == SDLK_Y)
+                {
+                    RedoScene();
+                }
+                else if (!m_isPlaying && event.key.key == SDLK_S &&
                     (event.key.mod & SDL_KMOD_CTRL) != 0)
                 {
                     (void)SaveScene();
@@ -751,6 +769,17 @@ void EditorApplication::DrawMenuBar()
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Exit")) RequestExit();
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Edit"))
+    {
+        ImGui::BeginDisabled(m_isPlaying || !m_sceneUndoHistory.CanUndo());
+        if (ImGui::MenuItem("Undo", "Ctrl+Z")) UndoScene();
+        ImGui::EndDisabled();
+        ImGui::BeginDisabled(m_isPlaying || !m_sceneUndoHistory.CanRedo());
+        if (ImGui::MenuItem("Redo", "Ctrl+Y")) RedoScene();
+        ImGui::EndDisabled();
         ImGui::EndMenu();
     }
 
@@ -2935,10 +2964,12 @@ bool EditorApplication::LoadSceneFromPath(const std::filesystem::path& path)
     }
 
     m_scene = std::move(loadedScene);
+    m_scene.SetLogger(&m_logger);
     m_currentScenePath = path;
     std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", PathToUtf8(path).c_str());
     m_selectedEntity = 0;
     m_sceneDirty = false;
+    ResetSceneHistory();
     std::snprintf(m_statusMessage, sizeof(m_statusMessage),
         "Loaded scene: %.200s", PathToUtf8(path).c_str());
     return true;
@@ -2967,9 +2998,11 @@ void EditorApplication::ApplyPendingSceneChange()
     if (change == 1)
     {
         m_scene = Scene("Untitled Scene");
+        m_scene.SetLogger(&m_logger);
         m_currentScenePath = path;
         m_selectedEntity = 0;
         m_sceneDirty = true;
+        ResetSceneHistory();
         std::snprintf(m_scenePath, sizeof(m_scenePath), "%s", PathToUtf8(path).c_str());
         std::snprintf(m_statusMessage, sizeof(m_statusMessage),
             "New empty scene created (not saved yet)");
@@ -3078,7 +3111,80 @@ void EditorApplication::DrawUnsavedScriptExitModal()
 
 void EditorApplication::MarkSceneDirty()
 {
-    if (!m_isPlaying) m_sceneDirty = true;
+    if (m_isPlaying) return;
+    m_sceneDirty = true;
+    std::string snapshot;
+    std::string error;
+    if (SceneSerializer::SerializeToString(m_scene, snapshot, &error, &m_componentRegistry))
+    {
+        if (m_sceneUndoHistory.GetEntryCount() == 0)
+            m_sceneUndoHistory.Reset(std::move(snapshot));
+        else
+            (void)m_sceneUndoHistory.Record(std::move(snapshot));
+    }
+    else
+    {
+        m_logger.Warning("Undo", "Could not record Scene history snapshot: " + error);
+    }
+}
+
+void EditorApplication::ResetSceneHistory()
+{
+    std::string snapshot;
+    std::string error;
+    if (SceneSerializer::SerializeToString(m_scene, snapshot, &error, &m_componentRegistry))
+    {
+        m_sceneUndoHistory.Reset(std::move(snapshot));
+    }
+    else
+    {
+        m_sceneUndoHistory.Reset({});
+        m_logger.Warning("Undo", "Could not initialize Scene history: " + error);
+    }
+}
+
+void EditorApplication::UndoScene()
+{
+    if (m_isPlaying) return;
+    const std::string* snapshot = m_sceneUndoHistory.Undo();
+    if (snapshot == nullptr) return;
+
+    Scene restored;
+    std::string error;
+    if (!SceneSerializer::LoadFromString(restored, *snapshot, &error, &m_componentRegistry))
+    {
+        (void)m_sceneUndoHistory.Redo();
+        m_logger.Error("Undo", "Could not restore previous Scene snapshot: " + error);
+        return;
+    }
+
+    restored.SetLogger(&m_logger);
+    m_scene = std::move(restored);
+    if (m_scene.FindEntity(m_selectedEntity) == nullptr) m_selectedEntity = 0;
+    m_sceneDirty = true;
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Undo completed");
+}
+
+void EditorApplication::RedoScene()
+{
+    if (m_isPlaying) return;
+    const std::string* snapshot = m_sceneUndoHistory.Redo();
+    if (snapshot == nullptr) return;
+
+    Scene restored;
+    std::string error;
+    if (!SceneSerializer::LoadFromString(restored, *snapshot, &error, &m_componentRegistry))
+    {
+        (void)m_sceneUndoHistory.Undo();
+        m_logger.Error("Undo", "Could not restore next Scene snapshot: " + error);
+        return;
+    }
+
+    restored.SetLogger(&m_logger);
+    m_scene = std::move(restored);
+    if (m_scene.FindEntity(m_selectedEntity) == nullptr) m_selectedEntity = 0;
+    m_sceneDirty = true;
+    std::snprintf(m_statusMessage, sizeof(m_statusMessage), "Redo completed");
 }
 
 void EditorApplication::LoadStartupScene()
@@ -3115,8 +3221,10 @@ void EditorApplication::LoadStartupScene()
     }
 
     m_scene = std::move(loadedScene);
+    m_scene.SetLogger(&m_logger);
     m_selectedEntity = 0;
     m_sceneDirty = false;
+    ResetSceneHistory();
     m_currentScenePath = m_projectConfiguration.startupScene;
     std::snprintf(m_scenePath, sizeof(m_scenePath), "%s",
         PathToUtf8(m_projectConfiguration.startupScene).c_str());
