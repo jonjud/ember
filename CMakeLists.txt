@@ -209,7 +209,9 @@ if(BUILD_TESTING)
     )
     target_include_directories(ember_logging_tests PRIVATE src)
     target_link_libraries(ember_logging_tests PRIVATE Threads::Threads)
-    add_test(NAME ember_logging_tests COMMAND ember_logging_tests)
+    add_test(NAME ember_logging_history_tests COMMAND ember_logging_tests history)
+    add_test(NAME ember_logging_sink_tests COMMAND ember_logging_tests sinks)
+    add_test(NAME ember_logging_concurrency_tests COMMAND ember_logging_tests concurrency)
 
     add_executable(ember_audio_engine_tests
         tests/AudioEngineTests.cpp
