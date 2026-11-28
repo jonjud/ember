@@ -37,6 +37,7 @@ int main()
     Check(logger.GetMinimumLevel() == ember::LogLevel::Trace,
         "Logger accepts all levels by default");
 
+    std::cerr << "[logging-test] basic logging start\\n" << std::flush;
     logger.Trace("Engine", "trace");
     logger.Debug("Engine", "debug");
     logger.Info("Renderer", "ready");
@@ -44,6 +45,7 @@ int main()
     logger.Error("Scene", "load failed");
     logger.Critical("Runtime", "fatal");
 
+    std::cerr << "[logging-test] basic logging complete\\n" << std::flush;
     auto entries = logger.Snapshot();
     Check(entries.size() == 3, "History is bounded to its configured capacity");
     Check(entries[0].message == "missing optional asset" &&
@@ -81,6 +83,7 @@ int main()
     Check(logger.Snapshot().front().sequence == 8,
         "Clearing history does not reset sequence numbers");
 
+    std::cerr << "[logging-test] history checks complete\\n" << std::flush;
     auto recordingSink = std::make_shared<RecordingSink>();
     ember::Logger sinkLogger(4);
     sinkLogger.AddSink(recordingSink);
@@ -91,6 +94,7 @@ int main()
     sinkLogger.Info("Tests", "not delivered");
     Check(recordingSink->messages.size() == 1, "Logger can detach all sinks");
 
+    std::cerr << "[logging-test] recording sink checks complete\\n" << std::flush;
     const auto logPath = std::filesystem::temp_directory_path() / "ember_logging_tests.log";
     std::filesystem::remove(logPath);
     {
@@ -109,6 +113,7 @@ int main()
         "File sink writes severity, category and message");
     std::filesystem::remove(logPath);
 
+    std::cerr << "[logging-test] file sink checks complete\\n" << std::flush;
     ember::Logger disabled(0);
     auto disabledSink = std::make_shared<RecordingSink>();
     disabled.AddSink(disabledSink);
@@ -118,6 +123,7 @@ int main()
     disabled.Error("Engine", "not stored");
     Check(disabled.Size() == 0, "Zero capacity disables history storage");
 
+    std::cerr << "[logging-test] zero-capacity checks complete\\n" << std::flush;
     ember::Logger concurrent(512);
     constexpr int threadCount = 4;
     constexpr int messagesPerThread = 100;
@@ -134,6 +140,7 @@ int main()
     for (auto& worker : workers)
         worker.join();
 
+    std::cerr << "[logging-test] concurrent writers joined\\n" << std::flush;
     entries = concurrent.Snapshot();
     Check(entries.size() == threadCount * messagesPerThread,
         "Concurrent writers retain every entry within capacity");
