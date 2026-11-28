@@ -127,7 +127,7 @@ struct LuaScriptRuntime::Instance
     {
         auto* instance = *static_cast<Instance**>(lua_getextraspace(state));
         if (instance == nullptr) return luaL_error(state, "Lua runtime context is unavailable.");
-        while (lua_gettop(state) < 2) lua_pushnil(state);
+        if (lua_gettop(state) < 3) lua_settop(state, 3);
         lua_pushliteral(state, "t");
         lua_replace(state, 3);
         lua_rawgeti(state, LUA_REGISTRYINDEX, instance->originalLoadRef);
