@@ -124,6 +124,19 @@ bool EditorApplication::Initialize(const std::filesystem::path& projectFile)
     if (!projectFile.empty()) m_projectFilePath = std::filesystem::absolute(projectFile).lexically_normal();
     m_logger.AddSink(std::make_shared<ConsoleLogSink>());
 
+    if (!projectFile.empty())
+    {
+        std::string error;
+        const auto configuration = ProjectConfigurationStore::Load(m_projectFilePath, &error);
+        if (!configuration)
+        {
+            m_logger.Error("Project", "Could not open command-line project: " + error);
+            std::cerr << "EMBER Editor: could not open project '"
+                      << PathToUtf8(m_projectFilePath) << "': " << error << '\n';
+            return false;
+        }
+    }
+
     char* preferencePath = SDL_GetPrefPath("EMBER", "EMBER");
     if (preferencePath != nullptr)
     {
@@ -397,6 +410,16 @@ void EditorApplication::OpenProjectFromPath(const std::filesystem::path& path)
     m_sceneDirty = false;
     m_selectedAssetId.clear();
     m_importSettingsAssetId.clear();
+    m_showScriptSourceEditor = false;
+    m_scriptSourceDirty = false;
+    m_scriptSourceAssetId.clear();
+    m_scriptSourcePath.clear();
+    m_scriptSourceOriginal.clear();
+    m_scriptSourceBuffer.fill('\0');
+    m_hasScriptValidationResult = false;
+    m_scriptValidationMessage.clear();
+    m_scriptValidationLine = 0;
+    m_scriptValidationColumn = 0;
     LoadInputSettings();
     if (m_projectLoadFailed) return;
     RefreshAssets();
