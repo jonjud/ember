@@ -2,7 +2,9 @@
 
 #include "Engine/Scene/Entity.hpp"
 
-#include <lua.hpp>
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
 #include <algorithm>
 #include <cmath>
