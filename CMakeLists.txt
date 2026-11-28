@@ -445,6 +445,7 @@ endif()
 # owns transient AudioSoundHandles during its runtime lifecycle.
 if(BUILD_TESTING)
     foreach(scene_target IN ITEMS
+        ember_audio_scene_tests
         ember_scene_physics_tests
         ember_sprite_animation_tests
         ember_scene_tests
