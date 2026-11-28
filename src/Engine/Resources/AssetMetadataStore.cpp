@@ -14,18 +14,9 @@ using Json = nlohmann::json;
 bool IsSafeRelativeSource(const std::filesystem::path& source)
 {
     if (source.empty() || source.is_absolute() || source.has_root_name())
-    {
         return false;
-    }
-
     for (const auto& part : source)
-    {
-        if (part == "..")
-        {
-            return false;
-        }
-    }
-
+        if (part == "..") return false;
     return true;
 }
 
@@ -36,6 +27,7 @@ const char* ToString(AssetType type)
     case AssetType::Texture: return "texture";
     case AssetType::Audio: return "audio";
     case AssetType::Scene: return "scene";
+    case AssetType::Script: return "script";
     }
     return nullptr;
 }
@@ -52,10 +44,7 @@ const char* ToString(TextureFilter filter)
 
 bool Fail(std::string* error, const std::string& message)
 {
-    if (error != nullptr)
-    {
-        *error = message;
-    }
+    if (error != nullptr) *error = message;
     return false;
 }
 }
@@ -66,27 +55,17 @@ bool AssetMetadataStore::Save(
     std::string* error)
 {
     if (metadataPath.empty())
-    {
         return Fail(error, "Metadata file path is empty.");
-    }
     if (metadata.schemaVersion != AssetMetadata::CurrentSchemaVersion)
-    {
         return Fail(error, "Unsupported asset metadata schema version.");
-    }
     if (metadata.assetId.empty())
-    {
         return Fail(error, "Asset ID must not be empty.");
-    }
     if (!IsSafeRelativeSource(metadata.source))
-    {
         return Fail(error, "Asset source must be a safe project-relative path.");
-    }
 
     const char* type = ToString(metadata.type);
     if (type == nullptr)
-    {
         return Fail(error, "Asset type is invalid.");
-    }
 
     Json document{
         {"schema_version", metadata.schemaVersion},
@@ -99,10 +78,7 @@ bool AssetMetadataStore::Save(
     {
         const char* filter = ToString(metadata.texture.filter);
         if (filter == nullptr)
-        {
             return Fail(error, "Texture filter is invalid.");
-        }
-
         document["texture"] = {
             {"filter", filter},
             {"premultiply_alpha", metadata.texture.premultiplyAlpha}
@@ -112,32 +88,18 @@ bool AssetMetadataStore::Save(
     try
     {
         const auto parent = metadataPath.parent_path();
-        if (!parent.empty())
-        {
-            std::filesystem::create_directories(parent);
-        }
-
+        if (!parent.empty()) std::filesystem::create_directories(parent);
         std::ofstream output(metadataPath, std::ios::binary | std::ios::trunc);
-        if (!output)
-        {
-            return Fail(error, "Could not open metadata file for writing.");
-        }
-
+        if (!output) return Fail(error, "Could not open metadata file for writing.");
         output << document.dump(4) << '\n';
-        if (!output)
-        {
-            return Fail(error, "Could not write asset metadata.");
-        }
+        if (!output) return Fail(error, "Could not write asset metadata.");
     }
     catch (const std::exception& exception)
     {
         return Fail(error, exception.what());
     }
 
-    if (error != nullptr)
-    {
-        error->clear();
-    }
+    if (error != nullptr) error->clear();
     return true;
 }
 
@@ -150,23 +112,16 @@ std::optional<AssetMetadata> AssetMetadataStore::Load(
         std::ifstream input(metadataPath, std::ios::binary);
         if (!input)
         {
-            if (error != nullptr)
-            {
-                *error = "Could not open metadata file.";
-            }
+            if (error != nullptr) *error = "Could not open metadata file.";
             return std::nullopt;
         }
 
         const Json document = Json::parse(input);
         AssetMetadata metadata;
-
         metadata.schemaVersion = document.at("schema_version").get<std::uint32_t>();
         if (metadata.schemaVersion != AssetMetadata::CurrentSchemaVersion)
         {
-            if (error != nullptr)
-            {
-                *error = "Unsupported asset metadata schema version.";
-            }
+            if (error != nullptr) *error = "Unsupported asset metadata schema version.";
             return std::nullopt;
         }
 
@@ -179,65 +134,35 @@ std::optional<AssetMetadata> AssetMetadataStore::Load(
             metadata.type = AssetType::Texture;
             const Json& texture = document.at("texture");
             const std::string filter = texture.at("filter").get<std::string>();
-
-            if (filter == "nearest")
-            {
-                metadata.texture.filter = TextureFilter::Nearest;
-            }
-            else if (filter == "linear")
-            {
-                metadata.texture.filter = TextureFilter::Linear;
-            }
+            if (filter == "nearest") metadata.texture.filter = TextureFilter::Nearest;
+            else if (filter == "linear") metadata.texture.filter = TextureFilter::Linear;
             else
             {
-                if (error != nullptr)
-                {
-                    *error = "Unknown texture filter.";
-                }
+                if (error != nullptr) *error = "Unknown texture filter.";
                 return std::nullopt;
             }
-
-            metadata.texture.premultiplyAlpha =
-                texture.at("premultiply_alpha").get<bool>();
+            metadata.texture.premultiplyAlpha = texture.at("premultiply_alpha").get<bool>();
         }
-        else if (type == "audio")
-        {
-            metadata.type = AssetType::Audio;
-        }
-        else if (type == "scene")
-        {
-            metadata.type = AssetType::Scene;
-        }
+        else if (type == "audio") metadata.type = AssetType::Audio;
+        else if (type == "scene") metadata.type = AssetType::Scene;
+        else if (type == "script") metadata.type = AssetType::Script;
         else
         {
-            if (error != nullptr)
-            {
-                *error = "Unknown asset type.";
-            }
+            if (error != nullptr) *error = "Unknown asset type.";
             return std::nullopt;
         }
 
         if (metadata.assetId.empty() || !IsSafeRelativeSource(metadata.source))
         {
-            if (error != nullptr)
-            {
-                *error = "Asset metadata contains an invalid ID or source path.";
-            }
+            if (error != nullptr) *error = "Asset metadata contains an invalid ID or source path.";
             return std::nullopt;
         }
-
-        if (error != nullptr)
-        {
-            error->clear();
-        }
+        if (error != nullptr) error->clear();
         return metadata;
     }
     catch (const std::exception& exception)
     {
-        if (error != nullptr)
-        {
-            *error = exception.what();
-        }
+        if (error != nullptr) *error = exception.what();
         return std::nullopt;
     }
 }

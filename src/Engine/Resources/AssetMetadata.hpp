@@ -10,7 +10,8 @@ enum class AssetType
 {
     Texture,
     Audio,
-    Scene
+    Scene,
+    Script
 };
 
 enum class TextureFilter

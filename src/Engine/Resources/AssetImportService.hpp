@@ -19,6 +19,12 @@ public:
     [[nodiscard]] const AssetMetadata* FindAsset(const std::string& assetId) const noexcept;
     [[nodiscard]] const AssetRegistry& GetRegistry() const noexcept;
 
+    // Imports a language-neutral text source and writes a .emberasset sidecar.
+    // The stable ID is derived from the normalized project-relative source path.
+    [[nodiscard]] bool ImportScript(
+        const std::filesystem::path& relativeSource,
+        std::string* error = nullptr);
+
     [[nodiscard]] bool UpdateTextureSettings(
         const std::string& assetId,
         const TextureImportSettings& settings,
