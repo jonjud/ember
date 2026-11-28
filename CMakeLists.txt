@@ -407,6 +407,12 @@ if(BUILD_TESTING)
     target_link_libraries(ember_scene_serializer_tests PRIVATE nlohmann_json::nlohmann_json box2d::box2d)
     add_test(NAME ember_scene_serializer_tests COMMAND ember_scene_serializer_tests)
 
+    add_executable(ember_scene_undo_history_tests
+        tests/SceneUndoHistoryTests.cpp
+    )
+    target_include_directories(ember_scene_undo_history_tests PRIVATE src)
+    add_test(NAME ember_scene_undo_history_tests COMMAND ember_scene_undo_history_tests)
+
     add_executable(ember_asset_metadata_tests
         tests/AssetMetadataTests.cpp
         src/Engine/Resources/AssetMetadataStore.cpp
