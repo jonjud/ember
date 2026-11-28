@@ -380,7 +380,7 @@ if(BUILD_TESTING)
         tests/ComponentRegistryTests.cpp
     )
     target_include_directories(ember_component_registry_tests PRIVATE src)
-    target_link_libraries(ember_component_registry_tests PRIVATE nlohmann_json::nlohmann_json)
+    target_link_libraries(ember_component_registry_tests PRIVATE ember_engine)
     add_test(NAME ember_component_registry_tests COMMAND ember_component_registry_tests)
 
     add_executable(ember_texture_cache_tests
