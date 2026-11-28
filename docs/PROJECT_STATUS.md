@@ -10,13 +10,13 @@
 | Repository | [jonjud/ember](https://github.com/jonjud/ember) |
 | Active branch | `develop` |
 | Stable branch | `main` |
-| Last code commit | Pending — viewport Undo/Redo gesture transaction |
-| Latest repository HEAD | [`454732f`](https://github.com/jonjud/ember/commit/454732fa5d91f30a8e244115c637771953fa3e79) — Multi-edit milestone documentation |
-| Last verified code CI | [Windows CI #388](https://github.com/jonjud/ember/actions/runs/46166314445) — **Success**; Windows Debug and Release build/tests passed |
-| Latest CI | [Windows CI #389](https://github.com/jonjud/ember/actions/runs/46167187177) — **Success**; Windows Debug and Release build/tests passed |
-| Latest documentation CI | Will be recorded after this status refresh |
-| Last completed milestone | Multi-edit Inspector: mixed values, atomic shared-property edits, multi-Entity Component add/remove, Play Mode guards and Audio/Script asset references; CI #46166314445 Debug + Release Success |
-| Active milestone | Editor workflow quality/reliability audit. Combined manual Windows project-template/export verification remains pending. |
+| Last code commit | [`9062fba`](https://github.com/jonjud/ember/commit/9062fbaba193c8f7b57fd77964875f2be7d41d0a) — rollback failed/throwing multi-edit property setters |
+| Latest repository HEAD | [`9062fba`](https://github.com/jonjud/ember/commit/9062fbaba193c8f7b57fd77964875f2be7d41d0a) — Multi-edit rollback hardening |
+| Last verified code CI | [Windows CI #392](https://github.com/jonjud/ember/actions/runs/46169076906) — **Success**; Windows Debug and Release build/tests passed |
+| Latest CI | [Windows CI #392](https://github.com/jonjud/ember/actions/runs/46169076906) — **Success**; Windows Debug and Release build/tests passed |
+| Latest documentation CI | Pending this status refresh |
+| Last completed milestone | Multi-edit Inspector and rollback hardening: shared values, component add/remove, Play Mode guards, Audio/Script references, and rollback for setters that mutate then fail/throw; CI #392 Debug + Release Success |
+| Active milestone | Editor workflow quality/reliability audit: Undo/Redo gesture batching and Multi-edit failure rollback are automated-tested. Combined manual Windows project-template/export verification remains pending. |
 | Physics backend | Box2D v3.2.0, pinned via FetchContent; wrapped by EMBER-owned PhysicsWorld API |
 
 > CI Success ยืนยัน Windows build และ automated tests; interactive verification เป็นผลทดสอบแยกต่างหากจากผู้ใช้
@@ -234,4 +234,6 @@ See [SCRIPTING_DESIGN.md](SCRIPTING_DESIGN.md) for the C++-first language policy
 
 ---
 
-**Handoff:** Latest repository HEAD before the active change is `454732fa5d91f30a8e244115c637771953fa3e79`; Windows CI #389 (`46167187177`) passed Windows Debug and Release build/tests. Editor Undo/Redo, multi-selection, Parent/Child Scene Hierarchy and Multi-edit Inspector are implemented and automated-tested. The active change batches viewport translation/rotation/scale gestures into one Undo/Redo snapshot at mouse release; CI is pending. Multi-edit supports shared Entity names, mixed values, safe atomic shared-property changes, multi-Entity Component add/remove (blocked safely during Play Mode), and AudioSource2D/ScriptComponent asset selection. Next focus after this fix: remaining multi-edit edge cases and Editor interaction consistency. Combined manual Windows verification of Blank 2D/2D Starter creation, Play Mode movement, Windows export contents and launching the exported runtime outside Editor remains pending. Do not mark interactive verification complete until the user confirms. Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md). Continue on `develop`; do not merge to `main`.
+**Handoff:** Latest repository HEAD is `9062fbaba193c8f7b57fd77964875f2be7d41d0a`; Windows CI #392 (`46169076906`) passed Windows Debug and Release build/tests. Editor Undo/Redo gesture batching, multi-selection, Parent/Child Scene Hierarchy and Multi-edit Inspector are implemented and automated-tested. Multi-edit shared-property application now rolls back the failing component when a setter mutates before returning false or throwing; regression tests cover both cases. Next focus: continue the Editor workflow reliability audit, especially Undo/Redo transaction boundaries for Inspector edits and continuous controls. Combined manual Windows verification of Blank 2D/2D Starter creation, Play Mode movement, Windows export contents and launching the exported runtime outside Editor remains pending. Do not mark interactive verification complete until the user confirms. Keep Editor-only code out of `ember_engine`. C++20 remains the primary Engine/Editor/native language. Long-term direction remains in Phase 6 of [ROADMAP.md](ROADMAP.md). Continue on `develop`; do not merge to `main`.
+
+| 2026-11-29 | [Multi-edit setter rollback, `9062fba`, CI #392](https://github.com/jonjud/ember/actions/runs/46169076906) | Success; Debug and Release passed. Failed or throwing setters now trigger rollback including the component that failed after partial mutation. |
