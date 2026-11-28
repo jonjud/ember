@@ -2370,14 +2370,18 @@ void EditorApplication::DrawScriptDiagnostics()
             }
             else
             {
-                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 150, 110, 255));
-                for (std::size_t index = 0; index < diagnostics.size(); ++index)
+                if (ImGui::BeginChild("ScriptDiagnosticList", ImVec2(0.0F, 0.0F), ImGuiChildFlags_Borders))
                 {
-                    ImGui::PushID(static_cast<int>(index));
-                    ImGui::BulletText("%s", diagnostics[index].c_str());
-                    ImGui::PopID();
+                    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 150, 110, 255));
+                    for (std::size_t index = 0; index < diagnostics.size(); ++index)
+                    {
+                        ImGui::PushID(static_cast<int>(index));
+                        ImGui::BulletText("%s", diagnostics[index].c_str());
+                        ImGui::PopID();
+                    }
+                    ImGui::PopStyleColor();
                 }
-                ImGui::PopStyleColor();
+                ImGui::EndChild();
             }
         }
     }

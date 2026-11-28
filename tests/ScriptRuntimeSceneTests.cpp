@@ -87,6 +87,10 @@ int main()
     scene.Update(0.25F);
     Check(runtime.updates == 2 && !scene.GetScriptDiagnostics().empty(),
         "A failed OnUpdate is diagnosed and faulted instances are not called again");
+    Check(scene.GetScriptDiagnostics().front().find("Actor") != std::string::npos,
+        "Script diagnostics identify the owning Entity by name");
+    Check(scene.GetScriptDiagnostics().front().find("scripts/player") != std::string::npos,
+        "Script diagnostics identify the assigned Script asset");
 
     scene.Stop();
     Check(runtime.destroys == 1 && runtime.shutdown == 1,

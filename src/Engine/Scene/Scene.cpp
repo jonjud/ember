@@ -465,8 +465,8 @@ void Scene::BuildScriptInstances() noexcept
             if (component == nullptr || !component->enabled) continue;
             if (!component->IsConfigurationValid())
             {
-                m_scriptDiagnostics.push_back("Entity " + std::to_string(entityId) +
-                    " has an invalid ScriptComponent configuration.");
+                m_scriptDiagnostics.push_back("Entity \"" + entity->GetName() + "\" (" + std::to_string(entityId) +
+                    ") has an invalid ScriptComponent configuration.");
                 continue;
             }
             if (component->scriptAssetId.empty()) continue;
@@ -476,16 +476,16 @@ void Scene::BuildScriptInstances() noexcept
                 const auto instance = m_scriptRuntime->CreateInstance(*component, *entity, &error);
                 if (!instance || !static_cast<bool>(*instance))
                 {
-                    m_scriptDiagnostics.push_back("Entity " + std::to_string(entityId) +
-                        " could not create script '" + component->scriptAssetId + "': " +
+                    m_scriptDiagnostics.push_back("Entity \"" + entity->GetName() + "\" (" + std::to_string(entityId) +
+                        ") could not create script '" + component->scriptAssetId + "': " +
                         (error.empty() ? "backend returned no instance." : error));
                     continue;
                 }
                 if (!m_scriptRuntime->InvokeOnCreate(*instance, *entity, &error))
                 {
                     m_scriptRuntime->InvokeOnDestroy(*instance, *entity);
-                    m_scriptDiagnostics.push_back("Entity " + std::to_string(entityId) +
-                        " OnCreate failed for script '" + component->scriptAssetId + "': " +
+                    m_scriptDiagnostics.push_back("Entity \"" + entity->GetName() + "\" (" + std::to_string(entityId) +
+                        ") OnCreate failed for script '" + component->scriptAssetId + "': " +
                         (error.empty() ? "backend reported failure." : error));
                     continue;
                 }
@@ -493,13 +493,13 @@ void Scene::BuildScriptInstances() noexcept
             }
             catch (const std::exception& exception)
             {
-                m_scriptDiagnostics.push_back("Entity " + std::to_string(entityId) +
-                    " script setup threw: " + exception.what());
+                m_scriptDiagnostics.push_back("Entity \"" + entity->GetName() + "\" (" + std::to_string(entityId) +
+                    ") script setup threw: " + exception.what());
             }
             catch (...)
             {
-                m_scriptDiagnostics.push_back("Entity " + std::to_string(entityId) +
-                    " script setup threw an unknown exception.");
+                m_scriptDiagnostics.push_back("Entity \"" + entity->GetName() + "\" (" + std::to_string(entityId) +
+                    ") script setup threw an unknown exception.");
             }
         }
     }
@@ -520,8 +520,8 @@ void Scene::UpdateScriptInstances(float deltaSeconds, const InputActionState& in
             if (!m_scriptRuntime->InvokeOnUpdate(instance.handle, context, &error))
             {
                 instance.faulted = true;
-                m_scriptDiagnostics.push_back("Entity " + std::to_string(instance.entity) +
-                    " script OnUpdate failed: " +
+                m_scriptDiagnostics.push_back("Entity \"" + entity->GetName() + "\" (" + std::to_string(instance.entity) +
+                    ") script '" + instance.component->scriptAssetId + "' OnUpdate failed: " +
                     (error.empty() ? "backend reported failure; instance disabled." : error));
             }
         }
