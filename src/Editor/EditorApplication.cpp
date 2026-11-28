@@ -666,8 +666,9 @@ void EditorApplication::DrawInspector()
                                             });
                                         for (const AssetMetadata* metadata : audioAssets)
                                         {
-                                            const std::string label = metadata->source.generic_string() +
-                                                " (" + metadata->assetId + ")##" + metadata->assetId;
+                                            const std::string label = metadata->source.generic_string() + " [" +
+                                                (metadata->scriptLanguage.empty() ? "Unassigned" : metadata->scriptLanguage) +
+                                                "] (" + metadata->assetId + ")##" + metadata->assetId;
                                             const bool selected = metadata->assetId == current;
                                             if (ImGui::Selectable(label.c_str(), selected) &&
                                                 property.set(*component, nlohmann::json(metadata->assetId)))
@@ -684,7 +685,8 @@ void EditorApplication::DrawInspector()
                                     const AssetMetadata* currentAsset = m_assetRegistry.Find(current);
                                     const std::string preview = current.empty() ? "None"
                                         : (currentAsset != nullptr && currentAsset->type == AssetType::Script
-                                            ? currentAsset->source.generic_string()
+                                            ? currentAsset->source.generic_string() + " [" +
+                                                (currentAsset->scriptLanguage.empty() ? "Unassigned" : currentAsset->scriptLanguage) + "]"
                                             : "Missing Script asset: " + current);
                                     if (ImGui::BeginCombo(property.displayName.c_str(), preview.c_str()))
                                     {
@@ -719,7 +721,13 @@ void EditorApplication::DrawInspector()
                                         }
                                         ImGui::EndCombo();
                                     }
-                                    ImGui::TextDisabled("Choose an imported Script asset. Its source language is handled by a ScriptRuntime backend.");
+                                    if (currentAsset != nullptr && currentAsset->type == AssetType::Script &&
+                                        currentAsset->scriptLanguage == "lua")
+                                        ImGui::TextDisabled("Lua 5.5.1 backend is available for this Script in Play Mode.");
+                                    else if (currentAsset != nullptr && currentAsset->type == AssetType::Script)
+                                        ImGui::TextDisabled("No matching runtime backend is available yet. This Script will not execute in Play Mode.");
+                                    else
+                                        ImGui::TextDisabled("Choose an imported Script asset. The language tag selects its runtime backend.");
                                 }
                                 else
                                 {
@@ -1185,7 +1193,7 @@ void EditorApplication::DrawAssetBrowser()
         ImGui::InputText("Search", m_assetSearch, sizeof(m_assetSearch));
         ImGui::SameLine();
         ImGui::SetNextItemWidth(120.0F);
-        ImGui::Combo("Type", &m_assetTypeFilter, "All\0Textures\0Audio\0Scenes\0");
+        ImGui::Combo("Type", &m_assetTypeFilter, "All\0Textures\0Audio\0Scenes\0Scripts\0");
 
         std::vector<const AssetMetadata*> assets;
         assets.reserve(m_assetRegistry.GetAssets().size());
@@ -1227,7 +1235,10 @@ void EditorApplication::DrawAssetBrowser()
                     LoadSelectedTextureSettings();
                 }
                 ImGui::TableSetColumnIndex(1);
-                ImGui::TextUnformatted(AssetTypeName(metadata->type));
+                std::string typeLabel = AssetTypeName(metadata->type);
+                if (metadata->type == AssetType::Script)
+                    typeLabel += metadata->scriptLanguage.empty() ? " / Unassigned" : " / " + metadata->scriptLanguage;
+                ImGui::TextUnformatted(typeLabel.c_str());
                 ImGui::TableSetColumnIndex(2);
                 const std::string source = metadata->source.generic_string();
                 ImGui::TextUnformatted(source.c_str());
@@ -1241,6 +1252,14 @@ void EditorApplication::DrawAssetBrowser()
             ImGui::Separator();
             ImGui::Text("Selected: %s (%s)", selected->assetId.c_str(), AssetTypeName(selected->type));
             ImGui::Text("Source: %s", selected->source.generic_string().c_str());
+            if (selected->type == AssetType::Script)
+            {
+                ImGui::Text("Language: %s", selected->scriptLanguage.empty()
+                    ? "Unassigned" : selected->scriptLanguage.c_str());
+                ImGui::TextDisabled("%s", selected->scriptLanguage == "lua"
+                    ? "Runtime backend: Lua 5.5.1 (available in Play Mode)"
+                    : "Runtime backend: no matching backend is currently available");
+            }
 
             if (selected->type == AssetType::Scene)
             {
