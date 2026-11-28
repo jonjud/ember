@@ -1010,6 +1010,22 @@ void EditorApplication::DrawInspector()
                     if (mixed) ImGui::TextDisabled("Mixed");
                 };
 
+                const std::string& firstName = selectedEntities.front()->GetName();
+                bool nameMixed = false;
+                for (const Entity* selected : selectedEntities)
+                    nameMixed = nameMixed || selected->GetName() != firstName;
+                char sharedName[128]{};
+                if (!nameMixed)
+                    std::snprintf(sharedName, sizeof(sharedName), "%s", firstName.c_str());
+                showMixed(nameMixed);
+                if (nameMixed) ImGui::SameLine();
+                if (ImGui::InputText("Name", sharedName, sizeof(sharedName)))
+                {
+                    const std::string name = sharedName;
+                    applyAll([&name](Entity& selected) { selected.SetName(name); });
+                    MarkSceneDirty();
+                }
+
                 bool active = selectedEntities.front()->IsActive();
                 bool activeMixed = false;
                 for (const Entity* selected : selectedEntities)
