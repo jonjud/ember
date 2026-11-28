@@ -1,5 +1,9 @@
 #include "Engine/Core/Logger.hpp"
 #include <cstdlib>
+#ifdef _WIN32
+#include <crtdbg.h>
+#include <windows.h>
+#endif
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -60,20 +64,50 @@ void RecordingSinkTest() {
     Check(recording->messages.size() == 1, "clear sinks");
 }
 void FileSinkTest() {
-    const auto path = std::filesystem::temp_directory_path() / "ember_logging_tests.log";
-    std::filesystem::remove(path);
+    std::cerr << "FileSink: resolving temp directory" << std::endl;
+    std::error_code error;
+    const auto tempDirectory = std::filesystem::temp_directory_path(error);
+    Check(!error, "resolve temp directory");
+    if (error) return;
+
+    const auto path = tempDirectory / "ember_logging_tests.log";
+    std::cerr << "FileSink: removing stale file" << std::endl;
+    error.clear();
+    std::filesystem::remove(path, error);
+    Check(!error, "remove stale log file");
+    if (error) return;
+
     {
+        std::cerr << "FileSink: constructing sink" << std::endl;
         auto sink = std::make_shared<ember::FileLogSink>(path);
         Check(sink->IsOpen(), "file sink opens");
+        if (!sink->IsOpen()) return;
+
+        std::cerr << "FileSink: writing entry" << std::endl;
         ember::Logger fileLogger(2);
         fileLogger.AddSink(sink);
         fileLogger.Warning("Persistence", "file sink entry");
+
+        std::cerr << "FileSink: flushing" << std::endl;
         sink->Flush();
+        std::cerr << "FileSink: leaving sink scope" << std::endl;
     }
+
+    std::cerr << "FileSink: reading persisted file" << std::endl;
     std::ifstream input(path);
-    const std::string contents((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
-    Check(contents.find("[Warning] [Persistence]") != std::string::npos && contents.find("file sink entry") != std::string::npos, "file sink contents");
-    std::filesystem::remove(path);
+    Check(input.is_open(), "open persisted log file");
+    if (input.is_open()) {
+        const std::string contents((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+        Check(contents.find("[Warning] [Persistence]") != std::string::npos &&
+              contents.find("file sink entry") != std::string::npos, "file sink contents");
+    }
+    input.close();
+
+    std::cerr << "FileSink: removing test file" << std::endl;
+    error.clear();
+    std::filesystem::remove(path, error);
+    Check(!error, "remove test log file");
+    std::cerr << "FileSink: completed" << std::endl;
 }
 void ZeroCapacitySinkTest() {
     ember::Logger disabled(0);
@@ -106,6 +140,16 @@ void Concurrency() {
 }
 }
 int main(int argc, char** argv) {
+#ifdef _WIN32
+    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+#endif
     const std::string stage = argc > 1 ? argv[1] : "all";
     if (stage == "history" || stage == "all") History();
     else if (stage == "recording") RecordingSinkTest();
