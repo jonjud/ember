@@ -133,8 +133,14 @@ bool ProjectExporter::ExportWindows(
     if (!registry.GetDiagnostics().empty())
         return Fail(error, "Asset registry contains errors; fix missing or invalid asset metadata before exporting.");
 
-    const auto output = std::filesystem::absolute(outputDirectory).lexically_normal();
-    if (IsWithin(output, std::filesystem::absolute(projectRoot).lexically_normal()))
+    const auto outputCandidate = std::filesystem::absolute(outputDirectory).lexically_normal();
+    const auto output = std::filesystem::weakly_canonical(outputCandidate, ec);
+    if (ec)
+        return Fail(error, "Could not resolve export destination: " + ec.message());
+    const auto canonicalProjectRoot = std::filesystem::weakly_canonical(projectRoot, ec);
+    if (ec)
+        return Fail(error, "Could not resolve source project directory: " + ec.message());
+    if (IsWithin(output, canonicalProjectRoot))
         return Fail(error, "Export destination must be outside the source project directory.");
     if (std::filesystem::exists(output, ec))
     {
