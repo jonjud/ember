@@ -136,7 +136,7 @@ add_library(ember_lua STATIC
     ${lua_SOURCE_DIR}/ltablib.c
     ${lua_SOURCE_DIR}/lutf8lib.c
 )
-target_include_directories(ember_lua PUBLIC ${lua_SOURCE_DIR}/src)
+target_include_directories(ember_lua PUBLIC ${lua_SOURCE_DIR})
 set_target_properties(ember_lua PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON)
 
 # miniaudio is compiled once behind EMBER's engine-owned audio facade.
