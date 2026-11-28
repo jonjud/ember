@@ -1202,14 +1202,6 @@ void EditorApplication::DrawInspector()
                         {
                             for (const auto& property : *properties)
                             {
-                                if ((property.id == "audio_asset_id" || property.id == "script_asset_id") &&
-                                    property.type == ComponentPropertyType::String)
-                                {
-                                    ImGui::TextDisabled("%s: multi-edit asset selection is not supported yet",
-                                        property.displayName.c_str());
-                                    continue;
-                                }
-
                                 std::vector<nlohmann::json> values;
                                 values.reserve(matchingComponents.size());
                                 for (const Component* match : matchingComponents)
@@ -1260,15 +1252,76 @@ void EditorApplication::DrawInspector()
                                 case ComponentPropertyType::String:
                                 {
                                     const std::string current = values.front().get<std::string>();
-                                    char editedValue[4097]{};
-                                    if (!mixed) std::snprintf(editedValue, sizeof(editedValue), "%s", current.c_str());
-                                    showMixed(mixed);
-                                    if (mixed) ImGui::SameLine();
-                                    if (ImGui::InputText(property.displayName.c_str(), editedValue, sizeof(editedValue)))
+                                    if (property.id == "audio_asset_id" || property.id == "script_asset_id")
                                     {
-                                        if (editor::ApplyComponentPropertyAtomically(
-                                            matchingComponents, property, nlohmann::json(std::string(editedValue))))
-                                            MarkSceneDirty();
+                                        const AssetType requiredType = property.id == "audio_asset_id"
+                                            ? AssetType::Audio : AssetType::Script;
+                                        const AssetMetadata* currentAsset = m_assetRegistry.Find(current);
+                                        std::string preview = mixed ? "Multiple values" :
+                                            (current.empty() ? "None" :
+                                                (currentAsset != nullptr && currentAsset->type == requiredType
+                                                    ? currentAsset->source.generic_string()
+                                                    : std::string("Missing asset: ") + current));
+                                        if (ImGui::BeginCombo(property.displayName.c_str(), preview.c_str()))
+                                        {
+                                            const auto applyAsset = [&](const std::string& assetId)
+                                            {
+                                                if (editor::ApplyComponentPropertyAtomically(
+                                                    matchingComponents, property, nlohmann::json(assetId)))
+                                                    MarkSceneDirty();
+                                            };
+                                            if (ImGui::Selectable("None", !mixed && current.empty()))
+                                                applyAsset({});
+                                            std::vector<const AssetMetadata*> candidates;
+                                            for (const auto& [assetId, metadata] : m_assetRegistry.GetAssets())
+                                            {
+                                                (void)assetId;
+                                                if (metadata.type != requiredType) continue;
+                                                const auto assetPath = m_assetRegistry.GetDirectory().Resolve(metadata.source);
+                                                std::error_code pathError;
+                                                if (!assetPath ||
+                                                    (requiredType == AssetType::Script
+                                                        ? !std::filesystem::is_regular_file(*assetPath, pathError)
+                                                        : !std::filesystem::exists(*assetPath, pathError)) ||
+                                                    pathError)
+                                                    continue;
+                                                candidates.push_back(&metadata);
+                                            }
+                                            std::sort(candidates.begin(), candidates.end(),
+                                                [](const AssetMetadata* left, const AssetMetadata* right)
+                                                {
+                                                    return left->source.generic_string() < right->source.generic_string();
+                                                });
+                                            for (const AssetMetadata* metadata : candidates)
+                                            {
+                                                std::string label = metadata->source.generic_string();
+                                                if (requiredType == AssetType::Audio)
+                                                    label += " (" + metadata->assetId + ")";
+                                                else
+                                                    label += " [" + (metadata->scriptLanguage.empty()
+                                                        ? std::string("Unassigned") : metadata->scriptLanguage) + "]";
+                                                label += "##" + metadata->assetId;
+                                                if (ImGui::Selectable(label.c_str(),
+                                                    !mixed && metadata->assetId == current))
+                                                    applyAsset(metadata->assetId);
+                                            }
+                                            ImGui::EndCombo();
+                                        }
+                                        ImGui::TextDisabled("Choose an imported %s asset for every selected Entity.",
+                                            requiredType == AssetType::Audio ? "Audio" : "Script");
+                                    }
+                                    else
+                                    {
+                                        char editedValue[4097]{};
+                                        if (!mixed) std::snprintf(editedValue, sizeof(editedValue), "%s", current.c_str());
+                                        showMixed(mixed);
+                                        if (mixed) ImGui::SameLine();
+                                        if (ImGui::InputText(property.displayName.c_str(), editedValue, sizeof(editedValue)))
+                                        {
+                                            if (editor::ApplyComponentPropertyAtomically(
+                                                matchingComponents, property, nlohmann::json(std::string(editedValue))))
+                                                MarkSceneDirty();
+                                        }
                                     }
                                     break;
                                 }
