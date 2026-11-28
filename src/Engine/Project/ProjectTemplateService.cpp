@@ -4,6 +4,7 @@
 #include "Engine/Scene/Scene.hpp"
 #include "Engine/Scene/SceneSerializer.hpp"
 
+#include <fstream>
 #include <system_error>
 
 namespace ember
